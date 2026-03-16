@@ -1,9 +1,8 @@
 import SwiftUI
 
 struct TodayView: View {
-    @StateObject private var store = ScriptureStore()
+    @EnvironmentObject var store: ScriptureStore
 
-    // Pick a daily verse — changes each day based on the date
     private var dailyVerse: ScriptureItem? {
         let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 1
         let verses = store.items(for: .gita)
@@ -34,14 +33,17 @@ struct TodayView: View {
 
                     // Daily verse card
                     if let verse = dailyVerse {
-                        DailyVerseCard(item: verse, store: store)
+                        DailyVerseCard(item: verse)
                             .padding(.horizontal, DharmaSpacing.md)
                     }
 
                     // Next festival teaser
                     if let festival = nextFestival {
-                        FestivalTeaserCard(festival: festival)
-                            .padding(.horizontal, DharmaSpacing.md)
+                        NavigationLink(destination: FestivalDetailView(festival: festival)) {
+                            FestivalTeaserCard(festival: festival)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, DharmaSpacing.md)
                     }
 
                     // Quick access
@@ -71,7 +73,12 @@ struct TodayView: View {
 // MARK: - Daily Verse Card
 struct DailyVerseCard: View {
     let item: ScriptureItem
-    @ObservedObject var store: ScriptureStore
+    @EnvironmentObject var store: ScriptureStore
+
+    // We need a live version of the item from the store to reflect favourite state
+    private var liveItem: ScriptureItem {
+        store.items.first { $0.id == item.id } ?? item
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DharmaSpacing.md) {
@@ -83,14 +90,15 @@ struct DailyVerseCard: View {
                     .kerning(0.5)
                 Spacer()
                 Button {
-                    store.toggleFavourite(item)
+                    store.toggleFavourite(liveItem)
                 } label: {
-                    Image(systemName: item.isFavourite ? "heart.fill" : "heart")
-                        .foregroundColor(item.isFavourite ? .dharmaGold : .dharmaTextMuted)
+                    Image(systemName: liveItem.isFavourite ? "heart.fill" : "heart")
+                        .foregroundColor(liveItem.isFavourite ? .dharmaGold : .dharmaTextMuted)
+                        .animation(.easeInOut(duration: 0.2), value: liveItem.isFavourite)
                 }
             }
 
-            Text(item.textEnglish)
+            Text(liveItem.textEnglish)
                 .font(DharmaFont.sanskrit(16))
                 .foregroundColor(.dharmaTextPrimary)
                 .lineSpacing(6)
@@ -100,7 +108,7 @@ struct DailyVerseCard: View {
                     .fill(Color.dharmaGold)
                     .frame(width: 2, height: 14)
                     .clipShape(Capsule())
-                Text(item.source)
+                Text(liveItem.source)
                     .font(DharmaFont.caption(12))
                     .foregroundColor(.dharmaTextMuted)
                     .italic()
@@ -147,8 +155,9 @@ struct FestivalTeaserCard: View {
 
             Spacer()
 
-            Image(systemName: "calendar.badge.clock")
-                .foregroundColor(.dharmaGold)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12))
+                .foregroundColor(.dharmaTextMuted)
         }
         .padding(DharmaSpacing.md)
         .background(Color.dharmaSurface)
@@ -158,6 +167,8 @@ struct FestivalTeaserCard: View {
 
 // MARK: - Quick Access Grid
 struct QuickAccessGrid: View {
+    @EnvironmentObject var store: ScriptureStore
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Browse")
@@ -168,7 +179,10 @@ struct QuickAccessGrid: View {
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(ScriptureCategory.allCases) { cat in
-                    QuickAccessTile(category: cat)
+                    NavigationLink(destination: CategoryDetailView(category: cat)) {
+                        QuickAccessTile(category: cat)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -205,6 +219,31 @@ struct QuickAccessTile: View {
     }
 }
 
+// MARK: - Category Detail View
+struct CategoryDetailView: View {
+    let category: ScriptureCategory
+    @EnvironmentObject var store: ScriptureStore
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                ForEach(store.items(for: category)) { item in
+                    NavigationLink(destination: ScriptureDetailView(item: item, store: store)) {
+                        ScriptureCardView(item: item)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(DharmaSpacing.md)
+            .padding(.bottom, DharmaSpacing.xl)
+        }
+        .background(Color.dharmaBackground)
+        .navigationTitle(category.rawValue)
+        .navigationBarTitleDisplayMode(.large)
+    }
+}
+
 #Preview {
     TodayView()
+        .environmentObject(ScriptureStore())
 }

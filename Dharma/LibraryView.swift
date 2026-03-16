@@ -1,18 +1,24 @@
 import SwiftUI
 
 struct LibraryView: View {
-    @StateObject private var store = ScriptureStore()
+    @EnvironmentObject var store: ScriptureStore
     @State private var searchText = ""
     @State private var selectedCategory: ScriptureCategory? = nil
-    @State private var showFavouritesOnly = false
+    @State private var showFilterSheet = false
+    @State private var showFavouritesPage = false
+    @State private var selectedChapter: Int? = nil
+    @State private var selectedSpeaker: String? = nil
 
     var filteredItems: [ScriptureItem] {
         var items = store.items
-        if showFavouritesOnly {
-            items = items.filter { $0.isFavourite }
-        }
         if let cat = selectedCategory {
             items = items.filter { $0.category == cat }
+        }
+        if let chapter = selectedChapter {
+            items = items.filter { $0.subtitle.contains("Chapter \(chapter) ·") }
+        }
+        if let speaker = selectedSpeaker {
+            items = items.filter { $0.title.hasPrefix(speaker) }
         }
         if !searchText.isEmpty {
             items = items.filter {
@@ -22,6 +28,10 @@ struct LibraryView: View {
             }
         }
         return items
+    }
+
+    var hasActiveFilters: Bool {
+        selectedChapter != nil || selectedSpeaker != nil
     }
 
     var body: some View {
@@ -34,7 +44,7 @@ struct LibraryView: View {
                         .padding(.bottom, DharmaSpacing.md)
 
                     if filteredItems.isEmpty {
-                        EmptyStateView(searchText: searchText, showFavouritesOnly: showFavouritesOnly)
+                        EmptyStateView(searchText: searchText)
                             .padding(.top, 60)
                     } else {
                         LazyVStack(spacing: 12) {
@@ -56,12 +66,208 @@ struct LibraryView: View {
             .searchable(text: $searchText, prompt: "Search verses, mantras…")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showFavouritesOnly.toggle()
-                    } label: {
-                        Image(systemName: showFavouritesOnly ? "heart.fill" : "heart")
-                            .foregroundColor(.dharmaGold)
+                    HStack(spacing: 16) {
+                        // Filter button
+                        Button {
+                            showFilterSheet = true
+                        } label: {
+                            ZStack(alignment: .topTrailing) {
+                                Image(systemName: "line.3.horizontal.decrease.circle")
+                                    .foregroundColor(hasActiveFilters ? .dharmaGold : .dharmaTextSecondary)
+                                if hasActiveFilters {
+                                    Circle()
+                                        .fill(Color.dharmaGold)
+                                        .frame(width: 8, height: 8)
+                                        .offset(x: 4, y: -4)
+                                }
+                            }
+                        }
+
+                        // Favourites button
+                        Button {
+                            showFavouritesPage = true
+                        } label: {
+                            Image(systemName: "heart.fill")
+                                .foregroundColor(.dharmaGold)
+                        }
                     }
+                }
+            }
+            .sheet(isPresented: $showFilterSheet) {
+                FilterSheetView(
+                    selectedCategory: selectedCategory,
+                    selectedChapter: $selectedChapter,
+                    selectedSpeaker: $selectedSpeaker
+                )
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showFavouritesPage) {
+                FavouritesView()
+                    .environmentObject(store)
+            }
+        }
+    }
+}
+
+// MARK: - Filter Sheet
+struct FilterSheetView: View {
+    let selectedCategory: ScriptureCategory?
+    @Binding var selectedChapter: Int?
+    @Binding var selectedSpeaker: String?
+    @Environment(\.dismiss) var dismiss
+
+    let speakers = ["Krishna", "Arjuna", "Sanjaya", "Dhritarashtra"]
+    let chapters = Array(1...18)
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: DharmaSpacing.lg) {
+
+                    // Speaker filter
+                    VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+                        Text("Speaker")
+                            .font(DharmaFont.heading())
+                            .foregroundColor(.dharmaTextPrimary)
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(speakers, id: \.self) { speaker in
+                                    CategoryPill(
+                                        label: speaker,
+                                        icon: speakerIcon(speaker),
+                                        color: speakerColor(speaker),
+                                        isSelected: selectedSpeaker == speaker
+                                    ) {
+                                        selectedSpeaker = selectedSpeaker == speaker ? nil : speaker
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Chapter filter (only for Gita)
+                    VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+                        Text("Chapter")
+                            .font(DharmaFont.heading())
+                            .foregroundColor(.dharmaTextPrimary)
+
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 8) {
+                            ForEach(chapters, id: \.self) { chapter in
+                                Button {
+                                    selectedChapter = selectedChapter == chapter ? nil : chapter
+                                } label: {
+                                    Text("\(chapter)")
+                                        .font(DharmaFont.caption(13))
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                        .background(selectedChapter == chapter ? Color.dharmaGold.opacity(0.18) : Color.dharmaSurface)
+                                        .foregroundColor(selectedChapter == chapter ? .dharmaGold : .dharmaTextSecondary)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .strokeBorder(selectedChapter == chapter ? Color.dharmaGold.opacity(0.5) : Color.clear, lineWidth: 1)
+                                        )
+                                }
+                            }
+                        }
+                    }
+
+                    // Clear filters button
+                    if selectedChapter != nil || selectedSpeaker != nil {
+                        Button {
+                            selectedChapter = nil
+                            selectedSpeaker = nil
+                        } label: {
+                            Text("Clear All Filters")
+                                .font(DharmaFont.body())
+                                .foregroundColor(.red.opacity(0.8))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(Color.red.opacity(0.08))
+                                .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
+                        }
+                    }
+                }
+                .padding(DharmaSpacing.md)
+            }
+            .background(Color.dharmaBackground)
+            .navigationTitle("Filter")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundColor(.dharmaGold)
+                }
+            }
+        }
+    }
+
+    func speakerIcon(_ speaker: String) -> String {
+        switch speaker {
+        case "Krishna": return "star.fill"
+        case "Arjuna": return "person.fill"
+        case "Sanjaya": return "eye.fill"
+        case "Dhritarashtra": return "crown.fill"
+        default: return "person.fill"
+        }
+    }
+
+    func speakerColor(_ speaker: String) -> Color {
+        switch speaker {
+        case "Krishna": return .dharmaGold
+        case "Arjuna": return .categoryGita
+        case "Sanjaya": return .categoryUpanishads
+        case "Dhritarashtra": return .categoryMantras
+        default: return .dharmaGold
+        }
+    }
+}
+
+// MARK: - Favourites Page
+struct FavouritesView: View {
+    @EnvironmentObject var store: ScriptureStore
+    @Environment(\.dismiss) var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                if store.favourites.isEmpty {
+                    VStack(spacing: DharmaSpacing.md) {
+                        Image(systemName: "heart")
+                            .font(.system(size: 50))
+                            .foregroundColor(.dharmaTextMuted)
+                            .padding(.top, 80)
+                        Text("No favourites yet")
+                            .font(DharmaFont.heading())
+                            .foregroundColor(.dharmaTextSecondary)
+                        Text("Tap the heart on any verse to save it here")
+                            .font(DharmaFont.body())
+                            .foregroundColor(.dharmaTextMuted)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(DharmaSpacing.xl)
+                } else {
+                    LazyVStack(spacing: 12) {
+                        ForEach(store.favourites) { item in
+                            NavigationLink(destination: ScriptureDetailView(item: item, store: store)) {
+                                ScriptureCardView(item: item)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(DharmaSpacing.md)
+                    .padding(.bottom, DharmaSpacing.xl)
+                }
+            }
+            .background(Color.dharmaBackground)
+            .navigationTitle("Favourites")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundColor(.dharmaGold)
                 }
             }
         }
@@ -186,17 +392,16 @@ struct ScriptureCardView: View {
 // MARK: - Empty State
 struct EmptyStateView: View {
     let searchText: String
-    var showFavouritesOnly: Bool = false
 
     var body: some View {
         VStack(spacing: DharmaSpacing.md) {
-            Image(systemName: showFavouritesOnly ? "heart" : "magnifyingglass")
+            Image(systemName: "magnifyingglass")
                 .font(.system(size: 40))
                 .foregroundColor(.dharmaTextMuted)
-            Text(showFavouritesOnly ? "No favourites yet" : searchText.isEmpty ? "No items found" : "No results for \"\(searchText)\"")
+            Text(searchText.isEmpty ? "No items found" : "No results for \"\(searchText)\"")
                 .font(DharmaFont.heading())
                 .foregroundColor(.dharmaTextSecondary)
-            Text(showFavouritesOnly ? "Tap the heart on any verse to save it here" : "Try a different category or search term")
+            Text("Try a different category or search term")
                 .font(DharmaFont.body())
                 .foregroundColor(.dharmaTextMuted)
                 .multilineTextAlignment(.center)
@@ -207,4 +412,5 @@ struct EmptyStateView: View {
 
 #Preview {
     LibraryView()
+        .environmentObject(ScriptureStore())
 }

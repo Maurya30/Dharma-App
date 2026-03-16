@@ -29,21 +29,24 @@ class ScriptureStore: ObservableObject {
               let gitaData = try? JSONDecoder().decode(GitaData.self, from: data)
         else {
             print("⚠️ Could not load gita.json — falling back to sample data")
-            return gitaVerses // fallback to the 7 hardcoded verses
+            return gitaVerses
         }
 
         var result: [ScriptureItem] = []
 
         for chapter in gitaData.chapters {
             for verse in chapter.verses {
-                // Clean the text — remove trailing "(1.1)" reference
                 let cleanText = verse.text
                     .replacingOccurrences(of: #"\s*\(\d+\.\d+[\d\.\-]*\)\s*$"#,
                                          with: "",
                                          options: .regularExpression)
                     .trimmingCharacters(in: .whitespaces)
 
+                // Use stable UUID derived from the verse reference
+                let stableID = UUID(uuidString: uuidFrom(string: "gita-\(verse.reference)")) ?? UUID()
+
                 let item = ScriptureItem(
+                    id: stableID,
                     category: .gita,
                     title: "\(verse.speaker) — \(verse.reference)",
                     subtitle: "Chapter \(chapter.chapter) · \(chapter.title)",
@@ -56,6 +59,14 @@ class ScriptureStore: ObservableObject {
 
         print("✅ Loaded \(result.count) Gita verses from gita.json")
         return result
+    }
+
+    // Generates a stable UUID from a string
+    private func uuidFrom(string: String) -> String {
+        let hash = string.utf8.reduce(0) { ($0 &* 31) &+ Int($1) }
+        let hex = String(format: "%032x", abs(hash))
+        let padded = hex.padding(toLength: 32, withPad: "0", startingAt: 0)
+        return "\(padded.prefix(8))-\(padded.dropFirst(8).prefix(4))-\(padded.dropFirst(12).prefix(4))-\(padded.dropFirst(16).prefix(4))-\(padded.dropFirst(20))"
     }
 
     // MARK: - Favourites

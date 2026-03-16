@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct DharmaApp: App {
+    @StateObject private var store = ScriptureStore()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(store)
         }
     }
 }
