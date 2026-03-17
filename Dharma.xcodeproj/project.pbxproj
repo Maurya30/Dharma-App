@@ -6,19 +6,90 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		770D67AD2F68DAD40051CA78 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 770D67AC2F68DAD40051CA78 /* WidgetKit.framework */; };
+		770D67AF2F68DAD40051CA78 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 770D67AE2F68DAD40051CA78 /* SwiftUI.framework */; };
+		770D67BE2F68DAD70051CA78 /* DharmaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 770D67AA2F68DAD40051CA78 /* DharmaWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		770D67BC2F68DAD70051CA78 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 77507B962F6611EC0035217C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 770D67A92F68DAD40051CA78;
+			remoteInfo = DharmaWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		770D67C32F68DAD70051CA78 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				770D67BE2F68DAD70051CA78 /* DharmaWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		770D67AA2F68DAD40051CA78 /* DharmaWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DharmaWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		770D67AC2F68DAD40051CA78 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		770D67AE2F68DAD40051CA78 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		770D67C52F68DBDB0051CA78 /* DharmaWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DharmaWidgetExtension.entitlements; sourceTree = "<group>"; };
 		77507B9E2F6611EC0035217C /* Dharma.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dharma.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		770D67BF2F68DAD70051CA78 /* Exceptions for "DharmaWidget" folder in "DharmaWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 770D67A92F68DAD40051CA78 /* DharmaWidgetExtension */;
+		};
+		770D67C92F68DCB30051CA78 /* Exceptions for "Dharma" folder in "DharmaWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				SharedData.swift,
+			);
+			target = 770D67A92F68DAD40051CA78 /* DharmaWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		770D67B02F68DAD40051CA78 /* DharmaWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				770D67BF2F68DAD70051CA78 /* Exceptions for "DharmaWidget" folder in "DharmaWidgetExtension" target */,
+			);
+			path = DharmaWidget;
+			sourceTree = "<group>";
+		};
 		77507BA02F6611EC0035217C /* Dharma */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				770D67C92F68DCB30051CA78 /* Exceptions for "Dharma" folder in "DharmaWidgetExtension" target */,
+			);
 			path = Dharma;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		770D67A72F68DAD40051CA78 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				770D67AF2F68DAD40051CA78 /* SwiftUI.framework in Frameworks */,
+				770D67AD2F68DAD40051CA78 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		77507B9B2F6611EC0035217C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -29,10 +100,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		770D67AB2F68DAD40051CA78 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				770D67AC2F68DAD40051CA78 /* WidgetKit.framework */,
+				770D67AE2F68DAD40051CA78 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		77507B952F6611EC0035217C = {
 			isa = PBXGroup;
 			children = (
+				770D67C52F68DBDB0051CA78 /* DharmaWidgetExtension.entitlements */,
 				77507BA02F6611EC0035217C /* Dharma */,
+				770D67B02F68DAD40051CA78 /* DharmaWidget */,
+				770D67AB2F68DAD40051CA78 /* Frameworks */,
 				77507B9F2F6611EC0035217C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +124,7 @@
 			isa = PBXGroup;
 			children = (
 				77507B9E2F6611EC0035217C /* Dharma.app */,
+				770D67AA2F68DAD40051CA78 /* DharmaWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,6 +132,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		770D67A92F68DAD40051CA78 /* DharmaWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 770D67C02F68DAD70051CA78 /* Build configuration list for PBXNativeTarget "DharmaWidgetExtension" */;
+			buildPhases = (
+				770D67A62F68DAD40051CA78 /* Sources */,
+				770D67A72F68DAD40051CA78 /* Frameworks */,
+				770D67A82F68DAD40051CA78 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				770D67B02F68DAD40051CA78 /* DharmaWidget */,
+			);
+			name = DharmaWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = DharmaWidgetExtension;
+			productReference = 770D67AA2F68DAD40051CA78 /* DharmaWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		77507B9D2F6611EC0035217C /* Dharma */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 77507BA92F6611EE0035217C /* Build configuration list for PBXNativeTarget "Dharma" */;
@@ -55,10 +161,12 @@
 				77507B9A2F6611EC0035217C /* Sources */,
 				77507B9B2F6611EC0035217C /* Frameworks */,
 				77507B9C2F6611EC0035217C /* Resources */,
+				770D67C32F68DAD70051CA78 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				770D67BD2F68DAD70051CA78 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				77507BA02F6611EC0035217C /* Dharma */,
@@ -80,6 +188,9 @@
 				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
+					770D67A92F68DAD40051CA78 = {
+						CreatedOnToolsVersion = 26.4;
+					};
 					77507B9D2F6611EC0035217C = {
 						CreatedOnToolsVersion = 26.4;
 					};
@@ -100,11 +211,19 @@
 			projectRoot = "";
 			targets = (
 				77507B9D2F6611EC0035217C /* Dharma */,
+				770D67A92F68DAD40051CA78 /* DharmaWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		770D67A82F68DAD40051CA78 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		77507B9C2F6611EC0035217C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -115,6 +234,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		770D67A62F68DAD40051CA78 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		77507B9A2F6611EC0035217C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,7 +250,77 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		770D67BD2F68DAD70051CA78 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 770D67A92F68DAD40051CA78 /* DharmaWidgetExtension */;
+			targetProxy = 770D67BC2F68DAD70051CA78 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		770D67C12F68DAD70051CA78 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = DharmaWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6H9QGC48R5;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DharmaWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = DharmaWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.maurya.Dharma.DharmaWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		770D67C22F68DAD70051CA78 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = DharmaWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6H9QGC48R5;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DharmaWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = DharmaWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.maurya.Dharma.DharmaWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		77507BA72F6611EE0035217C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -249,6 +445,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Dharma/Dharma.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 6H9QGC48R5;
@@ -283,6 +480,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Dharma/Dharma.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 6H9QGC48R5;
@@ -315,6 +513,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		770D67C02F68DAD70051CA78 /* Build configuration list for PBXNativeTarget "DharmaWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				770D67C12F68DAD70051CA78 /* Debug */,
+				770D67C22F68DAD70051CA78 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		77507B992F6611EC0035217C /* Build configuration list for PBXProject "Dharma" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

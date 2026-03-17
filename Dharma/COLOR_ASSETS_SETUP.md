@@ -1,4 +1,4 @@
-# Dharma — Xcode Color Assets Setup
+	# Dharma — Xcode Color Assets Setup
 
 You need to create these named colours in your Xcode Assets.xcassets.
 For each colour, right-click Assets.xcassets → New Color Set → name it exactly as shown.

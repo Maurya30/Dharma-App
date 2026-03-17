@@ -10,16 +10,13 @@ class ScriptureStore: ObservableObject {
     init() {
         loadItems()
         loadFavourites()
+        syncToWidget()
     }
 
     // MARK: - Loading
     private func loadItems() {
-        // Load real Gita verses from gita.json
         let gitaItems = loadGita()
-
-        // Combine with the rest of the sample data (Upanishads, Mantras, Bhajans)
         let otherItems = upanishadPassages + mantras + bhajans
-
         items = gitaItems + otherItems
     }
 
@@ -42,7 +39,6 @@ class ScriptureStore: ObservableObject {
                                          options: .regularExpression)
                     .trimmingCharacters(in: .whitespaces)
 
-                // Use stable UUID derived from the verse reference
                 let stableID = UUID(uuidString: uuidFrom(string: "gita-\(verse.reference)")) ?? UUID()
 
                 let item = ScriptureItem(
@@ -61,7 +57,6 @@ class ScriptureStore: ObservableObject {
         return result
     }
 
-    // Generates a stable UUID from a string
     private func uuidFrom(string: String) -> String {
         let hash = string.utf8.reduce(0) { ($0 &* 31) &+ Int($1) }
         let hex = String(format: "%032x", abs(hash))
@@ -74,6 +69,7 @@ class ScriptureStore: ObservableObject {
         guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
         items[index].isFavourite.toggle()
         saveFavourites()
+        syncToWidget()
     }
 
     var favourites: [ScriptureItem] {
@@ -101,5 +97,36 @@ class ScriptureStore: ObservableObject {
         for index in items.indices {
             items[index].isFavourite = savedSet.contains(items[index].id.uuidString)
         }
+    }
+
+    // MARK: - Widget Sync
+    func syncToWidget() {
+        let shared = SharedDataManager.shared
+        let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 1
+
+        // Sync daily Gita verse
+        let gitaItems = items(for: .gita)
+        if !gitaItems.isEmpty {
+            let verse = gitaItems[dayOfYear % gitaItems.count]
+            shared.saveWidgetVerse(WidgetVerse(
+                title: verse.title,
+                text: verse.textEnglish,
+                source: verse.source,
+                speaker: String(verse.title.split(separator: "—").first ?? "Krishna").trimmingCharacters(in: .whitespaces),
+                category: verse.category.rawValue
+            ))
+        }
+
+        // Sync favourites
+        let widgetFavourites = favourites.map { item in
+            WidgetVerse(
+                title: item.title,
+                text: item.textEnglish,
+                source: item.source,
+                speaker: String(item.title.split(separator: "—").first ?? "").trimmingCharacters(in: .whitespaces),
+                category: item.category.rawValue
+            )
+        }
+        shared.saveFavourites(widgetFavourites)
     }
 }
