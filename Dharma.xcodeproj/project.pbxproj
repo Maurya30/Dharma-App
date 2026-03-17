@@ -7,9 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		770D67AD2F68DAD40051CA78 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 770D67AC2F68DAD40051CA78 /* WidgetKit.framework */; };
-		770D67AF2F68DAD40051CA78 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 770D67AE2F68DAD40051CA78 /* SwiftUI.framework */; };
 		770D67BE2F68DAD70051CA78 /* DharmaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 770D67AA2F68DAD40051CA78 /* DharmaWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		770D67CA2F69D8980051CA78 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 770D67AE2F68DAD40051CA78 /* SwiftUI.framework */; };
+		770D67CB2F69D8980051CA78 /* SwiftUI.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 770D67AE2F68DAD40051CA78 /* SwiftUI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		770D67CD2F69D8990051CA78 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 770D67AC2F68DAD40051CA78 /* WidgetKit.framework */; };
+		770D67CE2F69D8990051CA78 /* WidgetKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 770D67AC2F68DAD40051CA78 /* WidgetKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,6 +34,18 @@
 				770D67BE2F68DAD70051CA78 /* DharmaWidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		770D67CC2F69D8980051CA78 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				770D67CB2F69D8980051CA78 /* SwiftUI.framework in Embed Frameworks */,
+				770D67CE2F69D8990051CA78 /* WidgetKit.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -85,8 +99,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				770D67AF2F68DAD40051CA78 /* SwiftUI.framework in Frameworks */,
-				770D67AD2F68DAD40051CA78 /* WidgetKit.framework in Frameworks */,
+				770D67CA2F69D8980051CA78 /* SwiftUI.framework in Frameworks */,
+				770D67CD2F69D8990051CA78 /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -139,6 +153,7 @@
 				770D67A62F68DAD40051CA78 /* Sources */,
 				770D67A72F68DAD40051CA78 /* Frameworks */,
 				770D67A82F68DAD40051CA78 /* Resources */,
+				770D67CC2F69D8980051CA78 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
