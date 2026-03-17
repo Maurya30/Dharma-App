@@ -1,10 +1,3 @@
-//
-//  DharmaWidget.swift
-//  DharmaWidget
-//
-//  Created by Maurya Panchal on 2026-03-16.
-//
-
 import WidgetKit
 import SwiftUI
 
@@ -34,58 +27,77 @@ struct DharmaWidgetProvider: AppIntentTimelineProvider {
     func snapshot(for configuration: DharmaWidgetConfiguration, in context: Context) async -> DharmaEntry {
         DharmaEntry(
             date: Date(),
-            verse: getVerse(for: configuration.contentType),
+            verse: getVerse(for: configuration),
             contentType: configuration.contentType
         )
     }
 
     func timeline(for configuration: DharmaWidgetConfiguration, in context: Context) async -> Timeline<DharmaEntry> {
-        let verse = getVerse(for: configuration.contentType)
+        let verse = getVerse(for: configuration)
         let entry = DharmaEntry(date: Date(), verse: verse, contentType: configuration.contentType)
-
-        // Refresh at midnight each day
         let midnight = Calendar.current.startOfDay(for: Date().addingTimeInterval(86400))
-        return Timeline(entries: [entry], policy: .after(midnight))
+        // Pinned verse never needs to refresh
+        let policy: TimelineReloadPolicy = configuration.contentType == .pinned ? .never : .after(midnight)
+        return Timeline(entries: [entry], policy: policy)
     }
 
-    private func getVerse(for type: WidgetContentType) -> WidgetVerse {
+    private func getVerse(for configuration: DharmaWidgetConfiguration) -> WidgetVerse {
         let shared = SharedDataManager.shared
         let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 1
+        let favs = shared.loadFavourites()
+        let all = shared.loadAllVerses()
 
-        switch type {
+        switch configuration.contentType {
+        case .daily:
+            if !all.isEmpty { return all[dayOfYear % all.count] }
+        case .gita:
+            let gita = all.filter { $0.category == "Bhagavad Gita" }
+            if !gita.isEmpty { return gita[dayOfYear % gita.count] }
+        case .upanishad:
+            let upanishads = all.filter { $0.category == "Upanishads" }
+            if !upanishads.isEmpty { return upanishads[dayOfYear % upanishads.count] }
+        case .mantra:
+            let mantras = all.filter { $0.category == "Mantras" }
+            if !mantras.isEmpty { return mantras[dayOfYear % mantras.count] }
         case .favourites:
-            let favs = shared.loadFavourites()
-            if !favs.isEmpty {
-                return favs[dayOfYear % favs.count]
+            if !favs.isEmpty { return favs[dayOfYear % favs.count] }
+        case .pinned:
+            if let pinned = configuration.pinnedVerse,
+               let match = favs.first(where: { $0.source == pinned.id }) {
+                return match
             }
-            fallthrough
-        default:
-            return shared.loadWidgetVerse() ?? WidgetVerse(
-                title: "Verse of the Day",
-                text: "You have the right to work only, and not to the fruits of work.",
-                source: "Bhagavad Gita 2.47",
-                speaker: "Krishna",
-                category: "Bhagavad Gita"
-            )
+            if !favs.isEmpty { return favs[0] }
         }
+
+        return WidgetVerse(
+            title: "Verse of the Day",
+            text: "You have the right to work only, and not to the fruits of work.",
+            source: "Bhagavad Gita 2.47",
+            speaker: "Krishna",
+            category: "Bhagavad Gita"
+        )
     }
 }
 
-// MARK: - Widget Views
+// MARK: - Widget Entry View
 struct DharmaWidgetEntryView: View {
     var entry: DharmaEntry
     @Environment(\.widgetFamily) var family
 
+    var goldColor: Color { Color(red: 0.91, green: 0.48, blue: 0.18) }
+
     var body: some View {
         switch family {
         case .systemSmall:
-            SmallWidgetView(entry: entry)
+            SmallWidgetView(entry: entry, goldColor: goldColor)
         case .systemMedium:
-            MediumWidgetView(entry: entry)
+            MediumWidgetView(entry: entry, goldColor: goldColor)
         case .systemLarge:
-            LargeWidgetView(entry: entry)
+            LargeWidgetView(entry: entry, goldColor: goldColor)
+        case .accessoryRectangular:
+            AccessoryRectangularView(entry: entry)
         default:
-            SmallWidgetView(entry: entry)
+            SmallWidgetView(entry: entry, goldColor: goldColor)
         }
     }
 }
@@ -93,39 +105,39 @@ struct DharmaWidgetEntryView: View {
 // MARK: - Small Widget
 struct SmallWidgetView: View {
     let entry: DharmaEntry
+    let goldColor: Color
 
     var body: some View {
-        ZStack {
-            Color(red: 0.10, green: 0.10, blue: 0.16)
-
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Image(systemName: categoryIcon(entry.verse.category))
-                        .font(.system(size: 10))
-                        .foregroundColor(categoryColor(entry.verse.category))
-                    Text(entry.verse.category)
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundColor(categoryColor(entry.verse.category))
-                    Spacer()
-                }
-
-                Spacer()
-
-                Text(entry.verse.text)
-                    .font(.system(size: 11, weight: .regular, design: .serif))
-                    .foregroundColor(.white)
-                    .lineLimit(4)
-                    .lineSpacing(2)
-
-                Spacer()
-
-                Text(entry.verse.source)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Image(systemName: categoryIcon(entry.verse.category))
                     .font(.system(size: 9))
-                    .foregroundColor(Color(red: 0.9, green: 0.6, blue: 0.2))
-                    .italic()
-                    .lineLimit(1)
+                    .foregroundColor(goldColor)
+                Text(entry.verse.category)
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundColor(goldColor)
+                Spacer()
             }
-            .padding(12)
+
+            Spacer()
+
+            Text(entry.verse.text)
+                .font(.system(size: 11, weight: .regular, design: .serif))
+                .foregroundStyle(.primary)
+                .lineLimit(4)
+                .lineSpacing(2)
+
+            Spacer()
+
+            Text(entry.verse.source)
+                .font(.system(size: 9))
+                .foregroundColor(goldColor)
+                .italic()
+                .lineLimit(1)
+        }
+        .padding(14)
+        .containerBackground(for: .widget) {
+            Color(.systemBackground)
         }
     }
 }
@@ -133,48 +145,47 @@ struct SmallWidgetView: View {
 // MARK: - Medium Widget
 struct MediumWidgetView: View {
     let entry: DharmaEntry
+    let goldColor: Color
 
     var body: some View {
-        ZStack {
-            Color(red: 0.10, green: 0.10, blue: 0.16)
+        HStack(spacing: 12) {
+            Rectangle()
+                .fill(goldColor)
+                .frame(width: 3)
+                .clipShape(Capsule())
 
-            HStack(spacing: 12) {
-                // Left accent bar
-                Rectangle()
-                    .fill(categoryColor(entry.verse.category))
-                    .frame(width: 3)
-                    .clipShape(Capsule())
-
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Image(systemName: "sun.max.fill")
-                            .font(.system(size: 10))
-                            .foregroundColor(Color(red: 0.9, green: 0.6, blue: 0.2))
-                        Text("VERSE OF THE DAY")
-                            .font(.system(size: 9, weight: .semibold))
-                            .foregroundColor(Color(red: 0.9, green: 0.6, blue: 0.2))
-                            .kerning(0.5)
-                        Spacer()
-                        Text(entry.verse.category)
-                            .font(.system(size: 9))
-                            .foregroundColor(.white.opacity(0.5))
-                    }
-
-                    Text(entry.verse.text)
-                        .font(.system(size: 12, weight: .regular, design: .serif))
-                        .foregroundColor(.white)
-                        .lineLimit(3)
-                        .lineSpacing(3)
-
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "sun.max.fill")
+                        .font(.system(size: 9))
+                        .foregroundColor(goldColor)
+                    Text("VERSE OF THE DAY")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundColor(goldColor)
+                        .kerning(0.5)
                     Spacer()
-
-                    Text(entry.verse.source)
-                        .font(.system(size: 10))
-                        .foregroundColor(Color(red: 0.9, green: 0.6, blue: 0.2))
-                        .italic()
+                    Text(entry.verse.category)
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
                 }
+
+                Text(entry.verse.text)
+                    .font(.system(size: 12, weight: .regular, design: .serif))
+                    .foregroundStyle(.primary)
+                    .lineLimit(3)
+                    .lineSpacing(3)
+
+                Spacer()
+
+                Text(entry.verse.source)
+                    .font(.system(size: 10))
+                    .foregroundColor(goldColor)
+                    .italic()
             }
-            .padding(14)
+        }
+        .padding(14)
+        .containerBackground(for: .widget) {
+            Color(.systemBackground)
         }
     }
 }
@@ -182,62 +193,78 @@ struct MediumWidgetView: View {
 // MARK: - Large Widget
 struct LargeWidgetView: View {
     let entry: DharmaEntry
+    let goldColor: Color
 
     var body: some View {
-        ZStack {
-            Color(red: 0.10, green: 0.10, blue: 0.16)
-
-            VStack(alignment: .leading, spacing: 12) {
-                // Header
-                HStack {
-                    Image(systemName: "sun.max.fill")
-                        .foregroundColor(Color(red: 0.9, green: 0.6, blue: 0.2))
-                    Text("VERSE OF THE DAY")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(Color(red: 0.9, green: 0.6, blue: 0.2))
-                        .kerning(0.8)
-                    Spacer()
-                    Text(Date().formatted(.dateTime.month().day()))
-                        .font(.system(size: 10))
-                        .foregroundColor(.white.opacity(0.4))
-                }
-
-                Divider()
-                    .background(Color.white.opacity(0.1))
-
-                // Speaker badge
-                if !entry.verse.speaker.isEmpty {
-                    Text(entry.verse.speaker)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(categoryColor(entry.verse.category))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(categoryColor(entry.verse.category).opacity(0.15))
-                        .clipShape(Capsule())
-                }
-
-                // Full verse text
-                Text(entry.verse.text)
-                    .font(.system(size: 14, weight: .regular, design: .serif))
-                    .foregroundColor(.white)
-                    .lineSpacing(5)
-                    .fixedSize(horizontal: false, vertical: true)
-
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "sun.max.fill")
+                    .foregroundColor(goldColor)
+                Text("VERSE OF THE DAY")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(goldColor)
+                    .kerning(0.8)
                 Spacer()
-
-                // Source
-                HStack {
-                    Rectangle()
-                        .fill(Color(red: 0.9, green: 0.6, blue: 0.2))
-                        .frame(width: 2, height: 14)
-                        .clipShape(Capsule())
-                    Text(entry.verse.source)
-                        .font(.system(size: 11))
-                        .foregroundColor(Color(red: 0.9, green: 0.6, blue: 0.2))
-                        .italic()
-                }
+                Text(Date().formatted(.dateTime.month().day()))
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
             }
-            .padding(16)
+
+            Divider()
+
+            if !entry.verse.speaker.isEmpty {
+                Text(entry.verse.speaker)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(goldColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(goldColor.opacity(0.12))
+                    .clipShape(Capsule())
+            }
+
+            Text(entry.verse.text)
+                .font(.system(size: 14, weight: .regular, design: .serif))
+                .foregroundStyle(.primary)
+                .lineSpacing(5)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer()
+
+            HStack {
+                Rectangle()
+                    .fill(goldColor)
+                    .frame(width: 2, height: 14)
+                    .clipShape(Capsule())
+                Text(entry.verse.source)
+                    .font(.system(size: 11))
+                    .foregroundColor(goldColor)
+                    .italic()
+            }
+        }
+        .padding(16)
+        .containerBackground(for: .widget) {
+            Color(.systemBackground)
+        }
+    }
+}
+
+// MARK: - Lock Screen Rectangular
+struct AccessoryRectangularView: View {
+    let entry: DharmaEntry
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(entry.verse.source)
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(.secondary)
+            Text(entry.verse.text)
+                .font(.system(size: 11, design: .serif))
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+                .lineSpacing(2)
+        }
+        .containerBackground(for: .widget) {
+            Color.clear
         }
     }
 }
@@ -255,11 +282,11 @@ func categoryIcon(_ category: String) -> String {
 
 func categoryColor(_ category: String) -> Color {
     switch category {
-    case "Bhagavad Gita": return Color(red: 0.9, green: 0.6, blue: 0.2)
+    case "Bhagavad Gita": return Color(red: 0.91, green: 0.48, blue: 0.18)
     case "Upanishads": return Color(red: 0.4, green: 0.7, blue: 0.9)
     case "Mantras": return Color(red: 0.6, green: 0.8, blue: 0.5)
     case "Bhajans": return Color(red: 0.9, green: 0.5, blue: 0.7)
-    default: return Color(red: 0.9, green: 0.6, blue: 0.2)
+    default: return Color(red: 0.91, green: 0.48, blue: 0.18)
     }
 }
 
@@ -274,11 +301,10 @@ struct DharmaWidget: Widget {
             provider: DharmaWidgetProvider()
         ) { entry in
             DharmaWidgetEntryView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Dharma")
         .description("Daily scripture from the Bhagavad Gita and more")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryRectangular])
     }
 }
 

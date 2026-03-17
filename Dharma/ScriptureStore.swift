@@ -104,7 +104,19 @@ class ScriptureStore: ObservableObject {
         let shared = SharedDataManager.shared
         let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 1
 
-        // Sync daily Gita verse
+        // Save all verses for category filtering
+        let allWidgetVerses = items.map { item in
+            WidgetVerse(
+                title: item.title,
+                text: item.textEnglish,
+                source: item.source,
+                speaker: String(item.title.split(separator: "—").first ?? "").trimmingCharacters(in: .whitespaces),
+                category: item.category.rawValue
+            )
+        }
+        shared.saveAllVerses(allWidgetVerses)
+
+        // Save daily Gita verse
         let gitaItems = items(for: .gita)
         if !gitaItems.isEmpty {
             let verse = gitaItems[dayOfYear % gitaItems.count]

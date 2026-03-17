@@ -27,6 +27,19 @@ class SharedDataManager {
         return verse
     }
 
+    func saveAllVerses(_ verses: [WidgetVerse]) {
+        if let encoded = try? JSONEncoder().encode(verses) {
+            defaults.set(encoded, forKey: "widget_all_verses")
+        }
+    }
+
+    func loadAllVerses() -> [WidgetVerse] {
+        guard let data = defaults.data(forKey: "widget_all_verses"),
+              let verses = try? JSONDecoder().decode([WidgetVerse].self, from: data)
+        else { return [] }
+        return verses
+    }
+
     func saveFavourites(_ verses: [WidgetVerse]) {
         if let encoded = try? JSONEncoder().encode(verses) {
             defaults.set(encoded, forKey: "widget_favourites")
