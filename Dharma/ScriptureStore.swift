@@ -47,6 +47,7 @@ class ScriptureStore: ObservableObject {
                     title: "\(verse.speaker) — \(verse.reference)",
                     subtitle: "Chapter \(chapter.chapter) · \(chapter.title)",
                     textEnglish: cleanText,
+                    textTransliteration: verse.transliteration?.trimmingCharacters(in: .whitespacesAndNewlines),
                     source: "Bhagavad Gita \(verse.reference)"
                 )
                 result.append(item)

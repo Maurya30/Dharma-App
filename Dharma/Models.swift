@@ -44,6 +44,7 @@ struct ScriptureItem: Identifiable, Codable {
     let title: String
     let subtitle: String        // e.g. "Chapter 2, Verse 47" or "Rig Veda"
     let textEnglish: String     // main content in English
+    let textTransliteration: String?  // Sanskrit in Latin script
     let source: String          // e.g. "Bhagavad Gita 2.47"
     let audioFileName: String?  // optional — for mantras/bhajans
     var isFavourite: Bool
@@ -54,6 +55,7 @@ struct ScriptureItem: Identifiable, Codable {
         title: String,
         subtitle: String,
         textEnglish: String,
+        textTransliteration: String? = nil,
         source: String,
         audioFileName: String? = nil,
         isFavourite: Bool = false
@@ -63,6 +65,7 @@ struct ScriptureItem: Identifiable, Codable {
         self.title = title
         self.subtitle = subtitle
         self.textEnglish = textEnglish
+        self.textTransliteration = textTransliteration
         self.source = source
         self.audioFileName = audioFileName
         self.isFavourite = isFavourite
@@ -125,6 +128,7 @@ struct GitaVerse: Codable, Identifiable {
     let reference: String
     let speaker: String
     let text: String
+    let transliteration: String?
     
     var id: String { reference }
 }

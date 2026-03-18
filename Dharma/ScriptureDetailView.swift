@@ -3,13 +3,30 @@ import SwiftUI
 struct ScriptureDetailView: View {
     let item: ScriptureItem
     @ObservedObject var store: ScriptureStore
+    @StateObject private var audioManager = VerseAudioManager.shared
     @State private var showShareSheet = false
+
+    private var verseChapter: Int? {
+        let parts = item.source.replacingOccurrences(of: "Bhagavad Gita ", with: "").split(separator: ".")
+        guard parts.count == 2, let ch = Int(parts[0]) else { return nil }
+        return ch
+    }
+
+    private var verseNumber: Int? {
+        let parts = item.source.replacingOccurrences(of: "Bhagavad Gita ", with: "").split(separator: ".")
+        guard parts.count == 2, let v = Int(parts[1]) else { return nil }
+        return v
+    }
+
+    private var isThisVerse: Bool {
+        guard let ch = verseChapter, let v = verseNumber else { return false }
+        return audioManager.currentReference == "\(ch).\(v)"
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DharmaSpacing.lg) {
 
-                // Category badge
                 Label(item.category.rawValue, systemImage: item.category.icon)
                     .font(DharmaFont.caption(12))
                     .foregroundColor(item.category.color)
@@ -18,12 +35,10 @@ struct ScriptureDetailView: View {
                     .background(item.category.color.opacity(0.12))
                     .clipShape(Capsule())
 
-                // Title
                 Text(item.title)
                     .font(DharmaFont.title(26))
                     .foregroundColor(.dharmaTextPrimary)
 
-                // Subtitle / reference
                 Text(item.subtitle)
                     .font(DharmaFont.caption(13))
                     .foregroundColor(.dharmaTextMuted)
@@ -32,14 +47,27 @@ struct ScriptureDetailView: View {
                 Divider()
                     .background(Color.dharmaTextMuted.opacity(0.3))
 
-                // Main scripture text
+                if let transliteration = item.textTransliteration, !transliteration.isEmpty {
+                    Text(transliteration)
+                        .font(DharmaFont.sanskrit(17))
+                        .foregroundColor(.dharmaTextPrimary)
+                        .lineSpacing(7)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if item.category == .gita, let ch = verseChapter, let v = verseNumber {
+                        VerseAudioCard(chapter: ch, verse: v, audioManager: audioManager, isThisVerse: isThisVerse)
+                    }
+
+                    Divider()
+                        .background(Color.dharmaTextMuted.opacity(0.2))
+                }
+
                 Text(item.textEnglish)
-                    .font(DharmaFont.sanskrit(17))
-                    .foregroundColor(.dharmaTextPrimary)
-                    .lineSpacing(7)
+                    .font(DharmaFont.body(15))
+                    .foregroundColor(.dharmaTextSecondary)
+                    .lineSpacing(5)
                     .fixedSize(horizontal: false, vertical: true)
 
-                // Source attribution
                 HStack {
                     Rectangle()
                         .fill(item.category.color)
@@ -51,12 +79,11 @@ struct ScriptureDetailView: View {
                         .italic()
                 }
 
-                // Audio player (if available)
                 if item.audioFileName != nil {
                     AudioPlayerView(fileName: item.audioFileName!)
                 }
 
-                Spacer(minLength: DharmaSpacing.xxl)
+                Spacer(minLength: DharmaSpacing.md)
             }
             .padding(DharmaSpacing.lg)
         }
@@ -64,7 +91,6 @@ struct ScriptureDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
-                // Favourite button
                 Button {
                     store.toggleFavourite(item)
                 } label: {
@@ -72,7 +98,6 @@ struct ScriptureDetailView: View {
                         .foregroundColor(item.isFavourite ? .dharmaGold : .dharmaTextSecondary)
                 }
 
-                // Share button
                 Button {
                     showShareSheet = true
                 } label: {
@@ -84,6 +109,9 @@ struct ScriptureDetailView: View {
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(items: [shareText])
         }
+        .onDisappear {
+            audioManager.stop()
+        }
     }
 
     private var shareText: String {
@@ -91,8 +119,104 @@ struct ScriptureDetailView: View {
     }
 }
 
-// MARK: - Audio Player View
-// Simple placeholder — wire up AVAudioPlayer here
+// MARK: - Inline Audio Card
+struct VerseAudioCard: View {
+    let chapter: Int
+    let verse: Int
+    @ObservedObject var audioManager: VerseAudioManager
+    let isThisVerse: Bool
+
+    private var localState: VersePlaybackState {
+        isThisVerse ? audioManager.state : .idle
+    }
+
+    var body: some View {
+        HStack(spacing: DharmaSpacing.md) {
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                audioManager.togglePlayPause(chapter: chapter, verse: verse)
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(Color.dharmaGold)
+                        .frame(width: 44, height: 44)
+                        .shadow(color: Color.dharmaGold.opacity(localState == .playing ? 0.4 : 0), radius: 8)
+
+                    if localState == .buffering {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Image(systemName: localState == .playing ? "pause.fill" : "play.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .contentTransition(.symbolEffect(.replace))
+                    }
+                }
+                .animation(.easeInOut(duration: 0.25), value: localState)
+            }
+            .buttonStyle(.plain)
+
+            VStack(alignment: .leading, spacing: 6) {
+                AnimatedWaveform(isAnimating: localState == .playing)
+
+                Text(statusLabel)
+                    .font(DharmaFont.caption(11))
+                    .foregroundColor(localState == .playing ? .dharmaGold : .dharmaTextMuted)
+                    .animation(.easeInOut(duration: 0.2), value: localState)
+            }
+        }
+        .padding(DharmaSpacing.md)
+        .background(Color.dharmaSurface)
+        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: DharmaRadius.md)
+                .strokeBorder(
+                    localState == .playing ? Color.dharmaGold.opacity(0.35) : Color.clear,
+                    lineWidth: 1
+                )
+                .animation(.easeInOut(duration: 0.3), value: localState)
+        )
+    }
+
+    private var statusLabel: String {
+        switch localState {
+        case .idle: return "Listen in Sanskrit"
+        case .buffering: return "Loading..."
+        case .playing: return "Now playing"
+        case .paused: return "Paused"
+        case .failed: return "Couldn't load audio"
+        }
+    }
+}
+
+// MARK: - Animated Waveform
+struct AnimatedWaveform: View {
+    let isAnimating: Bool
+    private let barCount = 24
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !isAnimating)) { timeline in
+            let t = isAnimating ? timeline.date.timeIntervalSinceReferenceDate : 0
+
+            HStack(spacing: 2.5) {
+                ForEach(0..<barCount, id: \.self) { i in
+                    let phase = t * 3.5 + Double(i) * 0.4
+                    let height: CGFloat = isAnimating
+                        ? 5 + CGFloat(abs(sin(phase))) * 19
+                        : 5
+
+                    Capsule()
+                        .fill(Color.dharmaGold.opacity(isAnimating ? 0.85 : 0.22))
+                        .frame(width: 3, height: height)
+                }
+            }
+            .animation(.easeInOut(duration: 0.35), value: isAnimating)
+        }
+        .frame(height: 26)
+    }
+}
+
+// MARK: - Audio Player View (for Mantras/Bhajans with bundled files)
 struct AudioPlayerView: View {
     let fileName: String
     @State private var isPlaying = false
@@ -106,11 +230,8 @@ struct AudioPlayerView: View {
                 .kerning(0.8)
 
             HStack(spacing: DharmaSpacing.md) {
-                // Play/pause button
                 Button {
                     isPlaying.toggle()
-                    // TODO: wire up AVAudioPlayer
-                    // AudioManager.shared.play(fileName: fileName)
                 } label: {
                     ZStack {
                         Circle()
@@ -123,13 +244,12 @@ struct AudioPlayerView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    // Waveform placeholder
                     RoundedRectangle(cornerRadius: 2)
                         .fill(Color.dharmaGold.opacity(0.3))
                         .frame(height: 28)
                         .overlay(
                             HStack(spacing: 2) {
-                                ForEach(0..<30, id: \.self) { i in
+                                ForEach(0..<30, id: \.self) { _ in
                                     RoundedRectangle(cornerRadius: 1)
                                         .fill(Color.dharmaGold.opacity(0.6))
                                         .frame(width: 2, height: CGFloat.random(in: 4...24))
