@@ -3,15 +3,6 @@ import SwiftUI
 struct ContentView: View {
     @State private var selectedTab = 0
 
-    init() {
-        let appearance = UITabBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(Color.dharmaSurface)
-        appearance.shadowColor = UIColor(Color.dharmaTabBorder)
-        UITabBar.appearance().standardAppearance = appearance
-        UITabBar.appearance().scrollEdgeAppearance = appearance
-    }
-
     var body: some View {
         TabView(selection: $selectedTab) {
             LibraryView()

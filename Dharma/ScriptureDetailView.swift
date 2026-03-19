@@ -86,16 +86,16 @@ struct ScriptureDetailView: View {
                                 .frame(width: 6, height: 6)
                             Text(context)
                                 .font(DharmaFont.caption(11))
-                                .foregroundColor(.dharmaGold)
+                                .foregroundColor(.dharmaSpeakerText)
                                 .italic()
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(Color.dharmaGold.opacity(0.08))
+                        .background(Color.dharmaSpeakerBg)
                         .clipShape(Capsule())
                     }
 
-                    Divider().background(Color.dharmaCardBorder)
+                    Divider().background(Color.dharmaDivider)
 
                     // Sanskrit Devanagari
                     if let sanskrit = item.textSanskrit, !sanskrit.isEmpty {
@@ -120,7 +120,7 @@ struct ScriptureDetailView: View {
                         VerseAudioCard(chapter: ch, verse: v, audioManager: audioManager, isThisVerse: isThisVerse)
                     }
 
-                    Divider().background(Color.dharmaCardBorder)
+                    Divider().background(Color.dharmaDivider)
 
                     // English translation with saffron accent bar
                     HStack(alignment: .top, spacing: DharmaSpacing.sm) {
@@ -131,7 +131,7 @@ struct ScriptureDetailView: View {
 
                         Text(item.textEnglish)
                             .font(DharmaFont.georgia(14))
-                            .foregroundColor(.dharmaTextPrimary)
+                            .foregroundColor(.dharmaTextBody)
                             .lineSpacing(6)
                             .fixedSize(horizontal: false, vertical: true)
                     }

@@ -54,8 +54,8 @@ struct TodayView: View {
                 }
             }
             .background(Color.dharmaBackground)
-            .navigationTitle("Dharma")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Today")
+            .navigationBarTitleDisplayMode(.large)
         }
     }
 

@@ -55,7 +55,7 @@ struct FestivalDetailView: View {
                     )
                 }
 
-                Divider().background(Color.dharmaTextMuted.opacity(0.3))
+                Divider().background(Color.dharmaDivider)
 
                 InfoSection(title: "The Story", content: festival.fullStory)
                 InfoSection(title: "Why It Matters", content: festival.significance)
@@ -146,7 +146,7 @@ struct InfoSection: View {
 
             Text(content)
                 .font(DharmaFont.body())
-                .foregroundColor(.dharmaTextPrimary)
+                .foregroundColor(.dharmaTextBody)
                 .lineSpacing(5)
                 .fixedSize(horizontal: false, vertical: true)
         }
