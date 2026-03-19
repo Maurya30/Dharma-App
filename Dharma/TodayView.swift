@@ -75,7 +75,6 @@ struct DailyVerseCard: View {
     let item: ScriptureItem
     @EnvironmentObject var store: ScriptureStore
 
-    // We need a live version of the item from the store to reflect favourite state
     private var liveItem: ScriptureItem {
         store.items.first { $0.id == item.id } ?? item
     }
@@ -120,7 +119,7 @@ struct DailyVerseCard: View {
                 .fill(Color.dharmaSurface)
                 .overlay(
                     RoundedRectangle(cornerRadius: DharmaRadius.lg)
-                        .strokeBorder(Color.dharmaGold.opacity(0.3), lineWidth: 1)
+                        .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
                 )
         )
     }
@@ -162,6 +161,10 @@ struct FestivalTeaserCard: View {
         .padding(DharmaSpacing.md)
         .background(Color.dharmaSurface)
         .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: DharmaRadius.md)
+                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
+        )
     }
 }
 
@@ -210,11 +213,11 @@ struct QuickAccessTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DharmaSpacing.md)
-        .background(category.color.opacity(0.08))
+        .background(Color.dharmaSurface)
         .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
         .overlay(
             RoundedRectangle(cornerRadius: DharmaRadius.md)
-                .strokeBorder(category.color.opacity(0.2), lineWidth: 0.5)
+                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
         )
     }
 }

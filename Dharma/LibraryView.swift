@@ -386,6 +386,10 @@ struct ScriptureCardView: View {
         .padding(DharmaSpacing.md)
         .background(Color.dharmaSurface)
         .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: DharmaRadius.md)
+                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
+        )
     }
 }
 
