@@ -12,7 +12,7 @@ struct WidgetVerse: Codable {
 
 class SharedDataManager {
     static let shared = SharedDataManager()
-    private let defaults = UserDefaults.standard
+    private let defaults = UserDefaults(suiteName: appGroupID)!
 
     func saveWidgetVerse(_ verse: WidgetVerse) {
         if let encoded = try? JSONEncoder().encode(verse) {
