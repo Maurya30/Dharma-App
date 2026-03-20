@@ -182,6 +182,9 @@ struct ScriptureDetailView: View {
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(items: [shareText])
         }
+        .onAppear {
+            store.markAsRead(item)
+        }
         .onDisappear {
             audioManager.stop()
         }

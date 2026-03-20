@@ -4,12 +4,23 @@ import Combine
 // MARK: - Scripture Store
 class ScriptureStore: ObservableObject {
     @Published var items: [ScriptureItem] = []
+    @Published var chapterInfos: [GitaChapterInfo] = []
+    @Published var readVerseIDs: Set<String> = []
+    @Published var lastReadSource: String? = nil
+    @Published var streak: Int = 0
 
     private let favouritesKey = "dharma_favourites"
+    private let readVersesKey = "dharma_read_verses"
+    private let lastReadKey = "dharma_last_read"
+    private let lastPracticeDateKey = "dharma_last_practice_date"
+    private let streakKey = "dharma_streak"
 
     init() {
+        loadChapterInfos()
         loadItems()
         loadFavourites()
+        loadReadingProgress()
+        loadStreak()
         syncToWidget()
     }
 
@@ -18,6 +29,14 @@ class ScriptureStore: ObservableObject {
         let gitaItems = loadGita()
         let otherItems = upanishadPassages + mantras + bhajans
         items = gitaItems + otherItems
+    }
+
+    private func loadChapterInfos() {
+        guard let url = Bundle.main.url(forResource: "chapters", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let infos = try? JSONDecoder().decode([GitaChapterInfo].self, from: data)
+        else { return }
+        chapterInfos = infos
     }
 
     private func loadGita() -> [ScriptureItem] {
@@ -82,9 +101,96 @@ class ScriptureStore: ObservableObject {
         items.filter { $0.category == category }
     }
 
+    func versesForChapter(_ chapter: Int) -> [ScriptureItem] {
+        items.filter { $0.category == .gita && $0.subtitle.hasPrefix("Chapter \(chapter) ·") }
+    }
+
     func randomItem(for category: ScriptureCategory? = nil) -> ScriptureItem? {
         let pool = category == nil ? items : items(for: category!)
         return pool.randomElement()
+    }
+
+    // MARK: - Reading Progress
+    func markAsRead(_ item: ScriptureItem) {
+        guard item.category == .gita else { return }
+        let ref = item.source.replacingOccurrences(of: "Bhagavad Gita ", with: "")
+        readVerseIDs.insert(ref)
+        lastReadSource = item.source
+        saveReadingProgress()
+        updateStreak()
+    }
+
+    var totalGitaVerses: Int {
+        items(for: .gita).count
+    }
+
+    var readCount: Int {
+        readVerseIDs.count
+    }
+
+    func readCountForChapter(_ chapter: Int) -> Int {
+        readVerseIDs.filter { $0.hasPrefix("\(chapter).") }.count
+    }
+
+    var lastReadItem: ScriptureItem? {
+        guard let source = lastReadSource else { return nil }
+        return items.first { $0.source == source }
+    }
+
+    var lastReadChapterNumber: Int? {
+        guard let src = lastReadSource else { return nil }
+        let ref = src.replacingOccurrences(of: "Bhagavad Gita ", with: "")
+        return Int(ref.split(separator: ".").first ?? "")
+    }
+
+    var lastReadChapterInfo: GitaChapterInfo? {
+        guard let ch = lastReadChapterNumber else { return nil }
+        return chapterInfos.first { $0.chapterNumber == ch }
+    }
+
+    private func saveReadingProgress() {
+        UserDefaults.standard.set(Array(readVerseIDs), forKey: readVersesKey)
+        UserDefaults.standard.set(lastReadSource, forKey: lastReadKey)
+    }
+
+    private func loadReadingProgress() {
+        let saved = UserDefaults.standard.stringArray(forKey: readVersesKey) ?? []
+        readVerseIDs = Set(saved)
+        lastReadSource = UserDefaults.standard.string(forKey: lastReadKey)
+    }
+
+    // MARK: - Streak
+    private func updateStreak() {
+        let today = Calendar.current.startOfDay(for: Date())
+        let lastDateRaw = UserDefaults.standard.object(forKey: lastPracticeDateKey) as? Date
+        let lastDate = lastDateRaw.map { Calendar.current.startOfDay(for: $0) }
+
+        if lastDate == today {
+            return
+        }
+
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today)!
+        if lastDate == yesterday {
+            streak += 1
+        } else {
+            streak = 1
+        }
+
+        UserDefaults.standard.set(today, forKey: lastPracticeDateKey)
+        UserDefaults.standard.set(streak, forKey: streakKey)
+    }
+
+    private func loadStreak() {
+        streak = UserDefaults.standard.integer(forKey: streakKey)
+        let today = Calendar.current.startOfDay(for: Date())
+        let lastDateRaw = UserDefaults.standard.object(forKey: lastPracticeDateKey) as? Date
+        let lastDate = lastDateRaw.map { Calendar.current.startOfDay(for: $0) }
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today)!
+
+        if lastDate != today && lastDate != yesterday {
+            streak = 0
+            UserDefaults.standard.set(0, forKey: streakKey)
+        }
     }
 
     // MARK: - Persistence
@@ -106,7 +212,6 @@ class ScriptureStore: ObservableObject {
         let shared = SharedDataManager.shared
         let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 1
 
-        // Save all verses for category filtering
         let allWidgetVerses = items.map { item in
             WidgetVerse(
                 title: item.title,
@@ -118,7 +223,6 @@ class ScriptureStore: ObservableObject {
         }
         shared.saveAllVerses(allWidgetVerses)
 
-        // Save daily Gita verse
         let gitaItems = items(for: .gita)
         if !gitaItems.isEmpty {
             let verse = gitaItems[dayOfYear % gitaItems.count]
@@ -131,7 +235,6 @@ class ScriptureStore: ObservableObject {
             ))
         }
 
-        // Sync favourites
         let widgetFavourites = favourites.map { item in
             WidgetVerse(
                 title: item.title,

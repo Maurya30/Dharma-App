@@ -114,6 +114,29 @@ struct HinduFestival: Identifiable, Codable {
     var isPast: Bool  { daysUntil < 0  }
 }
 
+// MARK: - Gita Chapter Info (from chapters.json)
+struct GitaChapterInfo: Codable, Identifiable {
+    let chapterNumber: Int
+    let chapterSummary: String
+    let name: String
+    let nameMeaning: String
+    let nameTranslation: String
+    let nameTransliterated: String
+    let versesCount: Int
+
+    var id: Int { chapterNumber }
+
+    enum CodingKeys: String, CodingKey {
+        case chapterNumber = "chapter_number"
+        case chapterSummary = "chapter_summary"
+        case name
+        case nameMeaning = "name_meaning"
+        case nameTranslation = "name_translation"
+        case nameTransliterated = "name_transliterated"
+        case versesCount = "verses_count"
+    }
+}
+
 // MARK: - Bhagavad Gita (from gita.json)
 struct GitaData: Codable {
     let chapters: [GitaChapter]

@@ -14,39 +14,85 @@ struct TodayView: View {
         HinduFestival.sampleData.sorted { $0.date < $1.date }.first { !$0.isPast }
     }
 
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        let name = UserDefaults.standard.string(forKey: "dharma_user_name") ?? ""
+        let suffix = name.isEmpty ? "" : ", \(name)"
+        switch hour {
+        case 5..<12:  return "Good morning\(suffix)"
+        case 12..<17: return "Good afternoon\(suffix)"
+        case 17..<21: return "Good evening\(suffix)"
+        default:      return "Good night\(suffix)"
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DharmaSpacing.lg) {
 
-                    // Greeting
-                    VStack(spacing: 4) {
-                        Text(greeting)
-                            .font(DharmaFont.title(20))
-                            .foregroundColor(.dharmaTextPrimary)
-                        Text(Date().formatted(date: .complete, time: .omitted))
-                            .font(DharmaFont.caption(13))
-                            .foregroundColor(.dharmaTextMuted)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, DharmaSpacing.md)
+                    // Greeting + Streak
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(greeting)
+                                .font(DharmaFont.body(15))
+                                .foregroundColor(.dharmaTextSecondary)
+                            Text(Date().formatted(date: .complete, time: .omitted))
+                                .font(DharmaFont.caption(12))
+                                .foregroundColor(.dharmaTextMuted)
+                        }
 
-                    // Daily verse card
+                        Spacer()
+
+                        if store.streak > 0 {
+                            HStack(spacing: 4) {
+                                Text("🔥")
+                                    .font(.system(size: 14))
+                                Text("\(store.streak)")
+                                    .font(DharmaFont.heading(15))
+                                    .foregroundColor(.dharmaGold)
+                                Text(store.streak == 1 ? "day" : "days")
+                                    .font(DharmaFont.caption(11))
+                                    .foregroundColor(.dharmaTextMuted)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.dharmaGold.opacity(0.10))
+                            .clipShape(Capsule())
+                        }
+                    }
+                    .padding(.horizontal, DharmaSpacing.md)
+                    .padding(.top, DharmaSpacing.sm)
+
+                    // Verse of the Day
                     if let verse = dailyVerse {
                         DailyVerseCard(item: verse)
                             .padding(.horizontal, DharmaSpacing.md)
                     }
 
-                    // Next festival teaser
-                    if let festival = nextFestival {
-                        NavigationLink(destination: FestivalDetailView(festival: festival)) {
-                            FestivalTeaserCard(festival: festival)
-                        }
-                        .buttonStyle(.plain)
+                    // Your Journey
+                    JourneyCard()
                         .padding(.horizontal, DharmaSpacing.md)
+
+                    // Coming Up
+                    if let festival = nextFestival {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Coming Up")
+                                .font(DharmaFont.caption(11))
+                                .foregroundColor(.dharmaTextMuted)
+                                .textCase(.uppercase)
+                                .kerning(0.8)
+                                .padding(.horizontal, DharmaSpacing.md)
+
+                            NavigationLink(destination: FestivalDetailView(festival: festival)) {
+                                FestivalTeaserCard(festival: festival)
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.horizontal, DharmaSpacing.md)
+                        }
                     }
 
-                    // Quick access
+                    // Browse
                     QuickAccessGrid()
                         .padding(.horizontal, DharmaSpacing.md)
 
@@ -56,16 +102,6 @@ struct TodayView: View {
             .background(Color.dharmaBackground)
             .navigationTitle("Today")
             .navigationBarTitleDisplayMode(.large)
-        }
-    }
-
-    private var greeting: String {
-        let hour = Calendar.current.component(.hour, from: Date())
-        switch hour {
-        case 5..<12:  return "🌅  Good morning"
-        case 12..<17: return "☀️  Good afternoon"
-        case 17..<21: return "🌇  Good evening"
-        default:      return "🌙  Good night"
         }
     }
 }
@@ -80,48 +116,143 @@ struct DailyVerseCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DharmaSpacing.md) {
-            HStack {
+        NavigationLink(destination: ScriptureDetailView(item: liveItem, store: store)) {
+            VStack(alignment: .leading, spacing: DharmaSpacing.md) {
                 Label("Verse of the Day", systemImage: "sun.max.fill")
                     .font(DharmaFont.caption(11))
                     .foregroundColor(.dharmaGold)
                     .textCase(.uppercase)
                     .kerning(0.5)
+
+                Text(liveItem.textEnglish)
+                    .font(DharmaFont.georgia(15))
+                    .foregroundColor(.dharmaTextBody)
+                    .lineSpacing(6)
+                    .multilineTextAlignment(.leading)
+
+                HStack {
+                    Rectangle()
+                        .fill(Color.dharmaGold)
+                        .frame(width: 2, height: 14)
+                        .clipShape(Capsule())
+
+                    let speaker = liveItem.title.split(separator: "—").first.map {
+                        String($0).trimmingCharacters(in: .whitespaces)
+                    } ?? ""
+                    Text("\(liveItem.source) · \(speaker)")
+                        .font(DharmaFont.caption(12))
+                        .foregroundColor(.dharmaGold)
+                        .italic()
+
+                    Spacer()
+
+                    Button {
+                        store.toggleFavourite(liveItem)
+                    } label: {
+                        Image(systemName: liveItem.isFavourite ? "heart.fill" : "heart")
+                            .font(.system(size: 14))
+                            .foregroundColor(liveItem.isFavourite ? .dharmaGold : .dharmaTextMuted)
+                    }
+                }
+            }
+            .padding(DharmaSpacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: DharmaRadius.lg)
+                    .fill(Color.dharmaSurface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DharmaRadius.lg)
+                            .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Journey Card
+struct JourneyCard: View {
+    @EnvironmentObject var store: ScriptureStore
+
+    private var progress: Double {
+        store.totalGitaVerses > 0 ? Double(store.readCount) / Double(store.totalGitaVerses) : 0
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Your Journey")
+                    .font(DharmaFont.caption(11))
+                    .foregroundColor(.dharmaTextMuted)
+                    .textCase(.uppercase)
+                    .kerning(0.8)
+
                 Spacer()
-                Button {
-                    store.toggleFavourite(liveItem)
-                } label: {
-                    Image(systemName: liveItem.isFavourite ? "heart.fill" : "heart")
-                        .foregroundColor(liveItem.isFavourite ? .dharmaGold : .dharmaTextMuted)
-                        .animation(.easeInOut(duration: 0.2), value: liveItem.isFavourite)
+
+                NavigationLink(destination: ChapterListView()) {
+                    Text("See all →")
+                        .font(DharmaFont.caption(12))
+                        .foregroundColor(.dharmaGold)
                 }
             }
 
-            Text(liveItem.textEnglish)
-                .font(DharmaFont.sanskrit(16))
-                .foregroundColor(.dharmaTextPrimary)
-                .lineSpacing(6)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("Bhagavad Gita")
+                        .font(DharmaFont.heading(16))
+                        .foregroundColor(.dharmaTextPrimary)
 
-            HStack {
-                Rectangle()
-                    .fill(Color.dharmaGold)
-                    .frame(width: 2, height: 14)
-                    .clipShape(Capsule())
-                Text(liveItem.source)
-                    .font(DharmaFont.caption(12))
-                    .foregroundColor(.dharmaTextMuted)
-                    .italic()
+                    Spacer()
+
+                    Text("\(store.readCount) / \(store.totalGitaVerses) verses")
+                        .font(DharmaFont.caption(12))
+                        .foregroundColor(.dharmaTextMuted)
+                }
+
+                ProgressView(value: progress)
+                    .tint(.dharmaGold)
+
+                if let chapterInfo = store.lastReadChapterInfo {
+                    Text("Chapter \(chapterInfo.chapterNumber) · \(chapterInfo.nameTranslation)")
+                        .font(DharmaFont.caption(12))
+                        .foregroundColor(.dharmaTextSecondary)
+                }
+
+                if let lastItem = store.lastReadItem {
+                    NavigationLink(destination: ScriptureDetailView(item: lastItem, store: store)) {
+                        HStack {
+                            Text("Continue reading")
+                                .font(DharmaFont.body(14))
+                                .foregroundColor(.dharmaGold)
+                            Spacer()
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 12))
+                                .foregroundColor(.dharmaGold)
+                        }
+                        .padding(.top, 4)
+                    }
+                } else {
+                    NavigationLink(destination: ChapterListView()) {
+                        HStack {
+                            Text("Start reading")
+                                .font(DharmaFont.body(14))
+                                .foregroundColor(.dharmaGold)
+                            Spacer()
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 12))
+                                .foregroundColor(.dharmaGold)
+                        }
+                        .padding(.top, 4)
+                    }
+                }
             }
+            .padding(DharmaSpacing.md)
+            .background(Color.dharmaSurface)
+            .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: DharmaRadius.md)
+                    .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
+            )
         }
-        .padding(DharmaSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: DharmaRadius.lg)
-                .fill(Color.dharmaSurface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: DharmaRadius.lg)
-                        .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-                )
-        )
     }
 }
 
@@ -142,8 +273,13 @@ struct FestivalTeaserCard: View {
             }
             .frame(width: 44)
 
+            Rectangle()
+                .fill(Color.dharmaGold.opacity(0.3))
+                .frame(width: 1)
+                .clipShape(Capsule())
+
             VStack(alignment: .leading, spacing: 4) {
-                Text(festival.isToday ? "Today — \(festival.name)" : "\(festival.name) in \(festival.daysUntil) days")
+                Text(festival.name)
                     .font(DharmaFont.heading(14))
                     .foregroundColor(.dharmaTextPrimary)
                 Text(festival.shortDescription)
@@ -154,9 +290,16 @@ struct FestivalTeaserCard: View {
 
             Spacer()
 
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12))
-                .foregroundColor(.dharmaTextMuted)
+            if !festival.isToday {
+                Text("\(festival.daysUntil)\ndays")
+                    .font(DharmaFont.caption(11))
+                    .foregroundColor(.dharmaGold)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.dharmaGold.opacity(0.10))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            }
         }
         .padding(DharmaSpacing.md)
         .background(Color.dharmaSurface)
@@ -182,10 +325,17 @@ struct QuickAccessGrid: View {
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(ScriptureCategory.allCases) { cat in
-                    NavigationLink(destination: CategoryDetailView(category: cat)) {
-                        QuickAccessTile(category: cat)
+                    if cat == .gita {
+                        NavigationLink(destination: ChapterListView()) {
+                            QuickAccessTile(category: cat)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        NavigationLink(destination: CategoryDetailView(category: cat)) {
+                            QuickAccessTile(category: cat)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }

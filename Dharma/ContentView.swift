@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var selectedTab = 0
+    @State private var selectedTab = 2
 
     var body: some View {
         TabView(selection: $selectedTab) {

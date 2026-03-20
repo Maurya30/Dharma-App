@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct DharmaApp: App {
     @StateObject private var store = ScriptureStore()
+    @StateObject private var onboarding = OnboardingManager()
 
     init() {
         let navAppearance = UINavigationBarAppearance()
@@ -31,8 +32,12 @@ struct DharmaApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(store)
+            if onboarding.hasCompletedOnboarding {
+                ContentView()
+                    .environmentObject(store)
+            } else {
+                OnboardingView(manager: onboarding)
+            }
         }
     }
 }

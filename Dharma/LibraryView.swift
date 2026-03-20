@@ -43,6 +43,41 @@ struct LibraryView: View {
                         .padding(.top, DharmaSpacing.sm)
                         .padding(.bottom, DharmaSpacing.md)
 
+                    if selectedCategory == .gita && searchText.isEmpty && !hasActiveFilters {
+                        NavigationLink(destination: ChapterListView()) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "list.number")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.dharmaGold)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Browse by Chapter")
+                                        .font(DharmaFont.heading(15))
+                                        .foregroundColor(.dharmaTextPrimary)
+                                    Text("18 chapters · \(store.readCount) of \(store.totalGitaVerses) verses read")
+                                        .font(DharmaFont.caption(12))
+                                        .foregroundColor(.dharmaTextMuted)
+                                }
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.dharmaTextMuted)
+                            }
+                            .padding(DharmaSpacing.md)
+                            .background(Color.dharmaSurface)
+                            .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DharmaRadius.md)
+                                    .strokeBorder(Color.dharmaGold.opacity(0.3), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, DharmaSpacing.md)
+                        .padding(.bottom, DharmaSpacing.sm)
+                    }
+
                     if filteredItems.isEmpty {
                         EmptyStateView(searchText: searchText)
                             .padding(.top, 60)
