@@ -5,6 +5,7 @@ enum WidgetContentType: String, AppEnum {
     case daily = "Daily Verse"
     case gita = "Daily Gita Verse"
     case upanishad = "Daily Upanishad"
+    case rigVeda = "Daily Rig Veda"
     case mantra = "Daily Mantra"
     case favourites = "From Favourites"
     case pinned = "Pinned Verse"
@@ -14,6 +15,7 @@ enum WidgetContentType: String, AppEnum {
         .daily: "Daily Verse",
         .gita: "Daily Gita Verse",
         .upanishad: "Daily Upanishad",
+        .rigVeda: "Daily Rig Veda",
         .mantra: "Daily Mantra",
         .favourites: "From Favourites",
         .pinned: "Pinned Verse"

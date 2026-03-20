@@ -76,6 +76,7 @@ extension Color {
     // Category accents — same in both modes
     static let categoryGita       = Color(red: 0.729, green: 0.459, blue: 0.090)
     static let categoryUpanishads = Color(red: 0.325, green: 0.294, blue: 0.718)
+    static let categoryRigVeda    = Color(red: 0.698, green: 0.298, blue: 0.176)
     static let categoryMantras    = Color(red: 0.059, green: 0.431, blue: 0.337)
     static let categoryBhajans    = Color(red: 0.600, green: 0.208, blue: 0.337)
 }

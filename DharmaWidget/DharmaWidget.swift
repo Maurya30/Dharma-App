@@ -56,6 +56,9 @@ struct DharmaWidgetProvider: AppIntentTimelineProvider {
         case .upanishad:
             let upanishads = all.filter { $0.category == "Upanishads" }
             if !upanishads.isEmpty { return upanishads[dayOfYear % upanishads.count] }
+        case .rigVeda:
+            let rigVeda = all.filter { $0.category == "Rig Veda" }
+            if !rigVeda.isEmpty { return rigVeda[dayOfYear % rigVeda.count] }
         case .mantra:
             let mantras = all.filter { $0.category == "Mantras" }
             if !mantras.isEmpty { return mantras[dayOfYear % mantras.count] }
@@ -274,6 +277,7 @@ func categoryIcon(_ category: String) -> String {
     switch category {
     case "Bhagavad Gita": return "book.fill"
     case "Upanishads": return "scroll.fill"
+    case "Rig Veda": return "flame.fill"
     case "Mantras": return "waveform"
     case "Bhajans": return "music.note"
     default: return "sparkles"
@@ -284,6 +288,7 @@ func categoryColor(_ category: String) -> Color {
     switch category {
     case "Bhagavad Gita": return Color(red: 0.91, green: 0.48, blue: 0.18)
     case "Upanishads": return Color(red: 0.4, green: 0.7, blue: 0.9)
+    case "Rig Veda": return Color(red: 0.698, green: 0.298, blue: 0.176)
     case "Mantras": return Color(red: 0.6, green: 0.8, blue: 0.5)
     case "Bhajans": return Color(red: 0.9, green: 0.5, blue: 0.7)
     default: return Color(red: 0.91, green: 0.48, blue: 0.18)

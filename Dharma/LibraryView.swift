@@ -43,39 +43,36 @@ struct LibraryView: View {
                         .padding(.top, DharmaSpacing.sm)
                         .padding(.bottom, DharmaSpacing.md)
 
-                    if selectedCategory == .gita && searchText.isEmpty && !hasActiveFilters {
-                        NavigationLink(destination: ChapterListView()) {
-                            HStack(spacing: 12) {
-                                Image(systemName: "list.number")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(.dharmaGold)
-
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Browse by Chapter")
-                                        .font(DharmaFont.heading(15))
-                                        .foregroundColor(.dharmaTextPrimary)
-                                    Text("18 chapters · \(store.readCount) of \(store.totalGitaVerses) verses read")
-                                        .font(DharmaFont.caption(12))
-                                        .foregroundColor(.dharmaTextMuted)
-                                }
-
-                                Spacer()
-
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.dharmaTextMuted)
-                            }
-                            .padding(DharmaSpacing.md)
-                            .background(Color.dharmaSurface)
-                            .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DharmaRadius.md)
-                                    .strokeBorder(Color.dharmaGold.opacity(0.3), lineWidth: 1)
+                    if searchText.isEmpty && !hasActiveFilters {
+                        if selectedCategory == .gita {
+                            browseByLink(
+                                destination: ChapterListView(),
+                                icon: "list.number",
+                                title: "Browse by Chapter",
+                                subtitle: "18 chapters · \(store.readCount) of \(store.totalGitaVerses) verses read",
+                                color: .dharmaGold
                             )
                         }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, DharmaSpacing.md)
-                        .padding(.bottom, DharmaSpacing.sm)
+
+                        if selectedCategory == .upanishads {
+                            browseByLink(
+                                destination: UpanishadListView(),
+                                icon: "scroll.fill",
+                                title: "Browse by Upanishad",
+                                subtitle: "\(store.upanishadSources.count) texts · \(store.items(for: .upanishads).count) verses",
+                                color: .categoryUpanishads
+                            )
+                        }
+
+                        if selectedCategory == .rigVeda {
+                            browseByLink(
+                                destination: RigVedaListView(),
+                                icon: "flame.fill",
+                                title: "Browse by Mandala",
+                                subtitle: "\(store.rigVedaBooks.count) books · \(store.items(for: .rigVeda).count) hymns",
+                                color: .categoryRigVeda
+                            )
+                        }
                     }
 
                     if filteredItems.isEmpty {
@@ -142,6 +139,43 @@ struct LibraryView: View {
                     .environmentObject(store)
             }
         }
+    }
+}
+
+extension LibraryView {
+    func browseByLink<D: View>(destination: D, icon: String, title: String, subtitle: String, color: Color) -> some View {
+        NavigationLink(destination: destination) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+                    .foregroundColor(color)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(DharmaFont.heading(15))
+                        .foregroundColor(.dharmaTextPrimary)
+                    Text(subtitle)
+                        .font(DharmaFont.caption(12))
+                        .foregroundColor(.dharmaTextMuted)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12))
+                    .foregroundColor(.dharmaTextMuted)
+            }
+            .padding(DharmaSpacing.md)
+            .background(Color.dharmaSurface)
+            .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: DharmaRadius.md)
+                    .strokeBorder(color.opacity(0.3), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, DharmaSpacing.md)
+        .padding(.bottom, DharmaSpacing.sm)
     }
 }
 

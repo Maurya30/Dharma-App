@@ -44,18 +44,17 @@ struct ShareCardView: View {
     private var referenceLine: String {
         switch item.category {
         case .gita:
-            // item.source: "Bhagavad Gita 2.47"
             let ref = item.source.replacingOccurrences(of: "Bhagavad Gita ", with: "").trimmingCharacters(in: .whitespaces)
             return "BG \(ref)"
         case .upanishads:
-            let ref = item.source.replacingOccurrences(of: "Upanishads ", with: "").trimmingCharacters(in: .whitespaces)
-            return "UP \(ref)"
+            return item.source
+        case .rigVeda:
+            let ref = item.source.replacingOccurrences(of: "Rig Veda ", with: "").trimmingCharacters(in: .whitespaces)
+            return "RV \(ref)"
         case .mantras:
-            let ref = item.source.replacingOccurrences(of: "Mantras ", with: "").trimmingCharacters(in: .whitespaces)
-            return "MN \(ref)"
+            return item.source
         case .bhajans:
-            let ref = item.source.replacingOccurrences(of: "Bhajans ", with: "").trimmingCharacters(in: .whitespaces)
-            return "BH \(ref)"
+            return item.source
         }
     }
 

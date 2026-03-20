@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Sample Data
 extension ScriptureItem {
-    static let sampleData: [ScriptureItem] = gitaVerses + upanishadPassages + mantras + bhajans
+    static let sampleData: [ScriptureItem] = gitaVerses + upanishadPassages + rigVedaSample + mantras + bhajans
 }
 
 // MARK: - Bhagavad Gita Verses (fallback only — real data loads from gita.json)
@@ -87,6 +87,17 @@ let upanishadPassages: [ScriptureItem] = [
         subtitle: "Isha Upanishad 6",
         textEnglish: "He who sees all beings in the Self, and the Self in all beings, hates none. For one who sees oneness everywhere, how can there be delusion or grief?",
         source: "Isha Upanishad"
+    ),
+]
+
+// MARK: - Rig Veda (fallback only — real data loads from rigveda.json)
+let rigVedaSample: [ScriptureItem] = [
+    ScriptureItem(
+        category: .rigVeda,
+        title: "Book 10 · Hymn 10.129.1",
+        subtitle: "Rig Veda 10.129.1",
+        textEnglish: "There was neither non-existence nor existence then; there was neither the realm of space nor the sky which is beyond.",
+        source: "Rig Veda 10.129.1"
     ),
 ]
 

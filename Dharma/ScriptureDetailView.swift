@@ -38,18 +38,18 @@ struct ScriptureDetailView: View {
         }
     }
 
+    private var categoryItems: [ScriptureItem] {
+        store.items(for: item.category)
+    }
+
     private var previousItem: ScriptureItem? {
-        guard item.category == .gita else { return nil }
-        let gitaItems = store.items(for: .gita)
-        guard let idx = gitaItems.firstIndex(where: { $0.id == item.id }), idx > 0 else { return nil }
-        return gitaItems[idx - 1]
+        guard let idx = categoryItems.firstIndex(where: { $0.id == item.id }), idx > 0 else { return nil }
+        return categoryItems[idx - 1]
     }
 
     private var nextItem: ScriptureItem? {
-        guard item.category == .gita else { return nil }
-        let gitaItems = store.items(for: .gita)
-        guard let idx = gitaItems.firstIndex(where: { $0.id == item.id }), idx < gitaItems.count - 1 else { return nil }
-        return gitaItems[idx + 1]
+        guard let idx = categoryItems.firstIndex(where: { $0.id == item.id }), idx < categoryItems.count - 1 else { return nil }
+        return categoryItems[idx + 1]
     }
 
     var body: some View {
@@ -150,7 +150,7 @@ struct ScriptureDetailView: View {
                     }
 
                     // Previous / Next navigation
-                    if item.category == .gita {
+                    if previousItem != nil || nextItem != nil {
                         VerseNavigationRow(
                             previousItem: previousItem,
                             nextItem: nextItem,

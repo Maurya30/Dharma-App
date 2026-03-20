@@ -178,7 +178,7 @@ struct JourneyCard: View {
     }
 
     private var otherJourneyCategories: [ScriptureCategory] {
-        [.upanishads, .mantras, .bhajans].filter { store.lastReadItem(for: $0) != nil }
+        [.upanishads, .rigVeda, .mantras, .bhajans].filter { store.lastReadItem(for: $0) != nil }
     }
 
     var body: some View {
@@ -369,19 +369,24 @@ struct QuickAccessGrid: View {
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(ScriptureCategory.allCases) { cat in
-                    if cat == .gita {
-                        NavigationLink(destination: ChapterListView()) {
-                            QuickAccessTile(category: cat)
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        NavigationLink(destination: CategoryDetailView(category: cat)) {
-                            QuickAccessTile(category: cat)
-                        }
-                        .buttonStyle(.plain)
+                    NavigationLink(destination: browseDestination(for: cat)) {
+                        QuickAccessTile(category: cat)
                     }
+                    .buttonStyle(.plain)
                 }
             }
+        }
+    }
+}
+
+extension QuickAccessGrid {
+    @ViewBuilder
+    func browseDestination(for category: ScriptureCategory) -> some View {
+        switch category {
+        case .gita:       ChapterListView()
+        case .upanishads: UpanishadListView()
+        case .rigVeda:    RigVedaListView()
+        default:          CategoryDetailView(category: category)
         }
     }
 }

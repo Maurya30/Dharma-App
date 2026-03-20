@@ -29,8 +29,10 @@ class ScriptureStore: ObservableObject {
     // MARK: - Loading
     private func loadItems() {
         let gitaItems = loadGita()
-        let otherItems = upanishadPassages + mantras + bhajans
-        items = gitaItems + otherItems
+        let upanishadItems = loadUpanishads()
+        let rigVedaItems = loadRigVeda()
+        let otherItems = mantras + bhajans
+        items = gitaItems + upanishadItems + rigVedaItems + otherItems
     }
 
     private func loadChapterInfos() {
@@ -78,6 +80,98 @@ class ScriptureStore: ObservableObject {
 
         print("✅ Loaded \(result.count) Gita verses from gita.json")
         return result
+    }
+
+    private func loadUpanishads() -> [ScriptureItem] {
+        guard let url = Bundle.main.url(forResource: "upanishads", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let entries = try? JSONDecoder().decode([UpanishadEntry].self, from: data)
+        else {
+            print("⚠️ Could not load upanishads.json — falling back to sample data")
+            return upanishadPassages
+        }
+
+        let result: [ScriptureItem] = entries.compactMap { entry in
+            guard !entry.english.isEmpty else { return nil }
+            let stableID = UUID(uuidString: uuidFrom(string: "upanishad-\(entry.id)")) ?? UUID()
+            return ScriptureItem(
+                id: stableID,
+                category: .upanishads,
+                title: entry.source,
+                subtitle: "Verse \(entry.verse)",
+                textEnglish: entry.english,
+                textTransliteration: entry.transliteration.isEmpty ? nil : entry.transliteration,
+                textSanskrit: entry.sanskrit.isEmpty ? nil : entry.sanskrit,
+                source: entry.source
+            )
+        }
+
+        print("✅ Loaded \(result.count) Upanishad verses from upanishads.json")
+        return result
+    }
+
+    private func loadRigVeda() -> [ScriptureItem] {
+        guard let url = Bundle.main.url(forResource: "rigveda", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let entries = try? JSONDecoder().decode([RigVedaEntry].self, from: data)
+        else {
+            print("⚠️ Could not load rigveda.json")
+            return []
+        }
+
+        let result: [ScriptureItem] = entries.compactMap { entry in
+            guard !entry.english.isEmpty else { return nil }
+            let stableID = UUID(uuidString: uuidFrom(string: "rigveda-\(entry.id)")) ?? UUID()
+            return ScriptureItem(
+                id: stableID,
+                category: .rigVeda,
+                title: "Book \(entry.chapter) · Hymn \(entry.verse)",
+                subtitle: "Rig Veda \(entry.verse)",
+                textEnglish: entry.english,
+                textTransliteration: entry.transliteration.isEmpty ? nil : entry.transliteration,
+                textSanskrit: entry.sanskrit.isEmpty ? nil : entry.sanskrit,
+                source: "Rig Veda \(entry.verse)"
+            )
+        }
+
+        print("✅ Loaded \(result.count) Rig Veda verses from rigveda.json")
+        return result
+    }
+
+    // MARK: - Grouped Data
+
+    /// Distinct Upanishad source names in the order they appear, with verse counts.
+    var upanishadSources: [(name: String, count: Int)] {
+        var seen: [String] = []
+        var counts: [String: Int] = [:]
+        for item in items where item.category == .upanishads {
+            let src = item.source
+            counts[src, default: 0] += 1
+            if !seen.contains(src) { seen.append(src) }
+        }
+        return seen.map { (name: $0, count: counts[$0] ?? 0) }
+    }
+
+    func upanishadItems(for source: String) -> [ScriptureItem] {
+        items.filter { $0.category == .upanishads && $0.source == source }
+    }
+
+    /// Distinct Rig Veda books with verse counts.
+    var rigVedaBooks: [(book: Int, count: Int)] {
+        var counts: [Int: Int] = [:]
+        for item in items where item.category == .rigVeda {
+            if let bookStr = item.title.components(separatedBy: "·").first?
+                .trimmingCharacters(in: .whitespaces)
+                .replacingOccurrences(of: "Book ", with: ""),
+               let book = Int(bookStr) {
+                counts[book, default: 0] += 1
+            }
+        }
+        return counts.sorted { $0.key < $1.key }.map { (book: $0.key, count: $0.value) }
+    }
+
+    func rigVedaItems(for book: Int) -> [ScriptureItem] {
+        items.filter { $0.category == .rigVeda && $0.title.hasPrefix("Book \(book) ·") }
     }
 
     private func uuidFrom(string: String) -> String {

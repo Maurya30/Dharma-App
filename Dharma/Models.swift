@@ -4,6 +4,7 @@ import SwiftUI
 enum ScriptureCategory: String, CaseIterable, Codable, Identifiable {
     case gita       = "Bhagavad Gita"
     case upanishads = "Upanishads"
+    case rigVeda    = "Rig Veda"
     case mantras    = "Mantras"
     case bhajans    = "Bhajans"
 
@@ -13,6 +14,7 @@ enum ScriptureCategory: String, CaseIterable, Codable, Identifiable {
         switch self {
         case .gita:       return "book.fill"
         case .upanishads: return "scroll.fill"
+        case .rigVeda:    return "flame.fill"
         case .mantras:    return "waveform"
         case .bhajans:    return "music.note"
         }
@@ -22,6 +24,7 @@ enum ScriptureCategory: String, CaseIterable, Codable, Identifiable {
         switch self {
         case .gita:       return .categoryGita
         case .upanishads: return .categoryUpanishads
+        case .rigVeda:    return .categoryRigVeda
         case .mantras:    return .categoryMantras
         case .bhajans:    return .categoryBhajans
         }
@@ -31,9 +34,56 @@ enum ScriptureCategory: String, CaseIterable, Codable, Identifiable {
         switch self {
         case .gita:       return "700 verses of divine wisdom"
         case .upanishads: return "Ancient philosophical texts"
+        case .rigVeda:    return "Oldest sacred hymns"
         case .mantras:    return "Sacred sounds & chants"
         case .bhajans:    return "Devotional songs"
         }
+    }
+}
+
+// MARK: - Upanishad JSON entry (from upanishads.json)
+struct UpanishadEntry: Codable {
+    let id: String
+    let source: String
+    let sourceShort: String
+    let category: String
+    let chapter: String
+    let verse: String
+    let sanskrit: String
+    let transliteration: String
+    let english: String
+    let hindi: String
+    let speaker: String
+    let wordMeanings: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, source, category, chapter, verse, sanskrit, transliteration
+        case english, hindi, speaker
+        case sourceShort = "source_short"
+        case wordMeanings
+    }
+}
+
+// MARK: - Rig Veda JSON entry (from rigveda.json)
+struct RigVedaEntry: Codable {
+    let id: String
+    let source: String
+    let sourceShort: String
+    let category: String
+    let chapter: String
+    let verse: String
+    let sanskrit: String
+    let transliteration: String
+    let english: String
+    let hindi: String
+    let speaker: String
+    let wordMeanings: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, source, category, chapter, verse, sanskrit, transliteration
+        case english, hindi, speaker
+        case sourceShort = "source_short"
+        case wordMeanings
     }
 }
 
