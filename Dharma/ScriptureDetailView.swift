@@ -1,10 +1,13 @@
 import SwiftUI
+import UIKit
 
 struct ScriptureDetailView: View {
     let item: ScriptureItem
     @ObservedObject var store: ScriptureStore
     @StateObject private var audioManager = VerseAudioManager.shared
     @State private var showShareSheet = false
+    @State private var shareItems: [Any] = []
+    @Environment(\.colorScheme) private var colorScheme
 
     private var verseChapter: Int? {
         let parts = item.source.replacingOccurrences(of: "Bhagavad Gita ", with: "").split(separator: ".")
@@ -172,6 +175,13 @@ struct ScriptureDetailView: View {
                 }
 
                 Button {
+                    let renderedImages = ShareCardRenderer.renderSquareAndTall(item, colorScheme: colorScheme)
+                    if renderedImages.isEmpty {
+                        shareItems = [shareText]
+                    } else {
+                        // Share both square + tall so downstream apps can pick what they support.
+                        shareItems = renderedImages
+                    }
                     showShareSheet = true
                 } label: {
                     Image(systemName: "square.and.arrow.up")
@@ -180,7 +190,7 @@ struct ScriptureDetailView: View {
             }
         }
         .sheet(isPresented: $showShareSheet) {
-            ShareSheet(items: [shareText])
+            ShareSheet(items: shareItems)
         }
         .onAppear {
             store.markAsRead(item)
