@@ -97,7 +97,30 @@ struct ChapterVerseListView: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
+            LazyVStack(alignment: .leading, spacing: DharmaSpacing.lg) {
+                if let info = chapterInfo {
+                    VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+                        Text("Chapter \(info.chapterNumber) · \(info.nameMeaning)")
+                            .font(DharmaFont.caption(12))
+                            .foregroundColor(.dharmaGold)
+                            .italic()
+
+                        Text(info.chapterSummary)
+                            .font(DharmaFont.body(14))
+                            .foregroundColor(.dharmaTextSecondary)
+                            .lineSpacing(5)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(DharmaSpacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.dharmaSurface)
+                    .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DharmaRadius.md)
+                            .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
+                    )
+                }
+
                 ForEach(store.versesForChapter(chapter)) { item in
                     NavigationLink(destination: ScriptureDetailView(item: item, store: store)) {
                         ScriptureCardView(item: item)

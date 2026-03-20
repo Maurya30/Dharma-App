@@ -177,6 +177,10 @@ struct JourneyCard: View {
         store.totalGitaVerses > 0 ? Double(store.readCount) / Double(store.totalGitaVerses) : 0
     }
 
+    private var otherJourneyCategories: [ScriptureCategory] {
+        [.upanishads, .mantras, .bhajans].filter { store.lastReadItem(for: $0) != nil }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -195,53 +199,14 @@ struct JourneyCard: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text("Bhagavad Gita")
-                        .font(DharmaFont.heading(16))
-                        .foregroundColor(.dharmaTextPrimary)
+            VStack(alignment: .leading, spacing: DharmaSpacing.lg) {
+                gitaJourneyBlock
 
-                    Spacer()
+                ForEach(otherJourneyCategories, id: \.self) { category in
+                    if let item = store.lastReadItem(for: category) {
+                        Divider().background(Color.dharmaDivider)
 
-                    Text("\(store.readCount) / \(store.totalGitaVerses) verses")
-                        .font(DharmaFont.caption(12))
-                        .foregroundColor(.dharmaTextMuted)
-                }
-
-                ProgressView(value: progress)
-                    .tint(.dharmaGold)
-
-                if let chapterInfo = store.lastReadChapterInfo {
-                    Text("Chapter \(chapterInfo.chapterNumber) · \(chapterInfo.nameTranslation)")
-                        .font(DharmaFont.caption(12))
-                        .foregroundColor(.dharmaTextSecondary)
-                }
-
-                if let lastItem = store.lastReadItem {
-                    NavigationLink(destination: ScriptureDetailView(item: lastItem, store: store)) {
-                        HStack {
-                            Text("Continue reading")
-                                .font(DharmaFont.body(14))
-                                .foregroundColor(.dharmaGold)
-                            Spacer()
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 12))
-                                .foregroundColor(.dharmaGold)
-                        }
-                        .padding(.top, 4)
-                    }
-                } else {
-                    NavigationLink(destination: ChapterListView()) {
-                        HStack {
-                            Text("Start reading")
-                                .font(DharmaFont.body(14))
-                                .foregroundColor(.dharmaGold)
-                            Spacer()
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 12))
-                                .foregroundColor(.dharmaGold)
-                        }
-                        .padding(.top, 4)
+                        otherCategoryJourneyBlock(category: category, item: item)
                     }
                 }
             }
@@ -253,6 +218,85 @@ struct JourneyCard: View {
                     .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
             )
         }
+    }
+
+    private var gitaJourneyBlock: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Bhagavad Gita")
+                    .font(DharmaFont.heading(16))
+                    .foregroundColor(.dharmaTextPrimary)
+
+                Spacer()
+
+                Text("\(store.readCount) / \(store.totalGitaVerses) verses")
+                    .font(DharmaFont.caption(12))
+                    .foregroundColor(.dharmaTextMuted)
+            }
+
+            ProgressView(value: progress)
+                .tint(.dharmaGold)
+
+            if let chapterInfo = store.lastReadChapterInfo {
+                Text("Chapter \(chapterInfo.chapterNumber) · \(chapterInfo.nameTranslation)")
+                    .font(DharmaFont.caption(12))
+                    .foregroundColor(.dharmaTextSecondary)
+            }
+
+            if let lastItem = store.lastReadItem(for: .gita) {
+                NavigationLink(destination: ScriptureDetailView(item: lastItem, store: store)) {
+                    journeyActionRowLabel("Continue reading")
+                }
+                .buttonStyle(.plain)
+            } else {
+                NavigationLink(destination: ChapterListView()) {
+                    journeyActionRowLabel("Start reading")
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func otherCategoryJourneyBlock(category: ScriptureCategory, item: ScriptureItem) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: category.icon)
+                    .font(.system(size: 14))
+                    .foregroundColor(category.color)
+
+                Text(category.rawValue)
+                    .font(DharmaFont.heading(16))
+                    .foregroundColor(.dharmaTextPrimary)
+            }
+
+            Text(item.title)
+                .font(DharmaFont.caption(12))
+                .foregroundColor(.dharmaTextSecondary)
+                .lineLimit(2)
+
+            NavigationLink(destination: ScriptureDetailView(item: item, store: store)) {
+                journeyActionRowLabel("Continue reading")
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func journeyActionRowLabel(_ title: String) -> some View {
+        HStack {
+            Text(title)
+                .font(DharmaFont.body(14))
+                .foregroundColor(.dharmaGold)
+            Spacer()
+            Image(systemName: "arrow.right")
+                .font(.system(size: 12))
+                .foregroundColor(.dharmaGold)
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .background(Color.dharmaGold.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.sm))
     }
 }
 

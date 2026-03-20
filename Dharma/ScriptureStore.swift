@@ -6,12 +6,14 @@ class ScriptureStore: ObservableObject {
     @Published var items: [ScriptureItem] = []
     @Published var chapterInfos: [GitaChapterInfo] = []
     @Published var readVerseIDs: Set<String> = []
-    @Published var lastReadSource: String? = nil
+    /// Category raw value → item `source` string for “Continue reading”
+    @Published var lastReadByCategory: [String: String] = [:]
     @Published var streak: Int = 0
 
     private let favouritesKey = "dharma_favourites"
     private let readVersesKey = "dharma_read_verses"
     private let lastReadKey = "dharma_last_read"
+    private let lastReadByCategoryKey = "dharma_last_read_by_category"
     private let lastPracticeDateKey = "dharma_last_practice_date"
     private let streakKey = "dharma_streak"
 
@@ -112,12 +114,21 @@ class ScriptureStore: ObservableObject {
 
     // MARK: - Reading Progress
     func markAsRead(_ item: ScriptureItem) {
-        guard item.category == .gita else { return }
-        let ref = item.source.replacingOccurrences(of: "Bhagavad Gita ", with: "")
-        readVerseIDs.insert(ref)
-        lastReadSource = item.source
-        saveReadingProgress()
+        lastReadByCategory[item.category.rawValue] = item.source
+        saveLastReadByCategory()
+
+        if item.category == .gita {
+            let ref = item.source.replacingOccurrences(of: "Bhagavad Gita ", with: "")
+            readVerseIDs.insert(ref)
+            UserDefaults.standard.set(Array(readVerseIDs), forKey: readVersesKey)
+        }
+
         updateStreak()
+    }
+
+    func lastReadItem(for category: ScriptureCategory) -> ScriptureItem? {
+        guard let source = lastReadByCategory[category.rawValue] else { return nil }
+        return items.first { $0.source == source }
     }
 
     var totalGitaVerses: Int {
@@ -133,12 +144,11 @@ class ScriptureStore: ObservableObject {
     }
 
     var lastReadItem: ScriptureItem? {
-        guard let source = lastReadSource else { return nil }
-        return items.first { $0.source == source }
+        lastReadItem(for: .gita)
     }
 
     var lastReadChapterNumber: Int? {
-        guard let src = lastReadSource else { return nil }
+        guard let src = lastReadByCategory[ScriptureCategory.gita.rawValue] else { return nil }
         let ref = src.replacingOccurrences(of: "Bhagavad Gita ", with: "")
         return Int(ref.split(separator: ".").first ?? "")
     }
@@ -148,15 +158,20 @@ class ScriptureStore: ObservableObject {
         return chapterInfos.first { $0.chapterNumber == ch }
     }
 
-    private func saveReadingProgress() {
-        UserDefaults.standard.set(Array(readVerseIDs), forKey: readVersesKey)
-        UserDefaults.standard.set(lastReadSource, forKey: lastReadKey)
+    private func saveLastReadByCategory() {
+        UserDefaults.standard.set(lastReadByCategory, forKey: lastReadByCategoryKey)
     }
 
     private func loadReadingProgress() {
         let saved = UserDefaults.standard.stringArray(forKey: readVersesKey) ?? []
         readVerseIDs = Set(saved)
-        lastReadSource = UserDefaults.standard.string(forKey: lastReadKey)
+
+        if let dict = UserDefaults.standard.dictionary(forKey: lastReadByCategoryKey) as? [String: String] {
+            lastReadByCategory = dict
+        } else if let legacy = UserDefaults.standard.string(forKey: lastReadKey) {
+            lastReadByCategory = [ScriptureCategory.gita.rawValue: legacy]
+            saveLastReadByCategory()
+        }
     }
 
     // MARK: - Streak

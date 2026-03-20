@@ -1,25 +1,25 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var selectedTab = 2
+    @State private var selectedTab = 0
 
     var body: some View {
         TabView(selection: $selectedTab) {
+            TodayView()
+                .tabItem {
+                    Label("Today", systemImage: "sun.horizon.fill")
+                }
+                .tag(0)
+
             LibraryView()
                 .tabItem {
                     Label("Library", systemImage: "books.vertical.fill")
                 }
-                .tag(0)
+                .tag(1)
 
             CalendarView()
                 .tabItem {
                     Label("Calendar", systemImage: "calendar")
-                }
-                .tag(1)
-
-            TodayView()
-                .tabItem {
-                    Label("Today", systemImage: "sun.horizon.fill")
                 }
                 .tag(2)
         }
