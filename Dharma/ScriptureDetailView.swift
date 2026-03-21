@@ -52,118 +52,175 @@ struct ScriptureDetailView: View {
         return categoryItems[idx + 1]
     }
 
+    /// Large background ॐ — does not affect layout (ZStack layer behind scroll).
+    private var omOpacityWatermark: Double {
+        colorScheme == .dark ? 0.12 : 0.08
+    }
+
+    private var hasOriginalText: Bool {
+        if let s = item.textSanskrit, !s.isEmpty { return true }
+        if let t = item.textTransliteration, !t.isEmpty { return true }
+        return false
+    }
+
     var body: some View {
-        ScrollView {
-            ZStack(alignment: .topTrailing) {
-                OmWatermark(size: 180, opacity: 0.12)
-                    .padding(.trailing, -20)
-                    .padding(.top, 20)
+        ZStack(alignment: .topTrailing) {
+            // Behind all scroll content — no layout impact
+            OmWatermark(size: 190, opacity: omOpacityWatermark, rotationDegrees: -8)
+                .fixedSize(horizontal: true, vertical: true)
+                .allowsHitTesting(false)
+                .padding(.top, -28)
+                .padding(.trailing, -52)
+                .accessibilityHidden(true)
 
-                VStack(alignment: .leading, spacing: DharmaSpacing.lg) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
 
-                    // Category badge
-                    Label(item.category.rawValue, systemImage: item.category.icon)
-                        .font(DharmaFont.caption(12))
-                        .foregroundColor(item.category.color)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(item.category.color.opacity(0.12))
-                        .clipShape(Capsule())
+                // Category badge
+                Label(item.category.rawValue, systemImage: item.category.icon)
+                    .font(DharmaFont.caption(13))
+                    .foregroundColor(item.category.color)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(item.category.color.opacity(0.12))
+                    .clipShape(Capsule())
+                    .padding(.bottom, 12)
 
-                    // Title
-                    Text(item.title)
-                        .font(DharmaFont.title(26))
-                        .foregroundColor(.dharmaTextPrimary)
+                // Title
+                Text(item.title)
+                    .font(DharmaFont.title(28))
+                    .foregroundColor(.dharmaTextPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                    // Subtitle
-                    Text(item.subtitle)
-                        .font(DharmaFont.caption(13))
-                        .foregroundColor(.dharmaTextMuted)
-                        .padding(.top, -DharmaSpacing.sm)
+                // Subtitle
+                Text(item.subtitle)
+                    .font(DharmaFont.body(16))
+                    .foregroundColor(.dharmaTextSecondary)
+                    .padding(.top, 6)
 
-                    // Speaker context badge
-                    if let context = speakerContext {
-                        HStack(spacing: 6) {
-                            Circle()
-                                .fill(Color.dharmaGold)
-                                .frame(width: 6, height: 6)
-                            Text(context)
-                                .font(DharmaFont.caption(11))
-                                .foregroundColor(.dharmaSpeakerText)
-                                .italic()
+                // Speaker context badge
+                if let context = speakerContext {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(Color.dharmaGold)
+                            .frame(width: 6, height: 6)
+                        Text(context)
+                            .font(DharmaFont.caption(12))
+                            .foregroundColor(.dharmaSpeakerText)
+                            .italic()
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.dharmaSpeakerBg)
+                    .clipShape(Capsule())
+                    .padding(.top, 12)
+                }
+
+                // Sanskrit + transliteration: one calm card, clear labels, generous spacing
+                if hasOriginalText {
+                    VStack(alignment: .leading, spacing: 0) {
+                        if let sanskrit = item.textSanskrit, !sanskrit.isEmpty {
+                            VerseSectionLabel("Sanskrit")
+                            Text(sanskrit)
+                                .font(.system(size: 22, weight: .regular, design: .serif))
+                                .foregroundColor(.dharmaTextPrimary)
+                                .lineSpacing(11)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.top, 8)
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(Color.dharmaSpeakerBg)
-                        .clipShape(Capsule())
+
+                        if let translit = item.textTransliteration, !translit.isEmpty {
+                            VerseSectionLabel("Transliteration")
+                                .padding(.top, item.textSanskrit == nil || item.textSanskrit?.isEmpty == true ? 0 : 26)
+
+                            Text(translit)
+                                .font(.system(size: 15, weight: .regular, design: .serif))
+                                .italic()
+                                .foregroundColor(.dharmaTextSecondary)
+                                .lineSpacing(8)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.top, 8)
+                        }
                     }
+                    .padding(DharmaSpacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.dharmaSurface)
+                    .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
+                            .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
+                    )
+                }
 
-                    Divider().background(Color.dharmaDivider)
+                // Audio card (Gita only)
+                if item.category == .gita, let ch = verseChapter, let v = verseNumber {
+                    VerseAudioCard(chapter: ch, verse: v, audioManager: audioManager, isThisVerse: isThisVerse)
+                        .padding(.top, hasOriginalText ? 20 : 16)
+                }
 
-                    // Sanskrit Devanagari
-                    if let sanskrit = item.textSanskrit, !sanskrit.isEmpty {
-                        Text(sanskrit)
-                            .font(.system(size: 13))
-                            .foregroundColor(.dharmaTextPrimary)
-                            .lineSpacing(13 * 0.8)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                Divider()
+                    .background(Color.dharmaDivider)
+                    .padding(.top, hasOriginalText || (item.category == .gita && verseChapter != nil && verseNumber != nil) ? 22 : 20)
+                    .padding(.bottom, 22)
 
-                    // Romanized transliteration
-                    if let translit = item.textTransliteration, !translit.isEmpty {
-                        Text(translit)
-                            .font(.system(size: 11).italic())
-                            .foregroundColor(.dharmaTextMuted)
-                            .lineSpacing(5)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    // Audio card (Gita only)
-                    if item.category == .gita, let ch = verseChapter, let v = verseNumber {
-                        VerseAudioCard(chapter: ch, verse: v, audioManager: audioManager, isThisVerse: isThisVerse)
-                    }
-
-                    Divider().background(Color.dharmaDivider)
-
-                    // English translation with saffron accent bar
-                    HStack(alignment: .top, spacing: DharmaSpacing.sm) {
+                VStack(alignment: .leading, spacing: 0) {
+                    VerseSectionLabel("Translation")
+                    HStack(alignment: .top, spacing: 14) {
                         Rectangle()
                             .fill(Color.dharmaGold)
-                            .frame(width: 3)
+                            .frame(width: 4)
                             .clipShape(Capsule())
 
                         Text(item.textEnglish)
-                            .font(DharmaFont.georgia(14))
+                            .font(DharmaFont.georgia(19))
                             .foregroundColor(.dharmaTextBody)
-                            .lineSpacing(6)
+                            .lineSpacing(10)
                             .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 8)
                     }
-
-                    // Source attribution
-                    Text(item.source)
-                        .font(.system(size: 10).italic())
-                        .foregroundColor(.dharmaGold)
-
-                    // Local audio player (Mantras/Bhajans)
-                    if item.audioFileName != nil {
-                        AudioPlayerView(fileName: item.audioFileName!)
-                    }
-
-                    // Previous / Next navigation
-                    if previousItem != nil || nextItem != nil {
-                        VerseNavigationRow(
-                            previousItem: previousItem,
-                            nextItem: nextItem,
-                            store: store
-                        )
-                    }
-
-                    Spacer(minLength: DharmaSpacing.md)
+                    .padding(.top, 4)
                 }
-                .padding(DharmaSpacing.lg)
+                .padding(.bottom, 8)
+
+                // Source attribution
+                Text(item.source)
+                    .font(.system(size: 13, weight: .regular, design: .default).italic())
+                    .foregroundColor(.dharmaGold)
+                    .padding(.top, 12)
+
+                // Local audio player (Mantras/Bhajans)
+                if item.audioFileName != nil {
+                    AudioPlayerView(fileName: item.audioFileName!)
+                        .padding(.top, 16)
+                }
+
+                // Bottom breathing room — nav is pinned via safeAreaInset
+                Color.clear.frame(height: 12)
+                }
+                .padding(.horizontal, DharmaSpacing.md)
+                .padding(.top, DharmaSpacing.sm)
+                .padding(.bottom, DharmaSpacing.md)
             }
+            .scrollContentBackground(.hidden)
         }
         .background(Color.dharmaBackground)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if previousItem != nil || nextItem != nil {
+                VStack(spacing: 0) {
+                    Divider()
+                        .background(Color.dharmaDivider)
+                    VerseNavigationRow(
+                        previousItem: previousItem,
+                        nextItem: nextItem,
+                        store: store
+                    )
+                    .padding(.horizontal, DharmaSpacing.md)
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.dharmaSurface)
+                }
+            }
+        }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
@@ -205,6 +262,20 @@ struct ScriptureDetailView: View {
     }
 }
 
+// MARK: - Section label (Sanskrit / Transliteration / Translation)
+private struct VerseSectionLabel: View {
+    let text: String
+
+    init(_ text: String) { self.text = text }
+
+    var body: some View {
+        Text(text.uppercased())
+            .font(DharmaFont.caption(11))
+            .tracking(1.4)
+            .foregroundColor(.dharmaTextMuted)
+    }
+}
+
 // MARK: - Verse Navigation
 struct VerseNavigationRow: View {
     let previousItem: ScriptureItem?
@@ -215,13 +286,16 @@ struct VerseNavigationRow: View {
         HStack {
             if let prev = previousItem {
                 NavigationLink(destination: ScriptureDetailView(item: prev, store: store)) {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 14, weight: .semibold))
                         Text("Previous")
-                            .font(DharmaFont.caption(12))
+                            .font(DharmaFont.body(16))
                     }
                     .foregroundColor(.dharmaGold)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 4)
+                    .contentShape(Rectangle())
                 }
             }
 
@@ -229,17 +303,20 @@ struct VerseNavigationRow: View {
 
             if let next = nextItem {
                 NavigationLink(destination: ScriptureDetailView(item: next, store: store)) {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         Text("Next")
-                            .font(DharmaFont.caption(12))
+                            .font(DharmaFont.body(16))
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 14, weight: .semibold))
                     }
                     .foregroundColor(.dharmaGold)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 4)
+                    .contentShape(Rectangle())
                 }
             }
         }
-        .padding(.vertical, DharmaSpacing.sm)
+        .padding(.vertical, 8)
     }
 }
 

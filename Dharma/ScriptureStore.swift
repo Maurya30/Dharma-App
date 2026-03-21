@@ -84,10 +84,17 @@ class ScriptureStore: ObservableObject {
 
     private func loadUpanishads() -> [ScriptureItem] {
         guard let url = Bundle.main.url(forResource: "upanishads", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let entries = try? JSONDecoder().decode([UpanishadEntry].self, from: data)
+              let data = try? Data(contentsOf: url)
         else {
-            print("⚠️ Could not load upanishads.json — falling back to sample data")
+            print("⚠️ Could not read upanishads.json from bundle — falling back to sample data")
+            return upanishadPassages
+        }
+
+        let entries: [UpanishadEntry]
+        do {
+            entries = try JSONDecoder().decode([UpanishadEntry].self, from: data)
+        } catch {
+            print("⚠️ upanishads.json decode failed: \(error.localizedDescription) — falling back to sample data")
             return upanishadPassages
         }
 
@@ -98,7 +105,7 @@ class ScriptureStore: ObservableObject {
                 id: stableID,
                 category: .upanishads,
                 title: entry.source,
-                subtitle: "Verse \(entry.verse)",
+                subtitle: "Ch. \(entry.chapter) · Verse \(entry.verse)",
                 textEnglish: entry.english,
                 textTransliteration: entry.transliteration.isEmpty ? nil : entry.transliteration,
                 textSanskrit: entry.sanskrit.isEmpty ? nil : entry.sanskrit,

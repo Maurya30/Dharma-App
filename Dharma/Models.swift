@@ -42,7 +42,8 @@ enum ScriptureCategory: String, CaseIterable, Codable, Identifiable {
 }
 
 // MARK: - Upanishad JSON entry (from upanishads.json)
-struct UpanishadEntry: Codable {
+/// `chapter` is sometimes a JSON number (e.g. `1`) and sometimes a string (e.g. `"1.1"` for Katha vallis).
+struct UpanishadEntry: Decodable {
     let id: String
     let source: String
     let sourceShort: String
@@ -62,6 +63,26 @@ struct UpanishadEntry: Codable {
         case sourceShort = "source_short"
         case wordMeanings
     }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        source = try c.decode(String.self, forKey: .source)
+        sourceShort = try c.decode(String.self, forKey: .sourceShort)
+        category = try c.decode(String.self, forKey: .category)
+        if let n = try? c.decode(Int.self, forKey: .chapter) {
+            chapter = String(n)
+        } else {
+            chapter = try c.decode(String.self, forKey: .chapter)
+        }
+        verse = try c.decode(String.self, forKey: .verse)
+        sanskrit = try c.decode(String.self, forKey: .sanskrit)
+        transliteration = try c.decode(String.self, forKey: .transliteration)
+        english = try c.decode(String.self, forKey: .english)
+        hindi = try c.decode(String.self, forKey: .hindi)
+        speaker = try c.decode(String.self, forKey: .speaker)
+        wordMeanings = try c.decode(String.self, forKey: .wordMeanings)
+    }
 }
 
 // MARK: - Rig Veda JSON entry (from rigveda.json)
@@ -70,7 +91,7 @@ struct RigVedaEntry: Codable {
     let source: String
     let sourceShort: String
     let category: String
-    let chapter: String
+    let chapter: Int
     let verse: String
     let sanskrit: String
     let transliteration: String

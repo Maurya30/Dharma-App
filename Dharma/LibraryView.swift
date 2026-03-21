@@ -8,6 +8,8 @@ struct LibraryView: View {
     @State private var showFavouritesPage = false
     @State private var selectedChapter: Int? = nil
     @State private var selectedSpeaker: String? = nil
+    @State private var selectedUpanishadSource: String? = nil
+    @State private var selectedRigVedaBook: Int? = nil
 
     var filteredItems: [ScriptureItem] {
         var items = store.items
@@ -20,6 +22,12 @@ struct LibraryView: View {
         if let speaker = selectedSpeaker {
             items = items.filter { $0.title.hasPrefix(speaker) }
         }
+        if let source = selectedUpanishadSource {
+            items = items.filter { $0.category == .upanishads && $0.source == source }
+        }
+        if let book = selectedRigVedaBook {
+            items = items.filter { $0.category == .rigVeda && $0.title.hasPrefix("Book \(book) ·") }
+        }
         if !searchText.isEmpty {
             items = items.filter {
                 $0.title.localizedCaseInsensitiveContains(searchText) ||
@@ -31,7 +39,7 @@ struct LibraryView: View {
     }
 
     var hasActiveFilters: Bool {
-        selectedChapter != nil || selectedSpeaker != nil
+        selectedChapter != nil || selectedSpeaker != nil || selectedUpanishadSource != nil || selectedRigVedaBook != nil
     }
 
     var body: some View {
@@ -129,7 +137,11 @@ struct LibraryView: View {
                 FilterSheetView(
                     selectedCategory: selectedCategory,
                     selectedChapter: $selectedChapter,
-                    selectedSpeaker: $selectedSpeaker
+                    selectedSpeaker: $selectedSpeaker,
+                    selectedUpanishadSource: $selectedUpanishadSource,
+                    selectedRigVedaBook: $selectedRigVedaBook,
+                    upanishadSources: store.upanishadSources.map(\.name),
+                    rigVedaBooks: store.rigVedaBooks.map(\.book)
                 )
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
@@ -137,6 +149,26 @@ struct LibraryView: View {
             .sheet(isPresented: $showFavouritesPage) {
                 FavouritesView()
                     .environmentObject(store)
+            }
+            .onChange(of: selectedCategory) { _, newValue in
+                switch newValue {
+                case .gita:
+                    selectedUpanishadSource = nil
+                    selectedRigVedaBook = nil
+                case .upanishads:
+                    selectedChapter = nil
+                    selectedSpeaker = nil
+                    selectedRigVedaBook = nil
+                case .rigVeda:
+                    selectedChapter = nil
+                    selectedSpeaker = nil
+                    selectedUpanishadSource = nil
+                default:
+                    selectedChapter = nil
+                    selectedSpeaker = nil
+                    selectedUpanishadSource = nil
+                    selectedRigVedaBook = nil
+                }
             }
         }
     }
@@ -184,6 +216,10 @@ struct FilterSheetView: View {
     let selectedCategory: ScriptureCategory?
     @Binding var selectedChapter: Int?
     @Binding var selectedSpeaker: String?
+    @Binding var selectedUpanishadSource: String?
+    @Binding var selectedRigVedaBook: Int?
+    let upanishadSources: [String]
+    let rigVedaBooks: [Int]
     @Environment(\.dismiss) var dismiss
 
     let speakers = ["Krishna", "Arjuna", "Sanjaya", "Dhritarashtra"]
@@ -194,60 +230,120 @@ struct FilterSheetView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DharmaSpacing.lg) {
 
-                    // Speaker filter
-                    VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
-                        Text("Speaker")
-                            .font(DharmaFont.heading())
-                            .foregroundColor(.dharmaTextPrimary)
+                    if selectedCategory == .gita || selectedCategory == nil {
+                        // Speaker filter
+                        VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+                            Text("Speaker")
+                                .font(DharmaFont.heading())
+                                .foregroundColor(.dharmaTextPrimary)
 
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                ForEach(speakers, id: \.self) { speaker in
-                                    CategoryPill(
-                                        label: speaker,
-                                        icon: speakerIcon(speaker),
-                                        color: speakerColor(speaker),
-                                        isSelected: selectedSpeaker == speaker
-                                    ) {
-                                        selectedSpeaker = selectedSpeaker == speaker ? nil : speaker
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(speakers, id: \.self) { speaker in
+                                        CategoryPill(
+                                            label: speaker,
+                                            icon: speakerIcon(speaker),
+                                            color: speakerColor(speaker),
+                                            isSelected: selectedSpeaker == speaker
+                                        ) {
+                                            selectedSpeaker = selectedSpeaker == speaker ? nil : speaker
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Chapter filter
+                        VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+                            Text("Chapter")
+                                .font(DharmaFont.heading())
+                                .foregroundColor(.dharmaTextPrimary)
+
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 8) {
+                                ForEach(chapters, id: \.self) { chapter in
+                                    Button {
+                                        selectedChapter = selectedChapter == chapter ? nil : chapter
+                                    } label: {
+                                        Text("\(chapter)")
+                                            .font(DharmaFont.caption(13))
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 8)
+                                            .background(selectedChapter == chapter ? Color.dharmaGold.opacity(0.18) : Color.dharmaSurface)
+                                            .foregroundColor(selectedChapter == chapter ? .dharmaGold : .dharmaTextSecondary)
+                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .strokeBorder(selectedChapter == chapter ? Color.dharmaGold.opacity(0.5) : Color.clear, lineWidth: 1)
+                                            )
                                     }
                                 }
                             }
                         }
                     }
 
-                    // Chapter filter (only for Gita)
-                    VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
-                        Text("Chapter")
-                            .font(DharmaFont.heading())
-                            .foregroundColor(.dharmaTextPrimary)
+                    if selectedCategory == .upanishads || selectedCategory == nil {
+                        VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+                            Text("Upanishad")
+                                .font(DharmaFont.heading())
+                                .foregroundColor(.dharmaTextPrimary)
 
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 8) {
-                            ForEach(chapters, id: \.self) { chapter in
-                                Button {
-                                    selectedChapter = selectedChapter == chapter ? nil : chapter
-                                } label: {
-                                    Text("\(chapter)")
-                                        .font(DharmaFont.caption(13))
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 8)
-                                        .background(selectedChapter == chapter ? Color.dharmaGold.opacity(0.18) : Color.dharmaSurface)
-                                        .foregroundColor(selectedChapter == chapter ? .dharmaGold : .dharmaTextSecondary)
-                                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .strokeBorder(selectedChapter == chapter ? Color.dharmaGold.opacity(0.5) : Color.clear, lineWidth: 1)
-                                        )
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                                ForEach(upanishadSources, id: \.self) { source in
+                                    Button {
+                                        selectedUpanishadSource = selectedUpanishadSource == source ? nil : source
+                                    } label: {
+                                        Text(source.replacingOccurrences(of: " Upanishad", with: ""))
+                                            .font(DharmaFont.caption(12))
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 8)
+                                            .background(selectedUpanishadSource == source ? Color.categoryUpanishads.opacity(0.18) : Color.dharmaSurface)
+                                            .foregroundColor(selectedUpanishadSource == source ? .categoryUpanishads : .dharmaTextSecondary)
+                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .strokeBorder(selectedUpanishadSource == source ? Color.categoryUpanishads.opacity(0.5) : Color.clear, lineWidth: 1)
+                                            )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if selectedCategory == .rigVeda || selectedCategory == nil {
+                        VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+                            Text("Mandala")
+                                .font(DharmaFont.heading())
+                                .foregroundColor(.dharmaTextPrimary)
+
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 8) {
+                                ForEach(rigVedaBooks, id: \.self) { book in
+                                    Button {
+                                        selectedRigVedaBook = selectedRigVedaBook == book ? nil : book
+                                    } label: {
+                                        Text("\(book)")
+                                            .font(DharmaFont.caption(13))
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 8)
+                                            .background(selectedRigVedaBook == book ? Color.categoryRigVeda.opacity(0.18) : Color.dharmaSurface)
+                                            .foregroundColor(selectedRigVedaBook == book ? .categoryRigVeda : .dharmaTextSecondary)
+                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .strokeBorder(selectedRigVedaBook == book ? Color.categoryRigVeda.opacity(0.5) : Color.clear, lineWidth: 1)
+                                            )
+                                    }
                                 }
                             }
                         }
                     }
 
                     // Clear filters button
-                    if selectedChapter != nil || selectedSpeaker != nil {
+                    if selectedChapter != nil || selectedSpeaker != nil || selectedUpanishadSource != nil || selectedRigVedaBook != nil {
                         Button {
                             selectedChapter = nil
                             selectedSpeaker = nil
+                            selectedUpanishadSource = nil
+                            selectedRigVedaBook = nil
                         } label: {
                             Text("Clear All Filters")
                                 .font(DharmaFont.body())
