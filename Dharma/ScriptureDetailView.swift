@@ -7,6 +7,7 @@ struct ScriptureDetailView: View {
     @StateObject private var audioManager = VerseAudioManager.shared
     @State private var showShareSheet = false
     @State private var shareItems: [Any] = []
+    @State private var showKrishna = false
     @Environment(\.colorScheme) private var colorScheme
 
     private var verseChapter: Int? {
@@ -192,6 +193,37 @@ struct ScriptureDetailView: View {
                 if item.audioFileName != nil {
                     AudioPlayerView(fileName: item.audioFileName!)
                         .padding(.top, 16)
+                }
+
+                // Speak with Krishna
+                Button {
+                    showKrishna = true
+                } label: {
+                    HStack(spacing: DharmaSpacing.sm) {
+                        Image(systemName: "seal.fill")
+                            .font(.system(size: 15))
+                            .foregroundColor(.dharmaGold)
+                        Text("Speak with Krishna about this verse")
+                            .font(DharmaFont.georgia(16))
+                            .foregroundColor(.dharmaGold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, DharmaSpacing.md)
+                    .background(Color.dharmaGold.opacity(0.07))
+                    .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
+                            .strokeBorder(Color.dharmaGold.opacity(0.45), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+                .padding(.top, DharmaSpacing.lg)
+                .sheet(isPresented: $showKrishna) {
+                    KrishnaView(verse: KrishnaVerse(
+                        id: item.id.uuidString,
+                        source: item.source,
+                        english: item.textEnglish
+                    ))
                 }
 
                 // Bottom breathing room — nav is pinned via safeAreaInset

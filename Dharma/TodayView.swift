@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TodayView: View {
     @EnvironmentObject var store: ScriptureStore
+    @State private var showKrishna = false
 
     private var dailyVerse: ScriptureItem? {
         let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 1
@@ -68,6 +69,18 @@ struct TodayView: View {
                     if let verse = dailyVerse {
                         DailyVerseCard(item: verse)
                             .padding(.horizontal, DharmaSpacing.md)
+                    }
+
+                    // Krishna Card
+                    Button {
+                        showKrishna = true
+                    } label: {
+                        KrishnaTodayCard()
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, DharmaSpacing.md)
+                    .sheet(isPresented: $showKrishna) {
+                        KrishnaView(verse: nil)
                     }
 
                     // Your Journey
@@ -442,6 +455,41 @@ struct CategoryDetailView: View {
         .background(Color.dharmaBackground)
         .navigationTitle(category.rawValue)
         .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+// MARK: - Krishna Today Card
+
+struct KrishnaTodayCard: View {
+    var body: some View {
+        HStack(spacing: DharmaSpacing.md) {
+            Image(systemName: "seal.fill")
+                .font(.system(size: 26))
+                .foregroundColor(.dharmaGold)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Krishna is here.")
+                    .font(DharmaFont.georgia(16))
+                    .foregroundColor(.dharmaTextPrimary)
+                    .fontWeight(.medium)
+                Text("Ask anything.")
+                    .font(DharmaFont.georgia(14))
+                    .foregroundColor(.dharmaTextSecondary)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.dharmaGold.opacity(0.6))
+        }
+        .padding(DharmaSpacing.md)
+        .background(Color.dharmaGold.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
+                .strokeBorder(Color.dharmaGold.opacity(0.45), lineWidth: 1)
+        )
     }
 }
 
