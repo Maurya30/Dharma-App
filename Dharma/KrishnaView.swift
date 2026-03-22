@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct KrishnaView: View {
     let verse: KrishnaVerse?
@@ -76,18 +77,19 @@ struct KrishnaView: View {
                         .padding(.bottom, DharmaSpacing.sm)
                     }
                     .scrollContentBackground(.hidden)
+                    .scrollDismissesKeyboard(.interactively)
                     .onAppear { scrollProxy = proxy }
-                    .onChange(of: service.streamingResponse) { _ in
+                    .onChange(of: service.streamingResponse) {
                         withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
                     }
-                    .onChange(of: service.conversationHistory.count) { _ in
+                    .onChange(of: service.conversationHistory.count) {
                         withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
                     }
                 }
-
-                // Input bar
-                inputBar
             }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            inputBar
         }
         .navigationBarHidden(true)
     }
@@ -270,6 +272,13 @@ private struct KrishnaBubble: View {
                 RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
                     .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
             )
+            .contextMenu {
+                Button {
+                    UIPasteboard.general.string = text
+                } label: {
+                    Label("Copy", systemImage: "doc.on.doc")
+                }
+            }
 
             Spacer(minLength: 40)
         }
