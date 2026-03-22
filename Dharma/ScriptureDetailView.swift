@@ -8,6 +8,8 @@ struct ScriptureDetailView: View {
     @State private var showShareSheet = false
     @State private var shareItems: [Any] = []
     @State private var showKrishna = false
+    @State private var relatedVerses: [RelatedVerse] = []
+    @State private var loadingRelated = false
     @Environment(\.colorScheme) private var colorScheme
 
     private var verseChapter: Int? {
@@ -56,6 +58,33 @@ struct ScriptureDetailView: View {
     /// Large background ॐ — does not affect layout (ZStack layer behind scroll).
     private var omOpacityWatermark: Double {
         colorScheme == .dark ? 0.12 : 0.08
+    }
+
+    /// Map ScriptureItem to the backend Supabase ID used by /related.
+    private var backendVerseId: String? {
+        switch item.category {
+        case .gita:
+            let ref = item.source.replacingOccurrences(of: "Bhagavad Gita ", with: "")
+            return ref.isEmpty ? nil : "bg-\(ref)"
+        case .upanishads:
+            let slug = item.title
+                .lowercased()
+                .replacingOccurrences(of: " upanishad", with: "")
+                .trimmingCharacters(in: .whitespaces)
+            let ch = item.subtitle
+                .replacingOccurrences(of: "Ch. ", with: "")
+                .components(separatedBy: " · Verse ")
+            guard ch.count == 2 else { return nil }
+            return "\(slug)-\(ch[0])-\(ch[1])"
+        case .rigVeda:
+            let parts = item.subtitle
+                .replacingOccurrences(of: "Rig Veda ", with: "")
+                .split(separator: ".")
+            guard parts.count >= 3 else { return nil }
+            return "rv-\(parts.joined(separator: "-"))"
+        default:
+            return nil
+        }
     }
 
     private var hasOriginalText: Bool {
@@ -226,6 +255,16 @@ struct ScriptureDetailView: View {
                     ))
                 }
 
+                // Related Verses
+                if backendVerseId != nil {
+                    RelatedVersesSection(
+                        relatedVerses: relatedVerses,
+                        isLoading: loadingRelated,
+                        store: store
+                    )
+                    .padding(.top, DharmaSpacing.lg)
+                }
+
                 // Bottom breathing room — nav is pinned via safeAreaInset
                 Color.clear.frame(height: 12)
                 }
@@ -236,6 +275,12 @@ struct ScriptureDetailView: View {
             .scrollContentBackground(.hidden)
         }
         .background(Color.dharmaBackground)
+        .task {
+            guard let vid = backendVerseId else { return }
+            loadingRelated = true
+            relatedVerses = await RelatedVersesService.shared.fetchRelated(verseId: vid)
+            loadingRelated = false
+        }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if previousItem != nil || nextItem != nil {
                 VStack(spacing: 0) {
@@ -510,6 +555,102 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+// MARK: - Related Verses Section
+
+private struct RelatedVersesSection: View {
+    let relatedVerses: [RelatedVerse]
+    let isLoading: Bool
+    let store: ScriptureStore
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DharmaSpacing.md) {
+            // Decorative divider
+            HStack(spacing: DharmaSpacing.sm) {
+                VStack { Divider().background(Color.dharmaGold.opacity(0.3)) }
+                Image(systemName: "leaf.fill")
+                    .font(.system(size: 11))
+                    .foregroundColor(.dharmaGold.opacity(0.45))
+                    .rotationEffect(.degrees(-30))
+                VStack { Divider().background(Color.dharmaGold.opacity(0.3)) }
+            }
+
+            Text("Related across all texts")
+                .font(DharmaFont.caption(11))
+                .foregroundColor(.dharmaGold)
+                .textCase(.uppercase)
+                .kerning(0.8)
+
+            if isLoading {
+                HStack(spacing: 6) {
+                    ForEach(0..<3, id: \.self) { _ in
+                        Circle()
+                            .fill(Color.dharmaGold.opacity(0.4))
+                            .frame(width: 6, height: 6)
+                    }
+                }
+                .padding(.top, DharmaSpacing.sm)
+            } else if !relatedVerses.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(relatedVerses) { rv in
+                            relatedCard(rv)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func relatedCard(_ rv: RelatedVerse) -> some View {
+        let matched = store.items.first {
+            $0.textEnglish.hasPrefix(String(rv.english.prefix(40)))
+        }
+
+        Group {
+            if let item = matched {
+                NavigationLink(destination: ScriptureDetailView(item: item, store: store)) {
+                    cardContent(rv)
+                }
+                .buttonStyle(.plain)
+            } else {
+                cardContent(rv)
+            }
+        }
+    }
+
+    private func cardContent(_ rv: RelatedVerse) -> some View {
+        VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+            Text(rv.categoryBadge)
+                .font(DharmaFont.caption(10))
+                .foregroundColor(.dharmaGold)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(Color.dharmaGold.opacity(0.12))
+                .clipShape(Capsule())
+
+            Text(rv.truncatedEnglish)
+                .font(DharmaFont.georgia(13))
+                .foregroundColor(.dharmaTextBody)
+                .lineSpacing(5)
+                .lineLimit(4)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(rv.id)
+                .font(DharmaFont.caption(10))
+                .foregroundColor(.dharmaTextMuted)
+        }
+        .padding(DharmaSpacing.md)
+        .frame(width: 200, alignment: .topLeading)
+        .background(Color.dharmaSurface)
+        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
+                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
+        )
+    }
 }
 
 #Preview {

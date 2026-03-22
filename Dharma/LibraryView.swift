@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LibraryView: View {
     @EnvironmentObject var store: ScriptureStore
+    @StateObject private var searchService = SearchService()
     @State private var searchText = ""
     @State private var selectedCategory: ScriptureCategory? = nil
     @State private var showFilterSheet = false
@@ -11,6 +12,22 @@ struct LibraryView: View {
     @State private var selectedUpanishadSource: String? = nil
     @State private var selectedRigVedaBook: Int? = nil
 
+    private var isSemanticQuery: Bool {
+        searchText.split(separator: " ").count >= 3
+    }
+
+    private var useSemanticResults: Bool {
+        isSemanticQuery && !searchService.results.isEmpty
+    }
+
+    /// Map a semantic SearchResult to the best local ScriptureItem match.
+    private func matchedItem(for result: SearchResult) -> ScriptureItem? {
+        store.items.first {
+            $0.textEnglish.hasPrefix(String(result.english.prefix(40)))
+        }
+    }
+
+    /// Local keyword-filtered items (original behaviour).
     var filteredItems: [ScriptureItem] {
         var items = store.items
         if let cat = selectedCategory {
@@ -83,7 +100,41 @@ struct LibraryView: View {
                         }
                     }
 
-                    if filteredItems.isEmpty {
+                    // Semantic search indicator
+                    if isSemanticQuery && !searchText.isEmpty {
+                        HStack(spacing: 6) {
+                            if searchService.isSearching {
+                                ProgressView()
+                                    .tint(.dharmaGold)
+                                    .scaleEffect(0.7)
+                            }
+                            Text("Semantic search")
+                                .font(DharmaFont.caption(11))
+                                .foregroundColor(.dharmaGold)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(Color.dharmaGold.opacity(0.12))
+                                .clipShape(Capsule())
+                        }
+                        .padding(.horizontal, DharmaSpacing.md)
+                        .padding(.bottom, DharmaSpacing.sm)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    if useSemanticResults {
+                        LazyVStack(spacing: 12) {
+                            ForEach(searchService.results) { result in
+                                if let item = matchedItem(for: result) {
+                                    NavigationLink(destination: ScriptureDetailView(item: item, store: store)) {
+                                        SemanticResultCard(item: item, similarity: result.similarity)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, DharmaSpacing.md)
+                        .padding(.bottom, DharmaSpacing.xl)
+                    } else if filteredItems.isEmpty {
                         EmptyStateView(searchText: searchText)
                             .padding(.top, 60)
                     } else {
@@ -149,6 +200,13 @@ struct LibraryView: View {
             .sheet(isPresented: $showFavouritesPage) {
                 FavouritesView()
                     .environmentObject(store)
+            }
+            .onChange(of: searchText) {
+                if isSemanticQuery {
+                    searchService.search(query: searchText)
+                } else {
+                    searchService.cancel()
+                }
             }
             .onChange(of: selectedCategory) { _, newValue in
                 switch newValue {
@@ -500,6 +558,63 @@ struct CategoryPill: View {
                     )
             )
         }
+    }
+}
+
+// MARK: - Semantic Result Card
+
+struct SemanticResultCard: View {
+    let item: ScriptureItem
+    let similarity: Double?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 8) {
+                Label(item.category.rawValue, systemImage: item.category.icon)
+                    .font(DharmaFont.caption(11))
+                    .foregroundColor(item.category.color)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(item.category.color.opacity(0.12))
+                    .clipShape(Capsule())
+
+                Spacer()
+
+                if let sim = similarity {
+                    Circle()
+                        .fill(Color.dharmaGold.opacity(0.2 + sim * 0.8))
+                        .frame(width: 8, height: 8)
+                }
+
+                if item.isFavourite {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 12))
+                        .foregroundColor(.dharmaGold)
+                }
+            }
+
+            Text(item.title)
+                .font(DharmaFont.heading())
+                .foregroundColor(.dharmaTextPrimary)
+                .lineLimit(1)
+
+            Text(item.textEnglish)
+                .font(DharmaFont.body(14))
+                .foregroundColor(.dharmaTextSecondary)
+                .lineLimit(2)
+                .lineSpacing(3)
+
+            Text(item.source)
+                .font(DharmaFont.caption())
+                .foregroundColor(.dharmaTextMuted)
+        }
+        .padding(DharmaSpacing.md)
+        .background(Color.dharmaSurface)
+        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: DharmaRadius.md)
+                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
+        )
     }
 }
 
