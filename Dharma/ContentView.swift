@@ -17,11 +17,17 @@ struct ContentView: View {
                 }
                 .tag(1)
 
+            JourneyView()
+                .tabItem {
+                    Label("Journey", systemImage: "figure.walk")
+                }
+                .tag(2)
+
             CalendarView()
                 .tabItem {
                     Label("Calendar", systemImage: "calendar")
                 }
-                .tag(2)
+                .tag(3)
         }
         .tint(.dharmaGold)
     }

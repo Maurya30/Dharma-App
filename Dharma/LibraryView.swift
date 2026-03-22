@@ -622,6 +622,10 @@ struct SemanticResultCard: View {
 struct ScriptureCardView: View {
     let item: ScriptureItem
 
+    private var matchingGoals: [String] {
+        GoalTagsLoader.shared.matchingUserGoals(for: item, userGoals: GoalsManager.shared.selectedGoals)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 8) {
@@ -658,6 +662,20 @@ struct ScriptureCardView: View {
                 .foregroundColor(.dharmaTextSecondary)
                 .lineLimit(2)
                 .lineSpacing(3)
+
+            if !matchingGoals.isEmpty {
+                HStack(spacing: 6) {
+                    ForEach(matchingGoals, id: \.self) { goal in
+                        Text(GoalsManager.shortName(for: goal))
+                            .font(DharmaFont.caption(10))
+                            .foregroundColor(.dharmaGold)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color.dharmaGold.opacity(0.15))
+                            .clipShape(Capsule())
+                    }
+                }
+            }
 
             Text(item.source)
                 .font(DharmaFont.caption())

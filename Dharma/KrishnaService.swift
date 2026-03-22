@@ -54,13 +54,18 @@ final class KrishnaService: ObservableObject {
     @Published var isStreaming: Bool = false
     @Published var conversationHistory: [KrishnaMessage] = []
 
-    private let endpoint = URL(string: "https://dharma-backend.vercel.app/chat")!
+    private let endpoint = BackendConfig.baseURL.appendingPathComponent("chat")
 
-    private let hardcodedGoals = [
+    private static let fallbackGoals = [
         "Develop non-attachment",
         "Build a daily meditation practice",
         "Become less reactive"
     ]
+
+    private var goals: [String] {
+        let user = GoalsManager.shared.selectedGoals
+        return user.isEmpty ? Self.fallbackGoals : user
+    }
 
     private var activeTask: URLSessionDataTask?
 
@@ -75,7 +80,7 @@ final class KrishnaService: ObservableObject {
         let request = KrishnaRequest(
             message: text,
             currentVerse: verse,
-            goals: hardcodedGoals,
+            goals: goals,
             reflection: nil,
             conversationHistory: Array(historyForAPI)
         )

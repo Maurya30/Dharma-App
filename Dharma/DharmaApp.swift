@@ -4,6 +4,8 @@ import SwiftUI
 struct DharmaApp: App {
     @StateObject private var store = ScriptureStore()
     @StateObject private var onboarding = OnboardingManager()
+    @StateObject private var goalsManager = GoalsManager.shared
+    @StateObject private var journalStore = JournalStore.shared
 
     init() {
         let navAppearance = UINavigationBarAppearance()
@@ -35,6 +37,15 @@ struct DharmaApp: App {
             if onboarding.hasCompletedOnboarding {
                 ContentView()
                     .environmentObject(store)
+                    .environmentObject(goalsManager)
+                    .environmentObject(journalStore)
+                    .fullScreenCover(isPresented: .init(
+                        get: { !goalsManager.hasCompletedGoalSelection },
+                        set: { _ in }
+                    )) {
+                        GoalsOnboardingView()
+                            .environmentObject(goalsManager)
+                    }
             } else {
                 OnboardingView(manager: onboarding)
             }

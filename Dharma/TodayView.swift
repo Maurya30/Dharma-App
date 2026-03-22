@@ -6,9 +6,30 @@ struct TodayView: View {
 
     private var dailyVerse: ScriptureItem? {
         let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 1
-        let verses = store.items(for: .gita)
-        guard !verses.isEmpty else { return nil }
-        return verses[dayOfYear % verses.count]
+        let userGoals = GoalsManager.shared.selectedGoals
+        let allVerses = store.items
+
+        if !userGoals.isEmpty {
+            let matchedIds = GoalTagsLoader.shared.verseIds(matching: userGoals)
+            let goalVerses = allVerses.filter { item in
+                guard let bid = GoalTagsLoader.backendId(for: item) else { return false }
+                return matchedIds.contains(bid)
+            }
+            if !goalVerses.isEmpty {
+                return goalVerses[dayOfYear % goalVerses.count]
+            }
+        }
+
+        let gitaVerses = store.items(for: .gita)
+        guard !gitaVerses.isEmpty else { return nil }
+        return gitaVerses[dayOfYear % gitaVerses.count]
+    }
+
+    /// The first goal that matches the daily verse, for display.
+    private var dailyVerseGoal: String? {
+        guard let verse = dailyVerse else { return nil }
+        let matches = GoalTagsLoader.shared.matchingUserGoals(for: verse, userGoals: GoalsManager.shared.selectedGoals)
+        return matches.first
     }
 
     private var nextFestival: HinduFestival? {
@@ -67,7 +88,7 @@ struct TodayView: View {
 
                     // Verse of the Day
                     if let verse = dailyVerse {
-                        DailyVerseCard(item: verse)
+                        DailyVerseCard(item: verse, goalName: dailyVerseGoal)
                             .padding(.horizontal, DharmaSpacing.md)
                     }
 
@@ -122,6 +143,7 @@ struct TodayView: View {
 // MARK: - Daily Verse Card
 struct DailyVerseCard: View {
     let item: ScriptureItem
+    var goalName: String? = nil
     @EnvironmentObject var store: ScriptureStore
 
     private var liveItem: ScriptureItem {
@@ -166,6 +188,13 @@ struct DailyVerseCard: View {
                             .font(.system(size: 14))
                             .foregroundColor(liveItem.isFavourite ? .dharmaGold : .dharmaTextMuted)
                     }
+                }
+
+                if let goal = goalName {
+                    Text("For your goal: \(GoalsManager.shortName(for: goal))")
+                        .font(DharmaFont.caption(12))
+                        .italic()
+                        .foregroundColor(.dharmaGold)
                 }
             }
             .padding(DharmaSpacing.md)

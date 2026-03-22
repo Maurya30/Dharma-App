@@ -8,8 +8,10 @@ struct ScriptureDetailView: View {
     @State private var showShareSheet = false
     @State private var shareItems: [Any] = []
     @State private var showKrishna = false
+    @State private var showingJournal = false
     @State private var relatedVerses: [RelatedVerse] = []
     @State private var loadingRelated = false
+    @ObservedObject private var journalStore = JournalStore.shared
     @Environment(\.colorScheme) private var colorScheme
 
     private var verseChapter: Int? {
@@ -122,11 +124,19 @@ struct ScriptureDetailView: View {
                     .foregroundColor(.dharmaTextPrimary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                // Subtitle
-                Text(item.subtitle)
-                    .font(DharmaFont.body(16))
-                    .foregroundColor(.dharmaTextSecondary)
-                    .padding(.top, 6)
+                // Subtitle + quill if reflected
+                HStack(spacing: 6) {
+                    Text(item.subtitle)
+                        .font(DharmaFont.body(16))
+                        .foregroundColor(.dharmaTextSecondary)
+
+                    if journalStore.entry(for: item.id.uuidString) != nil {
+                        Image(systemName: "square.and.pencil")
+                            .font(.system(size: 12))
+                            .foregroundColor(.dharmaGold)
+                    }
+                }
+                .padding(.top, 6)
 
                 // Speaker context badge
                 if let context = speakerContext {
@@ -218,10 +228,44 @@ struct ScriptureDetailView: View {
                     .foregroundColor(.dharmaGold)
                     .padding(.top, 12)
 
+                // Goal connection card
+                GoalConnectionCard(item: item)
+
                 // Local audio player (Mantras/Bhajans)
                 if item.audioFileName != nil {
                     AudioPlayerView(fileName: item.audioFileName!)
                         .padding(.top, 16)
+                }
+
+                // Reflect on this verse
+                Button {
+                    showingJournal = true
+                } label: {
+                    HStack(spacing: DharmaSpacing.sm) {
+                        Image(systemName: "square.and.pencil")
+                            .font(.system(size: 15))
+                            .foregroundColor(.dharmaGold)
+                        Text("Reflect on this verse")
+                            .font(DharmaFont.georgia(16))
+                            .foregroundColor(.dharmaGold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, DharmaSpacing.md)
+                    .background(Color.dharmaSurface)
+                    .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
+                            .strokeBorder(Color.dharmaGold.opacity(0.45), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+                .padding(.top, DharmaSpacing.md)
+                .sheet(isPresented: $showingJournal) {
+                    JournalSheetView(item: item) {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            showKrishna = true
+                        }
+                    }
                 }
 
                 // Speak with Krishna
@@ -246,7 +290,7 @@ struct ScriptureDetailView: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .padding(.top, DharmaSpacing.lg)
+                .padding(.top, DharmaSpacing.sm)
                 .sheet(isPresented: $showKrishna) {
                     KrishnaView(verse: KrishnaVerse(
                         id: item.id.uuidString,
@@ -555,6 +599,56 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+// MARK: - Goal Connection Card
+
+private struct GoalConnectionCard: View {
+    let item: ScriptureItem
+
+    private var matchingGoals: [String] {
+        GoalTagsLoader.shared.matchingUserGoals(for: item, userGoals: GoalsManager.shared.selectedGoals)
+    }
+
+    var body: some View {
+        if let firstGoal = matchingGoals.first {
+            HStack(alignment: .top, spacing: 0) {
+                Rectangle()
+                    .fill(Color.dharmaGold)
+                    .frame(width: 2)
+                    .clipShape(Capsule())
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Connects to your goal")
+                        .font(DharmaFont.caption(11))
+                        .foregroundColor(.dharmaGold)
+                        .textCase(.uppercase)
+                        .kerning(0.5)
+
+                    Text(GoalsManager.shortName(for: firstGoal))
+                        .font(DharmaFont.georgia(15))
+                        .foregroundColor(.dharmaTextBody)
+
+                    if let explanation = GoalsManager.explanations[firstGoal] {
+                        Text(explanation)
+                            .font(DharmaFont.body(13))
+                            .foregroundColor(.dharmaTextSecondary)
+                            .lineSpacing(4)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding(.leading, DharmaSpacing.md)
+            }
+            .padding(DharmaSpacing.md)
+            .background(Color.dharmaSurface)
+            .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
+                    .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
+            )
+            .padding(.top, DharmaSpacing.md)
+        }
+    }
 }
 
 // MARK: - Related Verses Section
