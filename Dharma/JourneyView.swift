@@ -36,6 +36,11 @@ struct JourneyView: View {
                     Spacer(minLength: DharmaSpacing.xxl)
                 }
             }
+            .refreshable {
+                await store.refreshLibraryContent()
+                await loadExploreFurther()
+                DharmaHaptics.light()
+            }
             .background(Color.dharmaBackground)
             .navigationTitle("My Journey")
             .navigationBarTitleDisplayMode(.large)
@@ -69,16 +74,14 @@ struct JourneyView: View {
 
     private var goalsEmptyState: some View {
         VStack(spacing: DharmaSpacing.md) {
-            Image(systemName: "target")
-                .font(.system(size: 28))
-                .foregroundColor(.dharmaTextMuted)
-
-            Text("Set your goals to personalize\nyour journey")
-                .font(DharmaFont.body(14))
-                .foregroundColor(.dharmaTextSecondary)
-                .multilineTextAlignment(.center)
-
+            WarmEmptyState(
+                icon: "hands.sparkles",
+                title: "Shape your path",
+                message: "Choose a few intentions that echo what you’re seeking right now — we’ll highlight verses and moments that resonate.",
+                hint: "You can change these anytime from onboarding."
+            )
             Button {
+                DharmaHaptics.medium()
                 goalsManager.resetGoals()
             } label: {
                 Text("Choose goals")
@@ -91,7 +94,7 @@ struct JourneyView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(DharmaSpacing.lg)
+        .padding(DharmaSpacing.md)
         .background(Color.dharmaSurface)
         .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
         .overlay(
@@ -180,21 +183,14 @@ struct JourneyView: View {
     }
 
     private var reflectionsEmptyState: some View {
-        VStack(spacing: DharmaSpacing.md) {
-            Image(systemName: "flame.fill")
-                .font(.system(size: 32))
-                .foregroundColor(.dharmaGold.opacity(0.5))
-
-            Text("Your reflections will appear here")
-                .font(DharmaFont.body(14))
-                .foregroundColor(.dharmaTextSecondary)
-
-            Text("Open any verse and tap 'Reflect' to begin")
-                .font(DharmaFont.caption(12))
-                .foregroundColor(.dharmaTextMuted)
-        }
+        WarmEmptyState(
+            icon: "flame",
+            title: "A gentle beginning",
+            message: "When a verse stays with you, pause and reflect — your words become part of your journey here.",
+            hint: "Open any verse and tap Reflect on this verse."
+        )
         .frame(maxWidth: .infinity)
-        .padding(DharmaSpacing.lg)
+        .padding(DharmaSpacing.md)
         .background(Color.dharmaSurface)
         .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
         .overlay(

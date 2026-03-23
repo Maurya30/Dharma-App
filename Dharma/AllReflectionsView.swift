@@ -7,20 +7,14 @@ struct AllReflectionsView: View {
     var body: some View {
         ScrollView {
             if journalStore.entries.isEmpty {
-                VStack(spacing: DharmaSpacing.md) {
-                    Image(systemName: "flame.fill")
-                        .font(.system(size: 40))
-                        .foregroundColor(.dharmaTextMuted)
-                        .padding(.top, 80)
-                    Text("No reflections yet")
-                        .font(DharmaFont.heading())
-                        .foregroundColor(.dharmaTextSecondary)
-                    Text("Open any verse and tap 'Reflect' to begin")
-                        .font(DharmaFont.body())
-                        .foregroundColor(.dharmaTextMuted)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(DharmaSpacing.xl)
+                WarmEmptyState(
+                    icon: "square.and.pencil",
+                    title: "Your reflections live here",
+                    message: "Each note you write is a thread in your practice — nothing is lost; it all gathers in one place.",
+                    hint: "From any verse, tap Reflect on this verse to begin."
+                )
+                .padding(.top, 56)
+                .padding(.horizontal, DharmaSpacing.md)
             } else {
                 LazyVStack(spacing: 12) {
                     ForEach(journalStore.entries) { entry in
@@ -37,6 +31,10 @@ struct AllReflectionsView: View {
                 .padding(DharmaSpacing.md)
                 .padding(.bottom, DharmaSpacing.xl)
             }
+        }
+        .refreshable {
+            await store.refreshLibraryContent()
+            DharmaHaptics.light()
         }
         .background(Color.dharmaBackground)
         .navigationTitle("All Reflections")

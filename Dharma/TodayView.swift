@@ -33,7 +33,7 @@ struct TodayView: View {
     }
 
     private var nextFestival: HinduFestival? {
-        HinduFestival.sampleData.sorted { $0.date < $1.date }.first { !$0.isPast }
+        allFestivals.sorted { $0.date < $1.date }.first { !$0.isPast }
     }
 
     private var greeting: String {
@@ -90,10 +90,19 @@ struct TodayView: View {
                     if let verse = dailyVerse {
                         DailyVerseCard(item: verse, goalName: dailyVerseGoal)
                             .padding(.horizontal, DharmaSpacing.md)
+                    } else {
+                        WarmEmptyState(
+                            icon: "sun.horizon",
+                            title: "Verses are gathering",
+                            message: "We couldn’t pick a verse of the day yet — pull down to refresh, or open the Library when you’re ready.",
+                            hint: "Sacred texts load from your device; a moment of patience often helps."
+                        )
+                        .padding(.horizontal, DharmaSpacing.md)
                     }
 
                     // Krishna Card
                     Button {
+                        DharmaHaptics.light()
                         showKrishna = true
                     } label: {
                         KrishnaTodayCard()
@@ -102,6 +111,7 @@ struct TodayView: View {
                     .padding(.horizontal, DharmaSpacing.md)
                     .sheet(isPresented: $showKrishna) {
                         KrishnaView(verse: nil)
+                            .environmentObject(store)
                     }
 
                     // Your Journey
@@ -132,6 +142,10 @@ struct TodayView: View {
 
                     Spacer(minLength: DharmaSpacing.xxl)
                 }
+            }
+            .refreshable {
+                await store.refreshLibraryContent()
+                DharmaHaptics.light()
             }
             .background(Color.dharmaBackground)
             .navigationTitle("Today")
@@ -183,6 +197,7 @@ struct DailyVerseCard: View {
 
                     Button {
                         store.toggleFavourite(liveItem)
+                        DharmaHaptics.light()
                     } label: {
                         Image(systemName: liveItem.isFavourite ? "heart.fill" : "heart")
                             .font(.system(size: 14))

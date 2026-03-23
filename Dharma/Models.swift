@@ -150,39 +150,83 @@ struct ScriptureItem: Identifiable, Codable {
 struct HinduFestival: Identifiable, Codable {
     let id: UUID
     let name: String
-    let date: Date
+    let dateString: String
+    let year: Int
+    let type: FestivalType
+    let description: String
     let deity: String
-    let shortDescription: String
-    let fullStory: String
     let significance: String
-    let howToObserve: String
+    let isHighlight: Bool
 
     init(
-        id: UUID = UUID(),
         name: String,
-        date: Date,
+        date: String,
+        year: Int,
+        type: FestivalType,
+        description: String,
         deity: String,
-        shortDescription: String,
-        fullStory: String,
         significance: String,
-        howToObserve: String
+        isHighlight: Bool = false
     ) {
-        self.id = id
+        self.id = UUID()
         self.name = name
-        self.date = date
+        self.dateString = date
+        self.year = year
+        self.type = type
+        self.description = description
         self.deity = deity
-        self.shortDescription = shortDescription
-        self.fullStory = fullStory
         self.significance = significance
-        self.howToObserve = howToObserve
+        self.isHighlight = isHighlight
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
+
+    var date: Date {
+        Self.dateFormatter.date(from: dateString) ?? Date.distantPast
     }
 
     var daysUntil: Int {
-        Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
+        let cal = Calendar.current
+        let startOfToday = cal.startOfDay(for: Date())
+        let startOfFestival = cal.startOfDay(for: date)
+        return cal.dateComponents([.day], from: startOfToday, to: startOfFestival).day ?? 0
     }
 
     var isToday: Bool { daysUntil == 0 }
     var isPast: Bool  { daysUntil < 0  }
+
+    var countdownText: String? {
+        if isPast { return nil }
+        if isToday { return "Today" }
+        if daysUntil == 1 { return "Tomorrow" }
+        if daysUntil <= 7 { return "In \(daysUntil) days" }
+        if daysUntil <= 21 { return "In \(daysUntil / 7) weeks" }
+        if daysUntil <= 60 { return "In \(daysUntil / 30) month\(daysUntil / 30 == 1 ? "" : "s")" }
+        return nil
+    }
+
+    var shortDescription: String {
+        String(description.prefix(80)) + (description.count > 80 ? "…" : "")
+    }
+
+    var fullStory: String { description }
+    var howToObserve: String { significance }
+}
+
+enum FestivalType: String, Codable, CaseIterable {
+    case majorFestival = "Festival"
+    case ekadashi = "Ekadashi"
+    case purnima = "Purnima"
+    case amavasya = "Amavasya"
+    case sankranti = "Sankranti"
+    case vrat = "Vrat"
+    case jayanti = "Jayanti"
+    case specialDay = "Sacred Day"
 }
 
 // MARK: - Gita Chapter Info (from chapters.json)

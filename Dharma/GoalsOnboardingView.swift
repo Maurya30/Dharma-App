@@ -130,9 +130,11 @@ struct GoalsOnboardingView: View {
                 if isSelected {
                     selected.remove(name)
                     showLimitMessage = false
+                    DharmaHaptics.selection()
                 } else if selected.count < 3 {
                     selected.insert(name)
                     showLimitMessage = false
+                    DharmaHaptics.selection()
                 } else {
                     triggerShake()
                 }
@@ -162,6 +164,7 @@ struct GoalsOnboardingView: View {
     }
 
     private func triggerShake() {
+        DharmaHaptics.warning()
         withAnimation(.easeInOut(duration: 0.05)) { showLimitMessage = true }
         withAnimation(.default) { shakeOffset = 8 }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {

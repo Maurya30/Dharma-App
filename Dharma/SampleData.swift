@@ -157,60 +157,7 @@ let bhajans: [ScriptureItem] = [
     ),
 ]
 
-// MARK: - Festival Sample Data
+// MARK: - Festival Sample Data (legacy compatibility)
 extension HinduFestival {
-    static let sampleData: [HinduFestival] = {
-        let cal = Calendar.current
-        let year = cal.component(.year, from: Date())
-        func date(_ month: Int, _ day: Int) -> Date {
-            cal.date(from: DateComponents(year: year, month: month, day: day)) ?? Date()
-        }
-        return [
-            HinduFestival(
-                name: "Holi",
-                date: date(3, 14),
-                deity: "Lord Krishna & Radha",
-                shortDescription: "Festival of colours and spring",
-                fullStory: "Holi commemorates the victory of good over evil through the story of Prahlad and Holika. Holika, the demoness sister of King Hiranyakashipu, tried to burn the devoted child Prahlad. But through divine grace, Prahlad emerged unscathed while Holika perished. The bonfire lit on Holi eve — Holika Dahan — symbolises this victory. The next day, people celebrate with coloured powders and water, embodying the joy of spring and divine love.",
-                significance: "Victory of good over evil. Arrival of spring. Celebration of divine love between Radha and Krishna.",
-                howToObserve: "Light a bonfire on the eve of Holi. On Holi day, play with natural colours. Visit friends and family. Offer sweets. Chant the names of Lord Krishna."
-            ),
-            HinduFestival(
-                name: "Ram Navami",
-                date: date(4, 6),
-                deity: "Lord Rama",
-                shortDescription: "Birth of Lord Rama, seventh avatar of Vishnu",
-                fullStory: "Ram Navami celebrates the birth of Lord Rama, the seventh incarnation of Lord Vishnu, born to King Dasharatha and Queen Kaushalya of Ayodhya. Born at noon on the ninth day of the bright fortnight of Chaitra, Rama is the ideal human being — the embodiment of dharma, truth, and virtue. His life story, told in the Ramayana by Sage Valmiki, is the eternal story of righteousness prevailing over adharma.",
-                significance: "Celebration of dharma, righteousness, and the ideal human life. Rama is the model of the perfect son, husband, king, and warrior.",
-                howToObserve: "Read or listen to the Ramayana. Chant Ram Nam. Visit Rama temples. Fast until midday. Perform Rama puja with flowers, tulsi leaves, and fruits."
-            ),
-            HinduFestival(
-                name: "Janmashtami",
-                date: date(8, 26),
-                deity: "Lord Krishna",
-                shortDescription: "Birth of Lord Krishna, eighth avatar of Vishnu",
-                fullStory: "Janmashtami celebrates the birth of Lord Krishna, the eighth avatar of Vishnu, born at midnight in a prison cell in Mathura to Devaki and Vasudeva. His birth during a dark stormy night symbolises the arrival of divine light into the world's darkness. Krishna's life — from his miraculous escape to Gokul, his childhood in Vrindavan, his teachings in the Mahabharata as the Bhagavad Gita — is the complete expression of divine love, wisdom, and play.",
-                significance: "The fullest expression of divine love and wisdom. Krishna's teachings in the Gita are the foundation of this very app.",
-                howToObserve: "Fast until midnight. Sing bhajans. At midnight, bathe and dress a Krishna murti. Perform aarti. Break fast with prasad. Enact the life of Krishna."
-            ),
-            HinduFestival(
-                name: "Navratri",
-                date: date(10, 2),
-                deity: "Goddess Durga / Devi",
-                shortDescription: "Nine nights of the Divine Mother",
-                fullStory: "Navratri — nine nights — is the celebration of Goddess Durga's victory over the buffalo demon Mahishasura. Each of the nine nights honours one of Devi's nine forms: Shailaputri, Brahmacharini, Chandraghanta, Kushmanda, Skandamata, Katyayani, Kalaratri, Mahagauri, and Siddhidatri. The festival reminds us that the divine feminine — Shakti — is the power behind all creation, preservation, and dissolution.",
-                significance: "Worship of the divine feminine. Victory of dharma. Inner purification through fasting, prayer, and devotion.",
-                howToObserve: "Fast for nine days. Recite the Durga Saptashati. Light a lamp (akhand jyoti). Visit Devi temples. On the ninth day (Navami), perform Kanya Puja."
-            ),
-            HinduFestival(
-                name: "Diwali",
-                date: date(10, 20),
-                deity: "Lord Rama & Goddess Lakshmi",
-                shortDescription: "Festival of lights",
-                fullStory: "Diwali marks Lord Rama's return to Ayodhya after 14 years of exile and his victory over the demon king Ravana. The people of Ayodhya lit oil lamps — diyas — to welcome their beloved king home. Diwali also celebrates Goddess Lakshmi, the deity of wealth and prosperity, who is said to visit clean and well-lit homes on this night. For Jains it marks Mahavira's nirvana, and for Sikhs the release of Guru Hargobind from prison.",
-                significance: "Victory of light over darkness, knowledge over ignorance, good over evil. Welcoming of prosperity and new beginnings.",
-                howToObserve: "Light diyas and candles. Perform Lakshmi puja in the evening. Burst crackers (mindfully). Share sweets. Wear new clothes. Clean and decorate the home."
-            ),
-        ]
-    }()
+    static let sampleData: [HinduFestival] = allFestivals
 }

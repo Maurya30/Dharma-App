@@ -12,7 +12,7 @@ struct FestivalDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DharmaSpacing.lg) {
 
-                // Date & deity
+                // Date, deity & type
                 HStack {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(festival.date.formatted(date: .complete, time: .omitted))
@@ -24,14 +24,24 @@ struct FestivalDetailView: View {
                             .italic()
                     }
                     Spacer()
-                    if festival.isToday {
-                        Text("Today")
-                            .font(DharmaFont.caption(12))
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(festival.type.rawValue)
+                            .font(DharmaFont.caption(10))
                             .foregroundColor(.dharmaGold)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color.dharmaGold.opacity(0.15))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color.dharmaGold.opacity(0.12))
                             .clipShape(Capsule())
+
+                        if let countdown = festival.countdownText {
+                            Text(countdown)
+                                .font(DharmaFont.caption(11))
+                                .foregroundColor(.dharmaGold)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(Color.dharmaGold.opacity(0.12))
+                                .clipShape(Capsule())
+                        }
                     }
                 }
 
@@ -57,9 +67,9 @@ struct FestivalDetailView: View {
 
                 Divider().background(Color.dharmaDivider)
 
-                InfoSection(title: "The Story", content: festival.fullStory)
-                InfoSection(title: "Why It Matters", content: festival.significance)
-                InfoSection(title: "How to Observe", content: festival.howToObserve)
+                InfoSection(title: "About", content: festival.description)
+
+                InfoSection(title: "Significance", content: festival.significance)
 
                 Spacer(minLength: DharmaSpacing.xxl)
             }
@@ -85,7 +95,7 @@ struct FestivalDetailView: View {
 
                 let event = EKEvent(eventStore: self.eventStore)
                 event.title = festival.name
-                event.notes = "\(festival.shortDescription)\n\nDeity: \(festival.deity)\n\nHow to observe: \(festival.howToObserve)"
+                event.notes = "\(festival.description)\n\nDeity: \(festival.deity)\n\nSignificance: \(festival.significance)"
                 event.startDate = festival.date
                 event.endDate = Calendar.current.date(byAdding: .hour, value: 1, to: festival.date)
                 event.isAllDay = true
@@ -158,6 +168,6 @@ struct InfoSection: View {
 
 #Preview {
     NavigationStack {
-        FestivalDetailView(festival: HinduFestival.sampleData[0])
+        FestivalDetailView(festival: allFestivals[0])
     }
 }

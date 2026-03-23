@@ -60,6 +60,7 @@ final class SearchService: ObservableObject {
             isSearching = false
             return
         }
+        results = []
         isSearching = true
 
         debounceTask = Task {

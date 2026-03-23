@@ -225,6 +225,7 @@ struct JournalSheetView: View {
         )
         entry.noteText = trimmed
         journalStore.save(entry: entry)
+        DharmaHaptics.success()
 
         withAnimation { showSaved = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
@@ -233,6 +234,7 @@ struct JournalSheetView: View {
     }
 
     private func askKrishna() {
+        DharmaHaptics.medium()
         let trimmed = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty {
             var entry = journalStore.entry(for: verseId) ?? JournalEntry(

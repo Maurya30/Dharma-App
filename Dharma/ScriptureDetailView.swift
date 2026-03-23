@@ -297,6 +297,7 @@ struct ScriptureDetailView: View {
                         source: item.source,
                         english: item.textEnglish
                     ))
+                    .environmentObject(store)
                 }
 
                 // Related Verses
@@ -347,6 +348,7 @@ struct ScriptureDetailView: View {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
                 Button {
                     store.toggleFavourite(item)
+                    DharmaHaptics.light()
                 } label: {
                     Image(systemName: item.isFavourite ? "heart.fill" : "heart")
                         .foregroundColor(item.isFavourite ? .dharmaGold : .dharmaTextSecondary)
@@ -677,11 +679,11 @@ private struct RelatedVersesSection: View {
                 .kerning(0.8)
 
             if isLoading {
-                HStack(spacing: 6) {
-                    ForEach(0..<3, id: \.self) { _ in
-                        Circle()
-                            .fill(Color.dharmaGold.opacity(0.4))
-                            .frame(width: 6, height: 6)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            RelatedVerseSkeletonCard()
+                        }
                     }
                 }
                 .padding(.top, DharmaSpacing.sm)

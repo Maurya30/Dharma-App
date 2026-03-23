@@ -4,16 +4,41 @@ import UIKit
 struct KrishnaView: View {
     let verse: KrishnaVerse?
 
+    @EnvironmentObject private var store: ScriptureStore
     @StateObject private var service = KrishnaService()
     @State private var inputText = ""
-    @State private var scrollProxy: ScrollViewProxy? = nil
     @FocusState private var inputFocused: Bool
+    @State private var linkedVerse: ScriptureItem? = nil
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
     private var omOpacity: Double { colorScheme == .dark ? 0.12 : 0.08 }
 
     var body: some View {
+        NavigationStack {
+            Group {
+                if linkedVerse == nil {
+                    mainChat
+                        .navigationBarHidden(true)
+                }
+            }
+            .navigationDestination(item: $linkedVerse) { item in
+                ScriptureDetailView(item: item, store: store)
+            }
+            .environment(\.openURL, OpenURLAction { url in
+                guard let id = VerseReferenceLinker.verseId(from: url),
+                      let item = store.items.first(where: { $0.id == id }) else {
+                    return .systemAction
+                }
+                linkedVerse = item
+                return .handled
+            })
+        }
+    }
+
+    // MARK: - Main chat (root of stack)
+
+    private var mainChat: some View {
         ZStack(alignment: .topTrailing) {
             Color.dharmaBackground.ignoresSafeArea()
 
@@ -25,10 +50,8 @@ struct KrishnaView: View {
                 .padding(.trailing, -52)
 
             VStack(spacing: 0) {
-                // Nav bar
                 navBar
 
-                // Verse context card
                 if let v = verse {
                     verseContextCard(v)
                         .padding(.horizontal, DharmaSpacing.md)
@@ -39,24 +62,23 @@ struct KrishnaView: View {
                 Divider()
                     .background(Color.dharmaDivider)
 
-                // Messages
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: DharmaSpacing.md) {
-                            // Greeting bubble
                             if service.conversationHistory.isEmpty && !service.isStreaming {
                                 KrishnaBubble(
                                     text: verse != nil
                                         ? "Namaste. I see you are reflecting on \(verse!.source). What arises in you from these words?"
                                         : "Namaste. I am here. What weighs on your heart today?",
-                                    isStreaming: false
+                                    isStreaming: false,
+                                    items: store.items
                                 )
                                 .id("greeting")
                             }
 
                             ForEach(service.conversationHistory) { message in
                                 if message.role == "assistant" {
-                                    KrishnaBubble(text: message.content, isStreaming: false)
+                                    KrishnaBubble(text: message.content, isStreaming: false, items: store.items)
                                         .id(message.id)
                                 } else {
                                     UserBubble(text: message.content)
@@ -64,9 +86,8 @@ struct KrishnaView: View {
                                 }
                             }
 
-                            // Live streaming bubble
                             if service.isStreaming {
-                                KrishnaBubble(text: service.streamingResponse, isStreaming: true)
+                                KrishnaBubble(text: service.streamingResponse, isStreaming: true, items: store.items)
                                     .id("streaming")
                             }
 
@@ -78,7 +99,6 @@ struct KrishnaView: View {
                     }
                     .scrollContentBackground(.hidden)
                     .scrollDismissesKeyboard(.interactively)
-                    .onAppear { scrollProxy = proxy }
                     .onChange(of: service.streamingResponse) {
                         withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
                     }
@@ -91,7 +111,6 @@ struct KrishnaView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             inputBar
         }
-        .navigationBarHidden(true)
     }
 
     // MARK: - Nav Bar
@@ -119,7 +138,6 @@ struct KrishnaView: View {
 
             Spacer()
 
-            // Balance spacer
             Color.clear.frame(width: 36, height: 36)
         }
         .padding(.horizontal, DharmaSpacing.md)
@@ -197,8 +215,6 @@ struct KrishnaView: View {
         }
     }
 
-    // MARK: - Helpers
-
     private var canSend: Bool {
         !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !service.isStreaming
     }
@@ -206,8 +222,36 @@ struct KrishnaView: View {
     private func send() {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
+        DharmaHaptics.medium()
         inputText = ""
         service.sendMessage(text, verse: verse)
+    }
+}
+
+// MARK: - Verse-linked assistant text
+
+private struct VerseLinkedText: View {
+    let plain: String
+    let isStreaming: Bool
+    let items: [ScriptureItem]
+
+    var body: some View {
+        Group {
+            if isStreaming || plain.isEmpty {
+                Text(plain)
+                    .font(DharmaFont.georgia(16))
+                    .foregroundColor(.dharmaTextBody)
+                    .lineSpacing(7)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(VerseReferenceLinker.attributedString(from: plain, items: items))
+                    .font(DharmaFont.georgia(16))
+                    .foregroundColor(.dharmaTextBody)
+                    .lineSpacing(7)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .tint(.dharmaGold)
+            }
+        }
     }
 }
 
@@ -216,11 +260,11 @@ struct KrishnaView: View {
 private struct KrishnaBubble: View {
     let text: String
     let isStreaming: Bool
+    let items: [ScriptureItem]
     @State private var pulse = false
 
     var body: some View {
         HStack(alignment: .top, spacing: DharmaSpacing.sm) {
-            // Lotus avatar
             Image(systemName: "seal.fill")
                 .font(.system(size: 20))
                 .foregroundColor(.dharmaGold)
@@ -238,11 +282,7 @@ private struct KrishnaBubble: View {
 
                     VStack(alignment: .leading, spacing: 0) {
                         if !text.isEmpty {
-                            Text(text)
-                                .font(DharmaFont.georgia(16))
-                                .foregroundColor(.dharmaTextBody)
-                                .lineSpacing(7)
-                                .fixedSize(horizontal: false, vertical: true)
+                            VerseLinkedText(plain: text, isStreaming: isStreaming, items: items)
                         }
 
                         if isStreaming {
@@ -304,4 +344,9 @@ private struct UserBubble: View {
                 .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
         }
     }
+}
+
+#Preview {
+    KrishnaView(verse: nil)
+        .environmentObject(ScriptureStore())
 }

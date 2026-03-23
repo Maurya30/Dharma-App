@@ -26,6 +26,16 @@ class ScriptureStore: ObservableObject {
         syncToWidget()
     }
 
+    /// Reload scripture JSON from the bundle and re-apply favourites (for pull-to-refresh).
+    func refreshLibraryContent() async {
+        await MainActor.run {
+            loadChapterInfos()
+            loadItems()
+            loadFavourites()
+            syncToWidget()
+        }
+    }
+
     // MARK: - Loading
     private func loadItems() {
         let gitaItems = loadGita()

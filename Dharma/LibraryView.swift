@@ -121,7 +121,15 @@ struct LibraryView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
-                    if useSemanticResults {
+                    if isSemanticQuery && !searchText.isEmpty && searchService.isSearching && searchService.results.isEmpty {
+                        LazyVStack(spacing: 12) {
+                            ForEach(0..<4, id: \.self) { _ in
+                                SemanticSearchSkeletonRow()
+                            }
+                        }
+                        .padding(.horizontal, DharmaSpacing.md)
+                        .padding(.bottom, DharmaSpacing.xl)
+                    } else if useSemanticResults {
                         LazyVStack(spacing: 12) {
                             ForEach(searchService.results) { result in
                                 if let item = matchedItem(for: result) {
@@ -135,7 +143,7 @@ struct LibraryView: View {
                         .padding(.horizontal, DharmaSpacing.md)
                         .padding(.bottom, DharmaSpacing.xl)
                     } else if filteredItems.isEmpty {
-                        EmptyStateView(searchText: searchText)
+                        EmptyStateView(searchText: searchText, isSemanticQuery: isSemanticQuery)
                             .padding(.top, 60)
                     } else {
                         LazyVStack(spacing: 12) {
@@ -151,6 +159,10 @@ struct LibraryView: View {
                     }
                 }
             }
+            .refreshable {
+                await store.refreshLibraryContent()
+                DharmaHaptics.light()
+            }
             .background(Color.dharmaBackground)
             .navigationTitle("Dharma Library")
             .navigationBarTitleDisplayMode(.large)
@@ -160,6 +172,7 @@ struct LibraryView: View {
                     HStack(spacing: 16) {
                         // Filter button
                         Button {
+                            DharmaHaptics.light()
                             showFilterSheet = true
                         } label: {
                             ZStack(alignment: .topTrailing) {
@@ -176,6 +189,7 @@ struct LibraryView: View {
 
                         // Favourites button
                         Button {
+                            DharmaHaptics.light()
                             showFavouritesPage = true
                         } label: {
                             Image(systemName: "heart.fill")
@@ -457,20 +471,13 @@ struct FavouritesView: View {
         NavigationStack {
             ScrollView {
                 if store.favourites.isEmpty {
-                    VStack(spacing: DharmaSpacing.md) {
-                        Image(systemName: "heart")
-                            .font(.system(size: 50))
-                            .foregroundColor(.dharmaTextMuted)
-                            .padding(.top, 80)
-                        Text("No favourites yet")
-                            .font(DharmaFont.heading())
-                            .foregroundColor(.dharmaTextSecondary)
-                        Text("Tap the heart on any verse to save it here")
-                            .font(DharmaFont.body())
-                            .foregroundColor(.dharmaTextMuted)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(DharmaSpacing.xl)
+                    WarmEmptyState(
+                        icon: "heart.circle",
+                        title: "Your favourites",
+                        message: "Verses you love will rest here — a quiet shelf you can return to anytime.",
+                        hint: "Tap the heart on any verse in the Library or when reading."
+                    )
+                    .padding(.top, 48)
                 } else {
                     LazyVStack(spacing: 12) {
                         ForEach(store.favourites) { item in
@@ -483,6 +490,10 @@ struct FavouritesView: View {
                     .padding(DharmaSpacing.md)
                     .padding(.bottom, DharmaSpacing.xl)
                 }
+            }
+            .refreshable {
+                await store.refreshLibraryContent()
+                DharmaHaptics.light()
             }
             .background(Color.dharmaBackground)
             .navigationTitle("Favourites")
@@ -536,7 +547,10 @@ struct CategoryPill: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            DharmaHaptics.selection()
+            action()
+        } label: {
             HStack(spacing: 5) {
                 Image(systemName: icon)
                     .font(.system(size: 11))
@@ -558,6 +572,7 @@ struct CategoryPill: View {
                     )
             )
         }
+        .buttonStyle(.plain)
     }
 }
 
@@ -694,21 +709,34 @@ struct ScriptureCardView: View {
 // MARK: - Empty State
 struct EmptyStateView: View {
     let searchText: String
+    var isSemanticQuery: Bool = false
 
     var body: some View {
-        VStack(spacing: DharmaSpacing.md) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 40))
-                .foregroundColor(.dharmaTextMuted)
-            Text(searchText.isEmpty ? "No items found" : "No results for \"\(searchText)\"")
-                .font(DharmaFont.heading())
-                .foregroundColor(.dharmaTextSecondary)
-            Text("Try a different category or search term")
-                .font(DharmaFont.body())
-                .foregroundColor(.dharmaTextMuted)
-                .multilineTextAlignment(.center)
+        Group {
+            if searchText.isEmpty {
+                WarmEmptyState(
+                    icon: "books.vertical",
+                    title: "Nothing here yet",
+                    message: "Try another category or clear filters to see more of the library.",
+                    hint: "Use the chapter and speaker filters, or pick a text from the top."
+                )
+            } else if isSemanticQuery {
+                WarmEmptyState(
+                    icon: "sparkles",
+                    title: "No verses surfaced",
+                    message: "We couldn’t match that thought to a verse yet. The sacred texts are vast — a gentler phrase might find a path.",
+                    hint: "Try fewer words, or a simpler keyword — you can always browse by chapter."
+                )
+            } else {
+                WarmEmptyState(
+                    icon: "magnifyingglass",
+                    title: "No results for “\(searchText)”",
+                    message: "Adjust your search or browse by chapter and text — what you seek may be worded differently in the verses.",
+                    hint: "Longer, phrase-like searches use meaning-based discovery."
+                )
+            }
         }
-        .padding(DharmaSpacing.xl)
+        .padding(DharmaSpacing.md)
     }
 }
 
