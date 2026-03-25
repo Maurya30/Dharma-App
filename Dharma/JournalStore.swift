@@ -33,6 +33,11 @@ final class JournalStore: ObservableObject {
         persist()
     }
 
+    func delete(entry: JournalEntry) {
+        entries.removeAll { $0.id == entry.id }
+        persist()
+    }
+
     func entriesForGoal(_ goal: String) -> [JournalEntry] {
         entries.filter { $0.goalContext == goal }
     }

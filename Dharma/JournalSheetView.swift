@@ -51,12 +51,7 @@ struct JournalSheetView: View {
                                         .foregroundColor(.dharmaTextBody)
                                         .padding(.horizontal, 12)
                                         .padding(.vertical, 8)
-                                        .background(Color.dharmaSurface)
-                                        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.sm, style: .continuous))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: DharmaRadius.sm, style: .continuous)
-                                                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-                                        )
+                                        .glassCard(cornerRadius: DharmaRadius.sm)
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -77,12 +72,7 @@ struct JournalSheetView: View {
                             .scrollContentBackground(.hidden)
                             .frame(minHeight: 200)
                             .padding(DharmaSpacing.md)
-                            .background(Color.dharmaSurface)
-                            .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
-                                    .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-                            )
+                            .background(Color.clear)
                             .overlay(alignment: .topLeading) {
                                 if noteText.isEmpty {
                                     Text("Write your reflection…")
@@ -94,6 +84,7 @@ struct JournalSheetView: View {
                                         .allowsHitTesting(false)
                                 }
                             }
+                            .glassCard(cornerRadius: DharmaRadius.md)
                     }
 
                     // Saved confirmation
@@ -136,8 +127,7 @@ struct JournalSheetView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(Color.dharmaSurface)
-                            .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous))
+                            .glassCard(cornerRadius: DharmaRadius.md)
                             .overlay(
                                 RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
                                     .strokeBorder(Color.dharmaGold.opacity(0.45), lineWidth: 1)
@@ -207,12 +197,7 @@ struct JournalSheetView: View {
             .padding(.leading, DharmaSpacing.md)
         }
         .padding(DharmaSpacing.md)
-        .background(Color.dharmaSurface)
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
-                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-        )
+        .glassCard(cornerRadius: DharmaRadius.md)
     }
 
     // MARK: - Actions

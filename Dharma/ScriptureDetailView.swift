@@ -3,6 +3,7 @@ import UIKit
 
 struct ScriptureDetailView: View {
     let item: ScriptureItem
+    var openJournalOnAppear: Bool = false
     @ObservedObject var store: ScriptureStore
     @StateObject private var audioManager = VerseAudioManager.shared
     @State private var showShareSheet = false
@@ -223,10 +224,14 @@ struct ScriptureDetailView: View {
                     showingJournal = true
                 } label: {
                     HStack(spacing: DharmaSpacing.sm) {
-                        Image(systemName: "square.and.pencil")
+                        Image(systemName: journalStore.entry(for: item.id.uuidString) != nil
+                              ? "pencil.circle.fill"
+                              : "square.and.pencil")
                             .font(.system(size: 15))
                             .foregroundColor(.dharmaGold)
-                        Text("Reflect on this verse")
+                        Text(journalStore.entry(for: item.id.uuidString) != nil
+                             ? "View / Edit Reflection"
+                             : "Reflect on this verse")
                             .font(DharmaFont.georgia(16))
                             .foregroundColor(.dharmaGold)
                     }
@@ -346,6 +351,9 @@ struct ScriptureDetailView: View {
         }
         .onAppear {
             store.markAsRead(item)
+            if openJournalOnAppear {
+                showingJournal = true
+            }
         }
         .onDisappear {
             audioManager.stop()

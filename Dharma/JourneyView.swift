@@ -5,6 +5,7 @@ struct JourneyView: View {
     @EnvironmentObject var goalsManager: GoalsManager
     @ObservedObject private var journalStore = JournalStore.shared
     @State private var exploreFurther: [RelatedVerse] = []
+    @State private var showingGoalEditor = false
 
     var body: some View {
         NavigationStack {
@@ -47,6 +48,10 @@ struct JourneyView: View {
             .task { await loadExploreFurther() }
             .transparentNavigationBar()
             .dharmaBackground()
+            .fullScreenCover(isPresented: $showingGoalEditor) {
+                GoalEditorView()
+                    .environmentObject(goalsManager)
+            }
         }
     }
 
@@ -54,11 +59,19 @@ struct JourneyView: View {
 
     private var goalsSection: some View {
         VStack(alignment: .leading, spacing: DharmaSpacing.md) {
-            Text("Your Goals")
-                .font(DharmaFont.caption(11))
-                .foregroundColor(.dharmaGold)
-                .textCase(.uppercase)
-                .kerning(0.8)
+            HStack {
+                Text("Your Goals")
+                    .font(DharmaFont.caption(11))
+                    .foregroundColor(.dharmaGold)
+                    .textCase(.uppercase)
+                    .kerning(0.8)
+                Spacer()
+                Button(action: { showingGoalEditor = true }) {
+                    Image(systemName: "plus.circle")
+                        .foregroundColor(Color(hex: "C9821E"))
+                        .font(.system(size: 18))
+                }
+            }
 
             if goalsManager.selectedGoals.isEmpty {
                 goalsEmptyState
@@ -152,7 +165,7 @@ struct JourneyView: View {
                 VStack(spacing: 12) {
                     ForEach(journalStore.entries.prefix(4)) { entry in
                         if let item = store.items.first(where: { $0.id.uuidString == entry.verseId }) {
-                            NavigationLink(destination: ScriptureDetailView(item: item, store: store)) {
+                            NavigationLink(destination: ScriptureDetailView(item: item, openJournalOnAppear: true, store: store)) {
                                 reflectionCard(entry)
                             }
                             .buttonStyle(.plain)
@@ -208,6 +221,14 @@ struct JourneyView: View {
                 }
 
                 Spacer()
+
+                Button(action: { journalStore.delete(entry: entry) }) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 12))
+                        .foregroundColor(.dharmaTextSecondary)
+                        .padding(6)
+                }
+                .buttonStyle(.plain)
             }
 
             Text(String(entry.verseEnglish.prefix(80)) + (entry.verseEnglish.count > 80 ? "…" : ""))

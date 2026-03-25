@@ -23,8 +23,22 @@ struct AllReflectionsView: View {
                                 reflectionCard(entry)
                             }
                             .buttonStyle(.plain)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    journalStore.delete(entry: entry)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                         } else {
                             reflectionCard(entry)
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    Button(role: .destructive) {
+                                        journalStore.delete(entry: entry)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
                         }
                     }
                 }
@@ -65,6 +79,14 @@ struct AllReflectionsView: View {
                 }
 
                 Spacer()
+
+                Button(action: { journalStore.delete(entry: entry) }) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 12))
+                        .foregroundColor(.dharmaTextSecondary)
+                        .padding(6)
+                }
+                .buttonStyle(.plain)
             }
 
             Text(entry.verseReference)
@@ -93,11 +115,6 @@ struct AllReflectionsView: View {
             }
         }
         .padding(DharmaSpacing.md)
-        .background(Color.dharmaSurface)
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
-                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-        )
+        .glassCard(cornerRadius: DharmaRadius.md)
     }
 }

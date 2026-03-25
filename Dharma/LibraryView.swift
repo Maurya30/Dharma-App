@@ -11,6 +11,7 @@ struct LibraryView: View {
     @State private var selectedSpeaker: String? = nil
     @State private var selectedUpanishadSource: String? = nil
     @State private var selectedRigVedaBook: Int? = nil
+    @State private var selectedGoalFilter: String? = nil
 
     private var isSemanticQuery: Bool {
         searchText.split(separator: " ").count >= 3
@@ -45,6 +46,13 @@ struct LibraryView: View {
         if let book = selectedRigVedaBook {
             items = items.filter { $0.category == .rigVeda && $0.title.hasPrefix("Book \(book) ·") }
         }
+        if let goal = selectedGoalFilter {
+            let ids = GoalTagsLoader.shared.verseIds(matching: [goal])
+            items = items.filter { item in
+                guard let bid = GoalTagsLoader.backendId(for: item) else { return false }
+                return ids.contains(bid)
+            }
+        }
         if !searchText.isEmpty {
             items = items.filter {
                 $0.title.localizedCaseInsensitiveContains(searchText) ||
@@ -70,7 +78,41 @@ struct LibraryView: View {
 
                     CategoryFilterView(selected: $selectedCategory)
                         .padding(.horizontal, DharmaSpacing.md)
+                        .padding(.bottom, DharmaSpacing.sm)
+
+                    let userGoals = GoalsManager.shared.selectedGoals
+                    if !userGoals.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(userGoals, id: \.self) { goal in
+                                    let isSelected = selectedGoalFilter == goal
+                                    Button {
+                                        DharmaHaptics.selection()
+                                        selectedGoalFilter = isSelected ? nil : goal
+                                    } label: {
+                                        HStack(spacing: 5) {
+                                            Image(systemName: "sparkle")
+                                                .font(.system(size: 10))
+                                            Text(GoalsManager.shortName(for: goal))
+                                                .font(DharmaFont.caption(12))
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 7)
+                                        .foregroundColor(isSelected ? .white : .dharmaTextSecondary)
+                                        .background(isSelected ? Color.dharmaGold : Color.clear)
+                                        .clipShape(Capsule())
+                                        .overlay(
+                                            Capsule()
+                                                .strokeBorder(isSelected ? Color.clear : Color.dharmaGold.opacity(0.4), lineWidth: 1)
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal, DharmaSpacing.md)
+                        }
                         .padding(.bottom, DharmaSpacing.md)
+                    }
 
                     if searchText.isEmpty && !hasActiveFilters {
                         if selectedCategory == .gita {
@@ -226,6 +268,7 @@ struct LibraryView: View {
                 }
             }
             .onChange(of: selectedCategory) { _, newValue in
+                selectedGoalFilter = nil
                 switch newValue {
                 case .gita:
                     selectedUpanishadSource = nil
@@ -670,6 +713,7 @@ struct SemanticResultCard: View {
 // MARK: - Scripture Card
 struct ScriptureCardView: View {
     let item: ScriptureItem
+    @ObservedObject private var journalStore = JournalStore.shared
 
     private var matchingGoals: [String] {
         GoalTagsLoader.shared.matchingUserGoals(for: item, userGoals: GoalsManager.shared.selectedGoals)
@@ -694,10 +738,17 @@ struct ScriptureCardView: View {
                         .foregroundColor(.dharmaTextMuted)
                 }
 
-                if item.isFavourite {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 12))
-                        .foregroundColor(.dharmaGold)
+                HStack(spacing: 6) {
+                    if journalStore.entry(for: item.id.uuidString) != nil {
+                        Image(systemName: "pencil.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color(hex: "C9821E").opacity(0.7))
+                    }
+                    if item.isFavourite {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(.dharmaGold)
+                    }
                 }
             }
 
