@@ -1,11 +1,18 @@
 import SwiftUI
 
+// MARK: - Calendar View
 struct CalendarView: View {
     @EnvironmentObject var store: ScriptureStore
     @State private var selectedYear: Int = Calendar.current.component(.year, from: Date())
     @State private var selectedType: FestivalType? = nil
+    @State private var selectedMonth: Int = Calendar.current.component(.month, from: Date())
+    @State private var selectedDate: Date? = nil
     @StateObject private var searchService = SearchService()
     @State private var searchResult: ScriptureItem? = nil
+
+    private let weekdaySymbols = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
+
+    // MARK: - Filtered festivals
 
     private var filteredFestivals: [HinduFestival] {
         allFestivals
@@ -14,17 +21,78 @@ struct CalendarView: View {
             .sorted { $0.date < $1.date }
     }
 
+    private var festivalsInMonth: [HinduFestival] {
+        filteredFestivals.filter {
+            Calendar.current.component(.month, from: $0.date) == selectedMonth &&
+            Calendar.current.component(.year, from: $0.date) == selectedYear
+        }
+    }
+
+    private var festivalsForSelectedDate: [HinduFestival] {
+        guard let d = selectedDate else { return [] }
+        return filteredFestivals.filter {
+            Calendar.current.isDate($0.date, inSameDayAs: d)
+        }
+    }
+
     private var todayFestivals: [HinduFestival] {
-        filteredFestivals.filter { $0.isToday }
+        festivalsInMonth.filter { $0.isToday }
     }
 
     private var upcomingFestivals: [HinduFestival] {
-        filteredFestivals.filter { !$0.isPast && !$0.isToday }
+        festivalsInMonth.filter { !$0.isPast && !$0.isToday }
     }
 
     private var pastFestivals: [HinduFestival] {
-        filteredFestivals.filter { $0.isPast }
+        festivalsInMonth.filter { $0.isPast }
     }
+
+    // MARK: - Calendar grid helpers
+
+    private var daysInMonth: [Date?] {
+        var cal = Calendar.current
+        cal.firstWeekday = 1
+        var comps = DateComponents()
+        comps.year = selectedYear
+        comps.month = selectedMonth
+        comps.day = 1
+        guard let firstDay = cal.date(from: comps) else { return [] }
+        let weekday = cal.component(.weekday, from: firstDay) - 1
+        let range = cal.range(of: .day, in: .month, for: firstDay)!
+        var days: [Date?] = Array(repeating: nil, count: weekday)
+        for day in range {
+            comps.day = day
+            days.append(cal.date(from: comps))
+        }
+        while days.count % 7 != 0 { days.append(nil) }
+        return days
+    }
+
+    private func festivalsOn(_ date: Date) -> [HinduFestival] {
+        filteredFestivals.filter { Calendar.current.isDate($0.date, inSameDayAs: date) }
+    }
+
+    private func isToday(_ date: Date) -> Bool {
+        Calendar.current.isDateInToday(date)
+    }
+
+    private func isSelected(_ date: Date) -> Bool {
+        guard let sel = selectedDate else { return false }
+        return Calendar.current.isDate(sel, inSameDayAs: date)
+    }
+
+    private var monthName: String {
+        let df = DateFormatter()
+        df.dateFormat = "MMMM"
+        var comps = DateComponents()
+        comps.year = selectedYear
+        comps.month = selectedMonth
+        comps.day = 1
+        let date = Calendar.current.date(from: comps) ?? Date()
+        return df.string(from: date)
+    }
+
+    // MARK: - Body
 
     var body: some View {
         NavigationStack {
@@ -38,63 +106,15 @@ struct CalendarView: View {
                     // Type filter pills
                     typeFilterPills
 
-                    // Today section
-                    if !todayFestivals.isEmpty {
-                        SectionHeader(title: "Today")
-                            .padding(.horizontal, DharmaSpacing.md)
+                    // Month calendar card
+                    monthCalendarCard
+                        .padding(.horizontal, DharmaSpacing.md)
 
-                        ForEach(todayFestivals) { festival in
-                            NavigationLink(destination: FestivalDetailView(festival: festival)) {
-                                NextFestivalBanner(festival: festival)
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.horizontal, DharmaSpacing.md)
-                        }
-                    }
-
-                    // Next up banner (if no today festivals)
-                    if todayFestivals.isEmpty, let next = upcomingFestivals.first {
-                        NextFestivalBanner(festival: next)
-                            .padding(.horizontal, DharmaSpacing.md)
-                    }
-
-                    // Upcoming
-                    if !upcomingFestivals.isEmpty {
-                        SectionHeader(title: "Upcoming")
-                            .padding(.horizontal, DharmaSpacing.md)
-
-                        ForEach(upcomingFestivals) { festival in
-                            NavigationLink(destination: FestivalDetailView(festival: festival)) {
-                                FestivalRowView(
-                                    festival: festival,
-                                    store: store,
-                                    searchService: searchService,
-                                    onVerseFound: { item in searchResult = item }
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.horizontal, DharmaSpacing.md)
-                        }
-                    }
-
-                    // Past
-                    if !pastFestivals.isEmpty {
-                        SectionHeader(title: "Earlier")
-                            .padding(.horizontal, DharmaSpacing.md)
-
-                        ForEach(pastFestivals) { festival in
-                            NavigationLink(destination: FestivalDetailView(festival: festival)) {
-                                FestivalRowView(
-                                    festival: festival,
-                                    muted: true,
-                                    store: store,
-                                    searchService: searchService,
-                                    onVerseFound: { item in searchResult = item }
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.horizontal, DharmaSpacing.md)
-                        }
+                    // Festival list — selected date or full month
+                    if selectedDate != nil {
+                        selectedDateSection
+                    } else {
+                        monthFestivalList
                     }
 
                     // Disclaimer
@@ -103,22 +123,24 @@ struct CalendarView: View {
                         .foregroundColor(.dharmaTextMuted)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, DharmaSpacing.lg)
-                        .padding(.top, DharmaSpacing.md)
+                        .padding(.top, DharmaSpacing.xs)
 
                     Spacer(minLength: DharmaSpacing.xxl)
                 }
                 .padding(.top, DharmaSpacing.md)
             }
+            .scrollContentBackground(.hidden)
             .refreshable {
                 try? await Task.sleep(for: .milliseconds(350))
                 DharmaHaptics.light()
             }
-            .background(Color.dharmaBackground)
             .navigationTitle("Sacred Calendar")
             .navigationBarTitleDisplayMode(.large)
             .navigationDestination(item: $searchResult) { item in
                 ScriptureDetailView(item: item, store: store)
             }
+            .transparentNavigationBar()
+            .dharmaBackground()
         }
     }
 
@@ -132,6 +154,7 @@ struct CalendarView: View {
         .pickerStyle(.segmented)
         .onChange(of: selectedYear) { _, _ in
             DharmaHaptics.selection()
+            selectedDate = nil
         }
     }
 
@@ -153,7 +176,10 @@ struct CalendarView: View {
         let isActive = selectedType == type
         return Button {
             DharmaHaptics.selection()
-            withAnimation(.easeInOut(duration: 0.2)) { selectedType = type }
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedType = type
+                selectedDate = nil
+            }
         } label: {
             Text(label)
                 .font(DharmaFont.caption(12))
@@ -168,17 +194,311 @@ struct CalendarView: View {
         }
         .buttonStyle(.plain)
     }
+
+    // MARK: - Month Calendar Card
+
+    private var monthCalendarCard: some View {
+        VStack(spacing: DharmaSpacing.sm) {
+
+            // Month navigation header
+            HStack {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        if selectedMonth == 1 {
+                            selectedMonth = 12
+                            selectedYear = max(2026, selectedYear - 1)
+                        } else {
+                            selectedMonth -= 1
+                        }
+                        selectedDate = nil
+                    }
+                    DharmaHaptics.selection()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.dharmaGold)
+                        .frame(width: 32, height: 32)
+                }
+
+                Spacer()
+
+                Text("\(monthName) \(String(selectedYear))")
+                    .font(DharmaFont.heading(16))
+                    .foregroundColor(.dharmaTextPrimary)
+
+                Spacer()
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        if selectedMonth == 12 {
+                            selectedMonth = 1
+                            selectedYear = min(2027, selectedYear + 1)
+                        } else {
+                            selectedMonth += 1
+                        }
+                        selectedDate = nil
+                    }
+                    DharmaHaptics.selection()
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.dharmaGold)
+                        .frame(width: 32, height: 32)
+                }
+            }
+
+            // Weekday headers
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7),
+                spacing: 0
+            ) {
+                ForEach(weekdaySymbols, id: \.self) { sym in
+                    Text(sym)
+                        .font(DharmaFont.caption(11))
+                        .foregroundColor(.dharmaTextMuted)
+                        .frame(maxWidth: .infinity)
+                        .padding(.bottom, 6)
+                }
+            }
+
+            // Day cells
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7),
+                spacing: 4
+            ) {
+                ForEach(Array(daysInMonth.enumerated()), id: \.offset) { _, date in
+                    if let date = date {
+                        DayCell(
+                            date: date,
+                            festivals: festivalsOn(date),
+                            isToday: isToday(date),
+                            isSelected: isSelected(date)
+                        )
+                        .onTapGesture {
+                            let festivals = festivalsOn(date)
+                            guard !festivals.isEmpty else { return }
+                            DharmaHaptics.selection()
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                if isSelected(date) {
+                                    selectedDate = nil
+                                } else {
+                                    selectedDate = date
+                                }
+                            }
+                        }
+                    } else {
+                        Color.clear.frame(height: 44)
+                    }
+                }
+            }
+
+            // Footer: count + clear button
+            HStack {
+                if !festivalsInMonth.isEmpty {
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(Color.dharmaGold)
+                            .frame(width: 5, height: 5)
+                        Text("\(festivalsInMonth.count) festival\(festivalsInMonth.count == 1 ? "" : "s") this month")
+                            .font(DharmaFont.caption(11))
+                            .foregroundColor(.dharmaTextMuted)
+                    }
+                }
+                Spacer()
+                if selectedDate != nil {
+                    Button("Clear") {
+                        withAnimation { selectedDate = nil }
+                    }
+                    .font(DharmaFont.caption(11))
+                    .foregroundColor(.dharmaGold)
+                }
+            }
+            .padding(.top, DharmaSpacing.xs)
+        }
+        .padding(DharmaSpacing.md)
+        .glassCard(cornerRadius: DharmaRadius.lg)
+    }
+
+    // MARK: - Selected Date Section
+
+    @ViewBuilder
+    private var selectedDateSection: some View {
+        if festivalsForSelectedDate.isEmpty {
+            Text("No festivals on this day")
+                .font(DharmaFont.body())
+                .foregroundColor(.dharmaTextMuted)
+                .padding(.horizontal, DharmaSpacing.md)
+        } else {
+            VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+                if let d = selectedDate {
+                    SectionHeader(title: d.formatted(date: .complete, time: .omitted))
+                        .padding(.horizontal, DharmaSpacing.md)
+                }
+
+                ForEach(festivalsForSelectedDate) { festival in
+                    NavigationLink(destination: FestivalDetailView(festival: festival)) {
+                        NextFestivalBanner(festival: festival)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, DharmaSpacing.md)
+                }
+            }
+        }
+    }
+
+    // MARK: - Full Month Festival List
+
+    @ViewBuilder
+    private var monthFestivalList: some View {
+        VStack(alignment: .leading, spacing: DharmaSpacing.md) {
+
+            // Today
+            if !todayFestivals.isEmpty {
+                SectionHeader(title: "Today")
+                    .padding(.horizontal, DharmaSpacing.md)
+                ForEach(todayFestivals) { festival in
+                    NavigationLink(destination: FestivalDetailView(festival: festival)) {
+                        NextFestivalBanner(festival: festival)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, DharmaSpacing.md)
+                }
+            }
+
+            // Next up banner if nothing today
+            if todayFestivals.isEmpty, let next = upcomingFestivals.first {
+                NavigationLink(destination: FestivalDetailView(festival: next)) {
+                    NextFestivalBanner(festival: next)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, DharmaSpacing.md)
+            }
+
+            // Remaining upcoming
+            let remaining = todayFestivals.isEmpty ? Array(upcomingFestivals.dropFirst()) : upcomingFestivals
+            if !remaining.isEmpty {
+                SectionHeader(title: "Upcoming")
+                    .padding(.horizontal, DharmaSpacing.md)
+                ForEach(remaining) { festival in
+                    NavigationLink(destination: FestivalDetailView(festival: festival)) {
+                        FestivalRowView(
+                            festival: festival,
+                            store: store,
+                            searchService: searchService,
+                            onVerseFound: { item in searchResult = item }
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, DharmaSpacing.md)
+                }
+            }
+
+            // Past
+            if !pastFestivals.isEmpty {
+                SectionHeader(title: "Earlier")
+                    .padding(.horizontal, DharmaSpacing.md)
+                ForEach(pastFestivals) { festival in
+                    NavigationLink(destination: FestivalDetailView(festival: festival)) {
+                        FestivalRowView(
+                            festival: festival,
+                            muted: true,
+                            store: store,
+                            searchService: searchService,
+                            onVerseFound: { item in searchResult = item }
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, DharmaSpacing.md)
+                }
+            }
+
+            // Empty state
+            if festivalsInMonth.isEmpty {
+                VStack(spacing: DharmaSpacing.sm) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 32))
+                        .foregroundColor(.dharmaTextMuted)
+                    Text("No festivals in \(monthName)")
+                        .font(DharmaFont.body())
+                        .foregroundColor(.dharmaTextMuted)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DharmaSpacing.xl)
+            }
+        }
+    }
 }
 
-// MARK: - Binding navigation helper
-extension ScriptureItem: Hashable {
-    static func == (lhs: ScriptureItem, rhs: ScriptureItem) -> Bool {
-        lhs.id == rhs.id
+// MARK: - Day Cell
+
+struct DayCell: View {
+    let date: Date
+    let festivals: [HinduFestival]
+    let isToday: Bool
+    let isSelected: Bool
+
+    private var dayNumber: String {
+        String(Calendar.current.component(.day, from: date))
     }
 
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
+    private var hasHighlight: Bool {
+        festivals.contains { $0.isHighlight }
     }
+
+    var body: some View {
+        VStack(spacing: 3) {
+            ZStack {
+                // Today ring
+                if isToday && !isSelected {
+                    Circle()
+                        .strokeBorder(Color.dharmaGold, lineWidth: 1.5)
+                        .frame(width: 32, height: 32)
+                }
+                // Selected fill
+                if isSelected {
+                    Circle()
+                        .fill(Color.dharmaGold)
+                        .frame(width: 32, height: 32)
+                }
+
+                Text(dayNumber)
+                    .font(.system(
+                        size: 14,
+                        weight: festivals.isEmpty ? .regular : .semibold
+                    ))
+                    .foregroundColor(
+                        isSelected ? .white :
+                        isToday    ? .dharmaGold :
+                        !festivals.isEmpty ? .dharmaTextPrimary :
+                        .dharmaTextPrimary
+                    )
+            }
+            .frame(width: 32, height: 32)
+
+            // Festival dots
+            if !festivals.isEmpty {
+                HStack(spacing: 2) {
+                    ForEach(0..<min(festivals.count, 3), id: \.self) { _ in
+                        Circle()
+                            .fill(isSelected ? Color.white.opacity(0.8) :
+                                  hasHighlight ? Color.dharmaGold : Color.dharmaGold.opacity(0.5))
+                            .frame(width: 4, height: 4)
+                    }
+                }
+            } else {
+                Color.clear.frame(height: 4)
+            }
+        }
+        .frame(height: 48)
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Hashable conformance for navigation
+extension ScriptureItem: Hashable {
+    static func == (lhs: ScriptureItem, rhs: ScriptureItem) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }
 
 // MARK: - Next Festival Banner
@@ -224,13 +544,10 @@ struct NextFestivalBanner: View {
                 .italic()
         }
         .padding(DharmaSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: DharmaRadius.lg)
-                .fill(Color.dharmaSurface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: DharmaRadius.lg)
-                        .strokeBorder(Color.dharmaGold.opacity(0.4), lineWidth: 1)
-                )
+        .glassCard(cornerRadius: DharmaRadius.lg)
+        .overlay(
+            RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
+                .strokeBorder(Color.dharmaGold.opacity(0.35), lineWidth: 0.5)
         )
     }
 }
@@ -257,9 +574,11 @@ struct FestivalRowView: View {
             }
             .frame(width: 44)
 
-            // Left border
+            // Left accent border
             Rectangle()
-                .fill(muted ? Color.dharmaTextMuted.opacity(0.3) : Color.dharmaGold.opacity(festival.isHighlight ? 0.9 : 0.4))
+                .fill(muted
+                      ? Color.dharmaTextMuted.opacity(0.3)
+                      : Color.dharmaGold.opacity(festival.isHighlight ? 0.9 : 0.4))
                 .frame(width: festival.isHighlight ? 3 : 2)
                 .clipShape(Capsule())
 
@@ -284,9 +603,9 @@ struct FestivalRowView: View {
                     Text(festival.type.rawValue)
                         .font(DharmaFont.caption(10))
                         .foregroundColor(.dharmaGold.opacity(muted ? 0.6 : 1))
-
-                    Circle().fill(Color.dharmaTextMuted.opacity(0.3)).frame(width: 3, height: 3)
-
+                    Circle()
+                        .fill(Color.dharmaTextMuted.opacity(0.3))
+                        .frame(width: 3, height: 3)
                     Text(festival.deity.components(separatedBy: " · ").first ?? festival.deity)
                         .font(DharmaFont.caption(10))
                         .foregroundColor(.dharmaTextMuted)
@@ -299,9 +618,7 @@ struct FestivalRowView: View {
                     .opacity(muted ? 0.55 : 1.0)
 
                 if festival.isHighlight && !muted {
-                    Button {
-                        findRelatedVerse()
-                    } label: {
+                    Button { findRelatedVerse() } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "book.closed")
                                 .font(.system(size: 9))
@@ -325,15 +642,13 @@ struct FestivalRowView: View {
                 .foregroundColor(.dharmaTextMuted)
         }
         .padding(DharmaSpacing.md)
-        .background(Color.dharmaSurface)
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
+        .glassCard(cornerRadius: DharmaRadius.md)
         .opacity(muted ? 0.65 : 1.0)
     }
 
     private func findRelatedVerse() {
         let deityName = festival.deity.components(separatedBy: " · ").first ?? festival.deity
         let query = "\(festival.name) \(deityName)"
-
         Task {
             searchService.search(query: query)
             try? await Task.sleep(for: .seconds(1.5))

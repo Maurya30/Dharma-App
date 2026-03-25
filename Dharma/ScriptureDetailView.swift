@@ -57,11 +57,6 @@ struct ScriptureDetailView: View {
         return categoryItems[idx + 1]
     }
 
-    /// Large background ॐ — does not affect layout (ZStack layer behind scroll).
-    private var omOpacityWatermark: Double {
-        colorScheme == .dark ? 0.12 : 0.08
-    }
-
     /// Map ScriptureItem to the backend Supabase ID used by /related.
     private var backendVerseId: String? {
         switch item.category {
@@ -96,16 +91,7 @@ struct ScriptureDetailView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            // Behind all scroll content — no layout impact
-            OmWatermark(size: 190, opacity: omOpacityWatermark, rotationDegrees: -8)
-                .fixedSize(horizontal: true, vertical: true)
-                .allowsHitTesting(false)
-                .padding(.top, -28)
-                .padding(.trailing, -52)
-                .accessibilityHidden(true)
-
-            ScrollView {
+        ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
 
                 // Category badge
@@ -184,12 +170,7 @@ struct ScriptureDetailView: View {
                     }
                     .padding(DharmaSpacing.md)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.dharmaSurface)
-                    .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
-                            .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-                    )
+                    .glassCard(cornerRadius: DharmaRadius.lg)
                 }
 
                 // Audio card (Gita only)
@@ -251,16 +232,15 @@ struct ScriptureDetailView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DharmaSpacing.md)
-                    .background(Color.dharmaSurface)
-                    .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
+                    .glassCard(cornerRadius: DharmaRadius.lg)
                     .overlay(
                         RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
-                            .strokeBorder(Color.dharmaGold.opacity(0.45), lineWidth: 1)
+                            .strokeBorder(Color.dharmaGold.opacity(0.35), lineWidth: 0.5)
                     )
                 }
                 .buttonStyle(.plain)
                 .padding(.top, DharmaSpacing.md)
-                .sheet(isPresented: $showingJournal) {
+                .fullScreenCover(isPresented: $showingJournal) {
                     JournalSheetView(item: item) {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                             showKrishna = true
@@ -282,16 +262,15 @@ struct ScriptureDetailView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DharmaSpacing.md)
-                    .background(Color.dharmaGold.opacity(0.07))
-                    .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
+                    .glassCard(cornerRadius: DharmaRadius.lg)
                     .overlay(
                         RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
-                            .strokeBorder(Color.dharmaGold.opacity(0.45), lineWidth: 1)
+                            .strokeBorder(Color.dharmaGold.opacity(0.35), lineWidth: 0.5)
                     )
                 }
                 .buttonStyle(.plain)
                 .padding(.top, DharmaSpacing.sm)
-                .sheet(isPresented: $showKrishna) {
+                .fullScreenCover(isPresented: $showKrishna) {
                     KrishnaView(verse: KrishnaVerse(
                         id: item.id.uuidString,
                         source: item.source,
@@ -318,8 +297,6 @@ struct ScriptureDetailView: View {
                 .padding(.bottom, DharmaSpacing.md)
             }
             .scrollContentBackground(.hidden)
-        }
-        .background(Color.dharmaBackground)
         .task {
             guard let vid = backendVerseId else { return }
             loadingRelated = true
@@ -328,19 +305,14 @@ struct ScriptureDetailView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if previousItem != nil || nextItem != nil {
-                VStack(spacing: 0) {
-                    Divider()
-                        .background(Color.dharmaDivider)
-                    VerseNavigationRow(
-                        previousItem: previousItem,
-                        nextItem: nextItem,
-                        store: store
-                    )
-                    .padding(.horizontal, DharmaSpacing.md)
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.dharmaSurface)
-                }
+                VerseNavigationRow(
+                    previousItem: previousItem,
+                    nextItem: nextItem,
+                    store: store
+                )
+                .padding(.horizontal, DharmaSpacing.md)
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -378,6 +350,8 @@ struct ScriptureDetailView: View {
         .onDisappear {
             audioManager.stop()
         }
+        .transparentNavigationBar()
+        .dharmaBackground()
     }
 
     private var shareText: String {
@@ -409,34 +383,34 @@ struct VerseNavigationRow: View {
         HStack {
             if let prev = previousItem {
                 NavigationLink(destination: ScriptureDetailView(item: prev, store: store)) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 14, weight: .semibold))
-                        Text("Previous")
-                            .font(DharmaFont.body(16))
-                    }
-                    .foregroundColor(.dharmaGold)
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 4)
-                    .contentShape(Rectangle())
+                    Label("Previous", systemImage: "chevron.left")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(Color(hex: "C9821E"))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
                 }
+                .buttonStyle(.plain)
+                .background(.ultraThinMaterial)
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(Color.white.opacity(0.60), lineWidth: 0.5))
+                .shadow(color: Color(hex: "8B5A0A").opacity(0.10), radius: 8, x: 0, y: 4)
             }
 
             Spacer()
 
             if let next = nextItem {
                 NavigationLink(destination: ScriptureDetailView(item: next, store: store)) {
-                    HStack(spacing: 6) {
-                        Text("Next")
-                            .font(DharmaFont.body(16))
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                    }
-                    .foregroundColor(.dharmaGold)
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 4)
-                    .contentShape(Rectangle())
+                    Label("Next", systemImage: "chevron.right")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(Color(hex: "C9821E"))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
                 }
+                .buttonStyle(.plain)
+                .background(.ultraThinMaterial)
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(Color.white.opacity(0.60), lineWidth: 0.5))
+                .shadow(color: Color(hex: "8B5A0A").opacity(0.10), radius: 8, x: 0, y: 4)
             }
         }
         .padding(.vertical, 8)
@@ -490,13 +464,12 @@ struct VerseAudioCard: View {
             }
         }
         .padding(DharmaSpacing.md)
-        .background(Color.dharmaSurface)
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
+        .glassCard(cornerRadius: DharmaRadius.md)
         .overlay(
-            RoundedRectangle(cornerRadius: DharmaRadius.md)
+            RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
                 .strokeBorder(
-                    localState == .playing ? Color.dharmaGold.opacity(0.35) : Color.dharmaCardBorder,
-                    lineWidth: 1
+                    localState == .playing ? Color.dharmaGold.opacity(0.4) : Color.clear,
+                    lineWidth: 0.5
                 )
                 .animation(.easeInOut(duration: 0.3), value: localState)
         )
@@ -586,8 +559,7 @@ struct AudioPlayerView: View {
                 }
             }
             .padding(DharmaSpacing.md)
-            .background(Color.dharmaSurface)
-            .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
+            .glassCard(cornerRadius: DharmaRadius.md)
         }
     }
 }
@@ -642,12 +614,7 @@ private struct GoalConnectionCard: View {
                 .padding(.leading, DharmaSpacing.md)
             }
             .padding(DharmaSpacing.md)
-            .background(Color.dharmaSurface)
-            .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
-                    .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-            )
+            .glassCard(cornerRadius: DharmaRadius.md)
             .padding(.top, DharmaSpacing.md)
         }
     }
@@ -740,12 +707,7 @@ private struct RelatedVersesSection: View {
         }
         .padding(DharmaSpacing.md)
         .frame(width: 200, alignment: .topLeading)
-        .background(Color.dharmaSurface)
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
-                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-        )
+        .glassCard(cornerRadius: DharmaRadius.md)
     }
 }
 

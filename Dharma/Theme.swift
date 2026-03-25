@@ -140,3 +140,173 @@ struct DharmaRadius {
     static let lg: CGFloat  = 16
     static let xl: CGFloat  = 24
 }
+
+// MARK: - Hex colors (design reference)
+
+extension Color {
+    /// 6-digit RGB hex, e.g. `"C9821E"`.
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let r, g, b: UInt64
+        switch hex.count {
+        case 6:
+            (r, g, b) = ((int >> 16) & 0xFF, (int >> 8) & 0xFF, int & 0xFF)
+        default:
+            (r, g, b) = (0, 0, 0)
+        }
+        self.init(.sRGB, red: Double(r) / 255, green: Double(g) / 255, blue: Double(b) / 255, opacity: 1)
+    }
+}
+
+// MARK: - Full-screen gradient + ॐ (design reference)
+
+private struct DharmaBackgroundModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        ZStack {
+            Group {
+                LinearGradient(
+                    colors: colorScheme == .dark
+                        ? [Color(hex: "2A1F0A"), Color(hex: "1A1206")]
+                        : [Color(hex: "FBF0DC"), Color(hex: "EDD9A3")],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+
+                VStack {
+                    HStack {
+                        Spacer()
+                        Text("ॐ")
+                            .font(.system(size: 300, weight: .ultraLight, design: .serif))
+                            .foregroundColor(Color(hex: "C9821E"))
+                            .opacity(colorScheme == .dark ? 0.13 : 0.10)
+                            .rotationEffect(.degrees(10))
+                            .offset(x: 80, y: -80)
+                    }
+                    Spacer()
+                }
+                .ignoresSafeArea()
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+
+            content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.clear)
+        }
+    }
+}
+
+extension View {
+    func dharmaBackground() -> some View {
+        modifier(DharmaBackgroundModifier())
+    }
+}
+
+// MARK: - Glass cards (design reference)
+
+enum GlassCardTint {
+    case standard
+    /// User chat bubble: material + saffron wash.
+    case userMessage
+}
+
+private struct GlassCardModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    var cornerRadius: CGFloat
+    var tint: GlassCardTint
+    /// When `true`, use `Capsule()` instead of `RoundedRectangle`.
+    var isCapsule: Bool
+
+    func body(content: Content) -> some View {
+        let strokeColor: Color = colorScheme == .dark
+            ? Color(hex: "C9821E").opacity(0.18)
+            : Color.white.opacity(0.70)
+        let shadowColor: Color = colorScheme == .dark
+            ? Color.black.opacity(0.40)
+            : Color(hex: "8B5A0A").opacity(0.10)
+        let shadowRadius: CGFloat = colorScheme == .dark ? 12 : 8
+
+        content
+            .background {
+                ZStack {
+                    Group {
+                        if isCapsule {
+                            Capsule().fill(.ultraThinMaterial)
+                        } else {
+                            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                                .fill(.ultraThinMaterial)
+                        }
+                    }
+                    Group {
+                        if isCapsule {
+                            switch tint {
+                            case .standard:
+                                Capsule()
+                                    .fill(colorScheme == .dark
+                                        ? Color(hex: "281A06").opacity(0.55)
+                                        : Color(hex: "FFFDF7").opacity(0.60))
+                            case .userMessage:
+                                Capsule()
+                                    .fill(Color(hex: "C9821E").opacity(0.12))
+                            }
+                        } else {
+                            switch tint {
+                            case .standard:
+                                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                                    .fill(colorScheme == .dark
+                                        ? Color(hex: "281A06").opacity(0.55)
+                                        : Color(hex: "FFFDF7").opacity(0.60))
+                            case .userMessage:
+                                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                                    .fill(Color(hex: "C9821E").opacity(0.12))
+                            }
+                        }
+                    }
+                }
+            }
+            .clipShape(isCapsule ? AnyShape(Capsule()) : AnyShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)))
+            .overlay {
+                if isCapsule {
+                    Capsule().stroke(strokeColor, lineWidth: 0.5)
+                } else {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(strokeColor, lineWidth: 0.5)
+                }
+            }
+            .shadow(color: shadowColor, radius: shadowRadius, x: 0, y: 4)
+    }
+}
+
+/// Type-erased shape for `clipShape` when switching between capsule and rounded rect.
+private struct AnyShape: Shape {
+    private let buildPath: (CGRect) -> Path
+
+    init<S: Shape>(_ shape: S) {
+        buildPath = { rect in shape.path(in: rect) }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        buildPath(rect)
+    }
+}
+
+extension View {
+    func glassCard(cornerRadius: CGFloat = 16, tint: GlassCardTint = .standard) -> some View {
+        modifier(GlassCardModifier(cornerRadius: cornerRadius, tint: tint, isCapsule: false))
+    }
+
+    /// Inactive Library filter pills (capsule glass).
+    func glassCapsuleCard(tint: GlassCardTint = .standard) -> some View {
+        modifier(GlassCardModifier(cornerRadius: 16, tint: tint, isCapsule: true))
+    }
+
+    /// Keeps the navigation bar transparent so `dharmaBackground` shows through while scrolling.
+    func transparentNavigationBar() -> some View {
+        toolbarBackground(.hidden, for: .navigationBar)
+    }
+}

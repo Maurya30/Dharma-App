@@ -63,9 +63,13 @@ struct LibraryView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 0) {
-                    CategoryFilterView(selected: $selectedCategory)
+                    librarySearchField
                         .padding(.horizontal, DharmaSpacing.md)
                         .padding(.top, DharmaSpacing.sm)
+                        .padding(.bottom, DharmaSpacing.sm)
+
+                    CategoryFilterView(selected: $selectedCategory)
+                        .padding(.horizontal, DharmaSpacing.md)
                         .padding(.bottom, DharmaSpacing.md)
 
                     if searchText.isEmpty && !hasActiveFilters {
@@ -159,14 +163,13 @@ struct LibraryView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
             .refreshable {
                 await store.refreshLibraryContent()
                 DharmaHaptics.light()
             }
-            .background(Color.dharmaBackground)
             .navigationTitle("Dharma Library")
             .navigationBarTitleDisplayMode(.large)
-            .searchable(text: $searchText, prompt: "Search verses, mantras…")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 16) {
@@ -242,7 +245,35 @@ struct LibraryView: View {
                     selectedRigVedaBook = nil
                 }
             }
+            .transparentNavigationBar()
+            .dharmaBackground()
         }
+    }
+
+    private var librarySearchField: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.dharmaTextMuted)
+
+            TextField("Search verses, mantras…", text: $searchText)
+                .font(DharmaFont.body(15))
+                .foregroundColor(.dharmaTextPrimary)
+
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.dharmaTextMuted)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, DharmaSpacing.md)
+        .glassCard(cornerRadius: DharmaRadius.lg)
     }
 }
 
@@ -270,11 +301,10 @@ extension LibraryView {
                     .foregroundColor(.dharmaTextMuted)
             }
             .padding(DharmaSpacing.md)
-            .background(Color.dharmaSurface)
-            .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
+            .glassCard(cornerRadius: DharmaRadius.md)
             .overlay(
-                RoundedRectangle(cornerRadius: DharmaRadius.md)
-                    .strokeBorder(color.opacity(0.3), lineWidth: 1)
+                RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
+                    .strokeBorder(color.opacity(0.28), lineWidth: 0.5)
             )
         }
         .buttonStyle(.plain)
@@ -439,6 +469,7 @@ struct FilterSheetView: View {
                 }
             }
         }
+        .transparentNavigationBar()
     }
 
     func speakerIcon(_ speaker: String) -> String {
@@ -491,11 +522,11 @@ struct FavouritesView: View {
                     .padding(.bottom, DharmaSpacing.xl)
                 }
             }
+            .scrollContentBackground(.hidden)
             .refreshable {
                 await store.refreshLibraryContent()
                 DharmaHaptics.light()
             }
-            .background(Color.dharmaBackground)
             .navigationTitle("Favourites")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
@@ -505,6 +536,8 @@ struct FavouritesView: View {
                 }
             }
         }
+        .transparentNavigationBar()
+        .dharmaBackground()
     }
 }
 
@@ -551,26 +584,32 @@ struct CategoryPill: View {
             DharmaHaptics.selection()
             action()
         } label: {
-            HStack(spacing: 5) {
-                Image(systemName: icon)
-                    .font(.system(size: 11))
-                Text(label)
-                    .font(DharmaFont.caption(13))
+            Group {
+                if isSelected {
+                    HStack(spacing: 5) {
+                        Image(systemName: icon)
+                            .font(.system(size: 11))
+                        Text(label)
+                            .font(DharmaFont.caption(13))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .foregroundColor(.white)
+                    .background(Color.dharmaGold)
+                    .clipShape(Capsule())
+                } else {
+                    HStack(spacing: 5) {
+                        Image(systemName: icon)
+                            .font(.system(size: 11))
+                        Text(label)
+                            .font(DharmaFont.caption(13))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .foregroundColor(.dharmaTextSecondary)
+                    .glassCapsuleCard()
+                }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
-            .background(
-                isSelected ? color.opacity(0.18) : Color.dharmaSurface
-            )
-            .foregroundColor(isSelected ? color : .dharmaTextSecondary)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .strokeBorder(
-                        isSelected ? color.opacity(0.5) : Color.clear,
-                        lineWidth: 1
-                    )
-            )
         }
         .buttonStyle(.plain)
     }
@@ -624,12 +663,7 @@ struct SemanticResultCard: View {
                 .foregroundColor(.dharmaTextMuted)
         }
         .padding(DharmaSpacing.md)
-        .background(Color.dharmaSurface)
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: DharmaRadius.md)
-                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-        )
+        .glassCard(cornerRadius: DharmaRadius.md)
     }
 }
 
@@ -697,12 +731,7 @@ struct ScriptureCardView: View {
                 .foregroundColor(.dharmaTextMuted)
         }
         .padding(DharmaSpacing.md)
-        .background(Color.dharmaSurface)
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: DharmaRadius.md)
-                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-        )
+        .glassCard(cornerRadius: DharmaRadius.md)
     }
 }
 

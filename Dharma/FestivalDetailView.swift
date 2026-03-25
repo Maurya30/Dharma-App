@@ -75,7 +75,7 @@ struct FestivalDetailView: View {
             }
             .padding(DharmaSpacing.lg)
         }
-        .background(Color.dharmaBackground)
+        .scrollContentBackground(.hidden)
         .navigationTitle(festival.name)
         .navigationBarTitleDisplayMode(.large)
         .onAppear {
@@ -86,6 +86,8 @@ struct FestivalDetailView: View {
                 EventEditViewController(event: event, eventStore: eventStore)
             }
         }
+        .transparentNavigationBar()
+        .dharmaBackground()
     }
 
     private func addToCalendar() {

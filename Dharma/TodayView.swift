@@ -109,7 +109,7 @@ struct TodayView: View {
                     }
                     .buttonStyle(.plain)
                     .padding(.horizontal, DharmaSpacing.md)
-                    .sheet(isPresented: $showKrishna) {
+                    .fullScreenCover(isPresented: $showKrishna) {
                         KrishnaView(verse: nil)
                             .environmentObject(store)
                     }
@@ -143,13 +143,15 @@ struct TodayView: View {
                     Spacer(minLength: DharmaSpacing.xxl)
                 }
             }
+            .scrollContentBackground(.hidden)
             .refreshable {
                 await store.refreshLibraryContent()
                 DharmaHaptics.light()
             }
-            .background(Color.dharmaBackground)
             .navigationTitle("Today")
             .navigationBarTitleDisplayMode(.large)
+            .transparentNavigationBar()
+            .dharmaBackground()
         }
     }
 }
@@ -213,14 +215,7 @@ struct DailyVerseCard: View {
                 }
             }
             .padding(DharmaSpacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: DharmaRadius.lg)
-                    .fill(Color.dharmaSurface)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DharmaRadius.lg)
-                            .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-                    )
-            )
+            .glassCard(cornerRadius: DharmaRadius.lg)
         }
         .buttonStyle(.plain)
     }
@@ -268,12 +263,7 @@ struct JourneyCard: View {
                 }
             }
             .padding(DharmaSpacing.md)
-            .background(Color.dharmaSurface)
-            .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
-            .overlay(
-                RoundedRectangle(cornerRadius: DharmaRadius.md)
-                    .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-            )
+            .glassCard(cornerRadius: DharmaRadius.md)
         }
     }
 
@@ -403,12 +393,7 @@ struct FestivalTeaserCard: View {
             }
         }
         .padding(DharmaSpacing.md)
-        .background(Color.dharmaSurface)
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: DharmaRadius.md)
-                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-        )
+        .glassCard(cornerRadius: DharmaRadius.md)
     }
 }
 
@@ -469,12 +454,7 @@ struct QuickAccessTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DharmaSpacing.md)
-        .background(Color.dharmaSurface)
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: DharmaRadius.md)
-                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-        )
+        .glassCard(cornerRadius: DharmaRadius.md)
     }
 }
 
@@ -496,9 +476,10 @@ struct CategoryDetailView: View {
             .padding(DharmaSpacing.md)
             .padding(.bottom, DharmaSpacing.xl)
         }
-        .background(Color.dharmaBackground)
+        .scrollContentBackground(.hidden)
         .navigationTitle(category.rawValue)
         .navigationBarTitleDisplayMode(.large)
+        .dharmaBackground()
     }
 }
 
@@ -528,11 +509,10 @@ struct KrishnaTodayCard: View {
                 .foregroundColor(.dharmaGold.opacity(0.6))
         }
         .padding(DharmaSpacing.md)
-        .background(Color.dharmaGold.opacity(0.07))
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
+        .glassCard(cornerRadius: DharmaRadius.lg)
         .overlay(
             RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
-                .strokeBorder(Color.dharmaGold.opacity(0.45), lineWidth: 1)
+                .strokeBorder(Color.dharmaGold.opacity(0.35), lineWidth: 0.5)
         )
     }
 }

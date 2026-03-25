@@ -36,9 +36,11 @@ struct AllReflectionsView: View {
             await store.refreshLibraryContent()
             DharmaHaptics.light()
         }
-        .background(Color.dharmaBackground)
+        .scrollContentBackground(.hidden)
         .navigationTitle("All Reflections")
         .navigationBarTitleDisplayMode(.large)
+        .transparentNavigationBar()
+        .dharmaBackground()
     }
 
     private func reflectionCard(_ entry: JournalEntry) -> some View {

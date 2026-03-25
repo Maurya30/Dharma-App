@@ -36,15 +36,17 @@ struct JourneyView: View {
                     Spacer(minLength: DharmaSpacing.xxl)
                 }
             }
+            .scrollContentBackground(.hidden)
             .refreshable {
                 await store.refreshLibraryContent()
                 await loadExploreFurther()
                 DharmaHaptics.light()
             }
-            .background(Color.dharmaBackground)
             .navigationTitle("My Journey")
             .navigationBarTitleDisplayMode(.large)
             .task { await loadExploreFurther() }
+            .transparentNavigationBar()
+            .dharmaBackground()
         }
     }
 
@@ -95,12 +97,7 @@ struct JourneyView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(DharmaSpacing.md)
-        .background(Color.dharmaSurface)
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
-                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-        )
+        .glassCard(cornerRadius: DharmaRadius.lg)
     }
 
     private func goalCard(_ goal: String) -> some View {
@@ -131,12 +128,7 @@ struct JourneyView: View {
         }
         .padding(DharmaSpacing.md)
         .frame(width: 160, height: 120, alignment: .topLeading)
-        .background(Color.dharmaSurface)
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
-                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-        )
+        .glassCard(cornerRadius: DharmaRadius.md)
     }
 
     private func versesForGoal(_ goal: String) -> Int {
@@ -191,12 +183,7 @@ struct JourneyView: View {
         )
         .frame(maxWidth: .infinity)
         .padding(DharmaSpacing.md)
-        .background(Color.dharmaSurface)
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
-                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-        )
+        .glassCard(cornerRadius: DharmaRadius.lg)
     }
 
     private func reflectionCard(_ entry: JournalEntry) -> some View {
@@ -245,12 +232,7 @@ struct JourneyView: View {
             }
         }
         .padding(DharmaSpacing.md)
-        .background(Color.dharmaSurface)
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
-                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-        )
+        .glassCard(cornerRadius: DharmaRadius.md)
     }
 
     // MARK: - Explore Further Section
@@ -321,12 +303,7 @@ struct JourneyView: View {
         }
         .padding(DharmaSpacing.md)
         .frame(width: 200, alignment: .topLeading)
-        .background(Color.dharmaSurface)
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
-                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-        )
+        .glassCard(cornerRadius: DharmaRadius.md)
     }
 
     // MARK: - Load

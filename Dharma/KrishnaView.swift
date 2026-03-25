@@ -10,16 +10,27 @@ struct KrishnaView: View {
     @FocusState private var inputFocused: Bool
     @State private var linkedVerse: ScriptureItem? = nil
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
-
-    private var omOpacity: Double { colorScheme == .dark ? 0.12 : 0.08 }
 
     var body: some View {
         NavigationStack {
             Group {
                 if linkedVerse == nil {
                     mainChat
-                        .navigationBarHidden(true)
+                }
+            }
+            .navigationTitle("Krishna")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        service.cancel()
+                        dismiss()
+                    }) {
+                        Image(systemName: "chevron.down")
+                    }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.circle)
+                    .tint(Color(hex: "C9821E"))
                 }
             }
             .navigationDestination(item: $linkedVerse) { item in
@@ -34,33 +45,19 @@ struct KrishnaView: View {
                 return .handled
             })
         }
+        .transparentNavigationBar()
     }
 
     // MARK: - Main chat (root of stack)
 
     private var mainChat: some View {
-        ZStack(alignment: .topTrailing) {
-            Color.dharmaBackground.ignoresSafeArea()
-
-            OmWatermark(size: 190, opacity: omOpacity, rotationDegrees: -8)
-                .fixedSize(horizontal: true, vertical: true)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-                .padding(.top, -28)
-                .padding(.trailing, -52)
-
-            VStack(spacing: 0) {
-                navBar
-
+        VStack(spacing: 0) {
                 if let v = verse {
                     verseContextCard(v)
                         .padding(.horizontal, DharmaSpacing.md)
                         .padding(.top, DharmaSpacing.sm)
                         .padding(.bottom, DharmaSpacing.xs)
                 }
-
-                Divider()
-                    .background(Color.dharmaDivider)
 
                 ScrollViewReader { proxy in
                     ScrollView {
@@ -106,11 +103,11 @@ struct KrishnaView: View {
                         withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
                     }
                 }
-            }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             inputBar
         }
+        .dharmaBackground()
     }
 
     // MARK: - Nav Bar
@@ -125,9 +122,8 @@ struct KrishnaView: View {
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.dharmaTextPrimary)
                     .frame(width: 36, height: 36)
-                    .background(Color.dharmaSurface)
-                    .clipShape(Circle())
-                    .overlay(Circle().strokeBorder(Color.dharmaCardBorder, lineWidth: 1))
+                    .background(.ultraThinMaterial, in: Circle())
+                    .overlay(Circle().strokeBorder(Color.dharmaCardBorder.opacity(0.5), lineWidth: 0.5))
             }
 
             Spacer()
@@ -142,7 +138,6 @@ struct KrishnaView: View {
         }
         .padding(.horizontal, DharmaSpacing.md)
         .padding(.vertical, DharmaSpacing.sm)
-        .background(Color.dharmaBackground)
     }
 
     // MARK: - Verse Context Card
@@ -170,49 +165,35 @@ struct KrishnaView: View {
         }
         .padding(.horizontal, DharmaSpacing.md)
         .padding(.vertical, DharmaSpacing.sm)
-        .background(Color.dharmaSurface)
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
-                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-        )
+        .glassCard(cornerRadius: DharmaRadius.md)
     }
 
     // MARK: - Input Bar
 
     private var inputBar: some View {
-        VStack(spacing: 0) {
-            Divider().background(Color.dharmaDivider)
+        HStack(alignment: .bottom, spacing: DharmaSpacing.sm) {
+            TextField("Ask Krishna...", text: $inputText, axis: .vertical)
+                .font(DharmaFont.georgia(16))
+                .foregroundColor(.dharmaTextPrimary)
+                .lineLimit(1...5)
+                .focused($inputFocused)
+                .padding(.horizontal, DharmaSpacing.md)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
 
-            HStack(alignment: .bottom, spacing: DharmaSpacing.sm) {
-                TextField("Ask Krishna...", text: $inputText, axis: .vertical)
-                    .font(DharmaFont.georgia(16))
-                    .foregroundColor(.dharmaTextPrimary)
-                    .lineLimit(1...5)
-                    .focused($inputFocused)
-                    .padding(.horizontal, DharmaSpacing.md)
-                    .padding(.vertical, 10)
-                    .background(Color.dharmaSurface)
-                    .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
-                            .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-                    )
-
-                Button(action: send) {
-                    Image(systemName: "paperplane.fill")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.white)
-                        .frame(width: 40, height: 40)
-                        .background(canSend ? Color.dharmaGold : Color.dharmaGold.opacity(0.35))
-                        .clipShape(Circle())
-                }
-                .disabled(!canSend)
+            Button(action: send) {
+                Image(systemName: "paperplane.fill")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
+                    .frame(width: 40, height: 40)
+                    .background(canSend ? Color.dharmaGold : Color.dharmaGold.opacity(0.35))
+                    .clipShape(Circle())
             }
-            .padding(.horizontal, DharmaSpacing.md)
-            .padding(.vertical, DharmaSpacing.sm)
-            .background(Color.dharmaBackground)
+            .disabled(!canSend)
         }
+        .padding(.horizontal, DharmaSpacing.md)
+        .padding(.vertical, DharmaSpacing.sm)
+        .background(.ultraThinMaterial)
     }
 
     private var canSend: Bool {
@@ -276,9 +257,8 @@ private struct KrishnaBubble: View {
                 HStack(alignment: .top, spacing: 10) {
                     Rectangle()
                         .fill(Color.dharmaGold)
-                        .frame(width: 3)
+                        .frame(width: 2)
                         .clipShape(Capsule())
-                        .opacity(0.7)
 
                     VStack(alignment: .leading, spacing: 0) {
                         if !text.isEmpty {
@@ -306,12 +286,7 @@ private struct KrishnaBubble: View {
                 }
                 .padding(DharmaSpacing.md)
             }
-            .background(Color.dharmaSurface)
-            .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
-                    .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-            )
+            .glassCard(cornerRadius: DharmaRadius.lg)
             .contextMenu {
                 Button {
                     UIPasteboard.general.string = text
@@ -340,8 +315,7 @@ private struct UserBubble: View {
                 .lineSpacing(7)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(DharmaSpacing.md)
-                .background(Color.dharmaGold.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous))
+                .glassCard(cornerRadius: DharmaRadius.lg, tint: .userMessage)
         }
     }
 }

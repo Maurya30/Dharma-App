@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 @main
 struct DharmaApp: App {
@@ -8,21 +9,24 @@ struct DharmaApp: App {
     @StateObject private var journalStore = JournalStore.shared
 
     init() {
-        let navAppearance = UINavigationBarAppearance()
-        navAppearance.configureWithOpaqueBackground()
-        navAppearance.backgroundColor = .dharmaBackgroundUI
-        navAppearance.titleTextAttributes = [.foregroundColor: UIColor.dharmaTextPrimaryUI]
-        navAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor.dharmaTextPrimaryUI]
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithTransparentBackground()
+        appearance.backgroundColor = .clear
+        appearance.shadowColor = .clear
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.dharmaTextPrimaryUI]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.dharmaTextPrimaryUI]
 
-        let scrollEdgeAppearance = UINavigationBarAppearance()
-        scrollEdgeAppearance.configureWithTransparentBackground()
-        scrollEdgeAppearance.titleTextAttributes = [.foregroundColor: UIColor.dharmaTextPrimaryUI]
-        scrollEdgeAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor.dharmaTextPrimaryUI]
-
-        UINavigationBar.appearance().standardAppearance = navAppearance
-        UINavigationBar.appearance().scrollEdgeAppearance = scrollEdgeAppearance
-        UINavigationBar.appearance().compactAppearance = navAppearance
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        UINavigationBar.appearance().compactAppearance = appearance
         UINavigationBar.appearance().tintColor = UIColor(red: 0.788, green: 0.510, blue: 0.118, alpha: 1)
+
+        // Let `dharmaBackground` show through SwiftUI ScrollView / List / grid backing stores.
+        UIScrollView.appearance().backgroundColor = .clear
+        UIView.appearance(whenContainedInInstancesOf: [UIScrollView.self]).backgroundColor = .clear
+        UITableView.appearance().backgroundColor = .clear
+        UITableViewCell.appearance().backgroundColor = .clear
+        UICollectionView.appearance().backgroundColor = .clear
 
         let tabAppearance = UITabBarAppearance()
         tabAppearance.configureWithOpaqueBackground()

@@ -151,13 +151,17 @@ struct JournalSheetView: View {
                 .padding(.horizontal, DharmaSpacing.md)
                 .padding(.top, DharmaSpacing.md)
             }
-            .background(Color.dharmaBackground)
+            .scrollContentBackground(.hidden)
             .navigationTitle("Reflect")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundColor(.dharmaGold)
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.down")
+                    }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.circle)
+                    .tint(Color(hex: "C9821E"))
                 }
             }
             .onAppear {
@@ -165,6 +169,8 @@ struct JournalSheetView: View {
                     noteText = existing.noteText
                 }
             }
+            .transparentNavigationBar()
+            .dharmaBackground()
         }
     }
 
