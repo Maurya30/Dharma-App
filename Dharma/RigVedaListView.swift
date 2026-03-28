@@ -16,9 +16,10 @@ struct RigVedaListView: View {
             .padding(DharmaSpacing.md)
             .padding(.bottom, DharmaSpacing.xl)
         }
-        .background(Color.dharmaBackground)
+        .scrollContentBackground(.hidden)
         .navigationTitle("Rig Veda")
         .navigationBarTitleDisplayMode(.large)
+        .dharmaBackground()
     }
 }
 
@@ -95,8 +96,9 @@ struct RigVedaBookView: View {
             .padding(DharmaSpacing.md)
             .padding(.bottom, DharmaSpacing.xl)
         }
-        .background(Color.dharmaBackground)
+        .scrollContentBackground(.hidden)
         .navigationTitle("Mandala \(book)")
         .navigationBarTitleDisplayMode(.large)
+        .dharmaBackground()
     }
 }

@@ -16,9 +16,10 @@ struct ChapterListView: View {
             .padding(DharmaSpacing.md)
             .padding(.bottom, DharmaSpacing.xl)
         }
-        .background(Color.dharmaBackground)
+        .scrollContentBackground(.hidden)
         .navigationTitle("Bhagavad Gita")
         .navigationBarTitleDisplayMode(.large)
+        .dharmaBackground()
     }
 }
 
@@ -131,8 +132,9 @@ struct ChapterVerseListView: View {
             .padding(DharmaSpacing.md)
             .padding(.bottom, DharmaSpacing.xl)
         }
-        .background(Color.dharmaBackground)
+        .scrollContentBackground(.hidden)
         .navigationTitle(chapterInfo?.nameTranslation ?? "Chapter \(chapter)")
         .navigationBarTitleDisplayMode(.large)
+        .dharmaBackground()
     }
 }

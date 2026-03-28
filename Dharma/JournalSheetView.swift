@@ -7,6 +7,9 @@ struct JournalSheetView: View {
     @ObservedObject private var journalStore = JournalStore.shared
     @State private var noteText = ""
     @State private var showSaved = false
+    @State private var showingKrishnaResponse = false
+    @State private var krishnaResponse = ""
+    @State private var isKrishnaLoading = false
     @Environment(\.dismiss) private var dismiss
 
     private var verseId: String { item.id.uuidString }
@@ -116,24 +119,67 @@ struct JournalSheetView: View {
                         }
                         .disabled(noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-                        Button { askKrishna() } label: {
+                        Button(action: { askKrishnaInline() }) {
                             HStack(spacing: DharmaSpacing.sm) {
-                                Image(systemName: "seal.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.dharmaGold)
-                                Text("Ask Krishna")
+                                if isKrishnaLoading {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                        .tint(Color(hex: "C9821E"))
+                                } else {
+                                    Image(systemName: "sparkles")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(Color(hex: "C9821E"))
+                                }
+                                Text(isKrishnaLoading ? "Krishna is reflecting..." : "Ask Krishna about this")
                                     .font(DharmaFont.heading(16))
-                                    .foregroundColor(.dharmaGold)
+                                    .foregroundColor(Color(hex: "C9821E"))
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .glassCard(cornerRadius: DharmaRadius.md)
                             .overlay(
                                 RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
-                                    .strokeBorder(Color.dharmaGold.opacity(0.45), lineWidth: 1)
+                                    .strokeBorder(Color(hex: "C9821E").opacity(0.45), lineWidth: 1)
                             )
                         }
                         .buttonStyle(.plain)
+                        .disabled(isKrishnaLoading)
+
+                        if showingKrishnaResponse && !krishnaResponse.isEmpty {
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack {
+                                    Image(systemName: "sparkles")
+                                        .foregroundColor(Color(hex: "C9821E"))
+                                        .font(.system(size: 12))
+                                    Text("Krishna")
+                                        .font(.system(size: 11, weight: .medium))
+                                        .foregroundColor(Color(hex: "C9821E"))
+                                    Spacer()
+                                    Button(action: {
+                                        noteText += "\n\n— Krishna: " + krishnaResponse
+                                        showingKrishnaResponse = false
+                                        krishnaResponse = ""
+                                    }) {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "plus.circle")
+                                                .font(.system(size: 11))
+                                            Text("Add to reflection")
+                                                .font(.system(size: 11))
+                                        }
+                                        .foregroundColor(Color(hex: "C9821E"))
+                                    }
+                                }
+                                Text(krishnaResponse)
+                                    .font(Font.custom("Georgia", size: 13))
+                                    .foregroundColor(Color(hex: "2A1A00"))
+                                    .italic()
+                                    .lineSpacing(4)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(12)
+                            .glassCard(cornerRadius: DharmaRadius.md)
+                            .padding(.top, 4)
+                        }
                     }
 
                     Spacer(minLength: DharmaSpacing.xl)
@@ -152,6 +198,15 @@ struct JournalSheetView: View {
                     .buttonStyle(.bordered)
                     .buttonBorderShape(.circle)
                     .tint(Color(hex: "C9821E"))
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        UIApplication.shared.sendAction(
+                            #selector(UIResponder.resignFirstResponder),
+                            to: nil, from: nil, for: nil)
+                    }
+                    .foregroundColor(Color(hex: "C9821E"))
                 }
             }
             .onAppear {
@@ -224,24 +279,45 @@ struct JournalSheetView: View {
         }
     }
 
-    private func askKrishna() {
-        DharmaHaptics.medium()
-        let trimmed = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty {
-            var entry = journalStore.entry(for: verseId) ?? JournalEntry(
-                verseId: verseId,
-                verseReference: item.subtitle,
-                verseSource: item.source,
-                verseEnglish: item.textEnglish,
-                noteText: trimmed,
-                goalContext: matchingGoal
-            )
-            entry.noteText = trimmed
-            entry.spokenWithKrishna = true
-            journalStore.save(entry: entry)
+    func askKrishnaInline() {
+        isKrishnaLoading = true
+        showingKrishnaResponse = false
+        krishnaResponse = ""
+
+        let message = noteText.trimmingCharacters(in: .whitespaces).isEmpty
+            ? "What does this verse mean and how can I apply it? Give a single focused insight in 3-5 sentences only. Do not ask follow up questions."
+            : "I wrote this reflection on the verse: \(noteText)\n\nRespond to my reflection with a single focused insight in 3-5 sentences. Speak directly to what I wrote. Do not ask follow up questions."
+
+        let request = KrishnaRequest(
+            message: message,
+            currentVerse: KrishnaVerse(
+                id: item.id.uuidString,
+                source: item.source,
+                english: item.textEnglish
+            ),
+            goals: GoalsManager.shared.selectedGoals,
+            reflection: noteText.trimmingCharacters(in: .whitespaces).isEmpty ? nil : noteText,
+            conversationHistory: nil
+        )
+
+        Task {
+            do {
+                var fullResponse = ""
+                for try await chunk in KrishnaService.shared.streamResponse(request: request) {
+                    fullResponse += chunk
+                    await MainActor.run {
+                        krishnaResponse = fullResponse
+                        showingKrishnaResponse = true
+                    }
+                }
+                await MainActor.run {
+                    isKrishnaLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    isKrishnaLoading = false
+                }
+            }
         }
-        journalStore.markSpokenWithKrishna(verseId: verseId)
-        dismiss()
-        onAskKrishna?()
     }
 }

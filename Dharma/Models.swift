@@ -6,7 +6,6 @@ enum ScriptureCategory: String, CaseIterable, Codable, Identifiable {
     case upanishads = "Upanishads"
     case rigVeda    = "Rig Veda"
     case mantras    = "Mantras"
-    case bhajans    = "Bhajans"
 
     var id: String { rawValue }
 
@@ -16,7 +15,6 @@ enum ScriptureCategory: String, CaseIterable, Codable, Identifiable {
         case .upanishads: return "scroll.fill"
         case .rigVeda:    return "flame.fill"
         case .mantras:    return "waveform"
-        case .bhajans:    return "music.note"
         }
     }
 
@@ -26,7 +24,6 @@ enum ScriptureCategory: String, CaseIterable, Codable, Identifiable {
         case .upanishads: return .categoryUpanishads
         case .rigVeda:    return .categoryRigVeda
         case .mantras:    return .categoryMantras
-        case .bhajans:    return .categoryBhajans
         }
     }
 
@@ -36,7 +33,6 @@ enum ScriptureCategory: String, CaseIterable, Codable, Identifiable {
         case .upanishads: return "Ancient philosophical texts"
         case .rigVeda:    return "Oldest sacred hymns"
         case .mantras:    return "Sacred sounds & chants"
-        case .bhajans:    return "Devotional songs"
         }
     }
 }
@@ -118,8 +114,19 @@ struct ScriptureItem: Identifiable, Codable {
     let textTransliteration: String?  // Sanskrit in Latin script
     let textSanskrit: String?   // Devanagari script
     let source: String          // e.g. "Bhagavad Gita 2.47"
-    let audioFileName: String?  // optional — for mantras/bhajans
+    let audioFileName: String?  // optional — for mantras
     var isFavourite: Bool
+
+    // Mantra-specific metadata (nil for non-mantra items)
+    var mantraTransliteration: String? = nil
+    var mantraSanskrit: String? = nil
+    var mantraMeaning: String? = nil
+    var mantraBenefits: [String]? = nil
+    var mantraHowToChant: String? = nil
+    var mantraRepetitions: Int? = nil
+    var mantraDeity: String? = nil
+    var mantraIsBeej: Bool? = nil
+    var mantraCategory: String? = nil
 
     init(
         id: UUID = UUID(),
@@ -131,7 +138,16 @@ struct ScriptureItem: Identifiable, Codable {
         textSanskrit: String? = nil,
         source: String,
         audioFileName: String? = nil,
-        isFavourite: Bool = false
+        isFavourite: Bool = false,
+        mantraTransliteration: String? = nil,
+        mantraSanskrit: String? = nil,
+        mantraMeaning: String? = nil,
+        mantraBenefits: [String]? = nil,
+        mantraHowToChant: String? = nil,
+        mantraRepetitions: Int? = nil,
+        mantraDeity: String? = nil,
+        mantraIsBeej: Bool? = nil,
+        mantraCategory: String? = nil
     ) {
         self.id = id
         self.category = category
@@ -143,6 +159,15 @@ struct ScriptureItem: Identifiable, Codable {
         self.source = source
         self.audioFileName = audioFileName
         self.isFavourite = isFavourite
+        self.mantraTransliteration = mantraTransliteration
+        self.mantraSanskrit = mantraSanskrit
+        self.mantraMeaning = mantraMeaning
+        self.mantraBenefits = mantraBenefits
+        self.mantraHowToChant = mantraHowToChant
+        self.mantraRepetitions = mantraRepetitions
+        self.mantraDeity = mantraDeity
+        self.mantraIsBeej = mantraIsBeej
+        self.mantraCategory = mantraCategory
     }
 }
 

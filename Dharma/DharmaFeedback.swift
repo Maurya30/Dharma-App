@@ -4,25 +4,11 @@ import UIKit
 // MARK: - Haptics
 
 enum DharmaHaptics {
-    static func light() {
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-    }
-
-    static func medium() {
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-    }
-
-    static func success() {
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
-    }
-
-    static func warning() {
-        UINotificationFeedbackGenerator().notificationOccurred(.warning)
-    }
-
-    static func selection() {
-        UISelectionFeedbackGenerator().selectionChanged()
-    }
+    static func light() { HapticManager.light() }
+    static func medium() { HapticManager.medium() }
+    static func success() { HapticManager.success() }
+    static func warning() { HapticManager.warning() }
+    static func selection() { HapticManager.selection() }
 }
 
 // MARK: - Shimmer

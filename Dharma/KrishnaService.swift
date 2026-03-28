@@ -50,9 +50,20 @@ struct KrishnaMessage: Codable, Identifiable {
 
 @MainActor
 final class KrishnaService: ObservableObject {
+    static let shared = KrishnaService()
+
+    /// Free-tier cap for settings display; increment when the user sends a message.
+    static let dailyMessageLimit = 25
+
+    private static let messagesCalendarDayKey = "krishna_messages_calendar_day"
+    private static let messagesCountTodayKey = "krishna_messages_count_today"
+
     @Published var streamingResponse: String = ""
     @Published var isStreaming: Bool = false
     @Published var conversationHistory: [KrishnaMessage] = []
+
+    /// User messages sent today (resets per calendar day in the current timezone).
+    @Published private(set) var messagesSentToday: Int = 0
 
     private let endpoint = BackendConfig.baseURL.appendingPathComponent("chat")
 
@@ -69,7 +80,48 @@ final class KrishnaService: ObservableObject {
 
     private var activeTask: URLSessionDataTask?
 
+    init() {
+        messagesSentToday = Self.readMessagesSentToday()
+    }
+
+    /// Syncs published count after calendar day changes (e.g. opening Settings at midnight).
+    func refreshMessageUsageFromPersistence() {
+        messagesSentToday = Self.readMessagesSentToday()
+    }
+
+    /// Messages sent today for quota display (same storage as `messagesSentToday`).
+    static func messagesSentTodayCount() -> Int {
+        let defaults = UserDefaults.standard
+        let day = Self.currentCalendarDayString()
+        guard defaults.string(forKey: messagesCalendarDayKey) == day else { return 0 }
+        return defaults.integer(forKey: messagesCountTodayKey)
+    }
+
+    private static func currentCalendarDayString() -> String {
+        let cal = Calendar.current
+        let c = cal.dateComponents([.year, .month, .day], from: Date())
+        return "\(c.year ?? 0)-\(c.month ?? 0)-\(c.day ?? 0)"
+    }
+
+    private static func readMessagesSentToday() -> Int {
+        messagesSentTodayCount()
+    }
+
+    private func recordOutgoingUserMessage() {
+        let defaults = UserDefaults.standard
+        let day = Self.currentCalendarDayString()
+        if defaults.string(forKey: Self.messagesCalendarDayKey) != day {
+            defaults.set(day, forKey: Self.messagesCalendarDayKey)
+            defaults.set(1, forKey: Self.messagesCountTodayKey)
+        } else {
+            let n = defaults.integer(forKey: Self.messagesCountTodayKey)
+            defaults.set(n + 1, forKey: Self.messagesCountTodayKey)
+        }
+        messagesSentToday = Self.readMessagesSentToday()
+    }
+
     func sendMessage(_ text: String, verse: KrishnaVerse?) {
+        recordOutgoingUserMessage()
         let userMessage = KrishnaMessage(role: "user", content: text)
         conversationHistory.append(userMessage)
 
@@ -133,6 +185,45 @@ final class KrishnaService: ObservableObject {
             isStreaming = false
         }
     }
+
+    func streamResponse(request: KrishnaRequest) -> AsyncThrowingStream<String, Error> {
+        let url = endpoint
+        guard let body = try? JSONEncoder().encode(request) else {
+            return AsyncThrowingStream { $0.finish() }
+        }
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+        urlRequest.httpBody = body
+
+        return AsyncThrowingStream { continuation in
+            Task {
+                do {
+                    let (bytes, response) = try await URLSession.shared.bytes(for: urlRequest)
+                    guard let httpResponse = response as? HTTPURLResponse,
+                          httpResponse.statusCode == 200 else {
+                        continuation.finish()
+                        return
+                    }
+                    for try await line in bytes.lines {
+                        if line.hasPrefix("data: ") {
+                            let jsonStr = String(line.dropFirst(6))
+                            if jsonStr == "[DONE]" { break }
+                            if let data = jsonStr.data(using: .utf8),
+                               let obj = try? JSONDecoder().decode([String: String].self, from: data),
+                               let text = obj["text"] {
+                                continuation.yield(text)
+                            }
+                        }
+                    }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+        }
+    }
 }
 
 // MARK: - SSE Delegate
@@ -141,6 +232,8 @@ private final class SSEDelegate: NSObject, URLSessionDataDelegate {
     private let onChunk: (String) -> Void
     private let onComplete: () -> Void
     private var buffer = ""
+    private var totalBytes = 0
+    private let maxStreamBytes = 50_000
 
     init(onChunk: @escaping (String) -> Void, onComplete: @escaping () -> Void) {
         self.onChunk = onChunk
@@ -148,6 +241,11 @@ private final class SSEDelegate: NSObject, URLSessionDataDelegate {
     }
 
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        totalBytes += data.count
+        if totalBytes > maxStreamBytes {
+            dataTask.cancel()
+            return
+        }
         guard let text = String(data: data, encoding: .utf8) else { return }
         buffer += text
 

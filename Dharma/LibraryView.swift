@@ -144,6 +144,16 @@ struct LibraryView: View {
                                 color: .categoryRigVeda
                             )
                         }
+
+                        if selectedCategory == .mantras {
+                            browseByLink(
+                                destination: MantraListView(),
+                                icon: "waveform",
+                                title: "Browse Mantras & Chants",
+                                subtitle: "\(store.items(for: .mantras).count) mantras · filter by deity or tradition",
+                                color: .categoryMantras
+                            )
+                        }
                     }
 
                     // Semantic search indicator
@@ -183,6 +193,7 @@ struct LibraryView: View {
                                         SemanticResultCard(item: item, similarity: result.similarity)
                                     }
                                     .buttonStyle(.plain)
+                                    .scriptureNavigationSelectionHaptic()
                                 }
                             }
                         }
@@ -198,6 +209,7 @@ struct LibraryView: View {
                                     ScriptureCardView(item: item)
                                 }
                                 .buttonStyle(.plain)
+                                .scriptureNavigationSelectionHaptic()
                             }
                         }
                         .padding(.horizontal, DharmaSpacing.md)
@@ -290,6 +302,12 @@ struct LibraryView: View {
             }
             .transparentNavigationBar()
             .dharmaBackground()
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("dharma.openGoalFilter"))) { notification in
+                if let goal = notification.userInfo?["goal"] as? String {
+                    selectedGoalFilter = goal
+                    selectedCategory = nil
+                }
+            }
         }
     }
 
@@ -502,7 +520,7 @@ struct FilterSheetView: View {
                 }
                 .padding(DharmaSpacing.md)
             }
-            .background(Color.dharmaBackground)
+            .scrollContentBackground(.hidden)
             .navigationTitle("Filter")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -513,6 +531,7 @@ struct FilterSheetView: View {
             }
         }
         .transparentNavigationBar()
+        .dharmaBackground()
     }
 
     func speakerIcon(_ speaker: String) -> String {
@@ -559,6 +578,7 @@ struct FavouritesView: View {
                                 ScriptureCardView(item: item)
                             }
                             .buttonStyle(.plain)
+                            .scriptureNavigationSelectionHaptic()
                         }
                     }
                     .padding(DharmaSpacing.md)

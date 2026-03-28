@@ -5,6 +5,7 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
+
             TodayView()
                 .tabItem {
                     Label("Today", systemImage: "sun.horizon.fill")
@@ -30,6 +31,12 @@ struct ContentView: View {
                 .tag(3)
         }
         .tint(.dharmaGold)
+        .onChange(of: selectedTab) { _, _ in
+            HapticManager.light()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("dharma.openGoalFilter"))) { _ in
+            selectedTab = 1
+        }
     }
 }
 

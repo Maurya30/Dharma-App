@@ -78,7 +78,6 @@ extension Color {
     static let categoryUpanishads = Color(red: 0.325, green: 0.294, blue: 0.718)
     static let categoryRigVeda    = Color(red: 0.698, green: 0.298, blue: 0.176)
     static let categoryMantras    = Color(red: 0.059, green: 0.431, blue: 0.337)
-    static let categoryBhajans    = Color(red: 0.600, green: 0.208, blue: 0.337)
 }
 
 // MARK: - UIColor accessors (for UIKit appearance APIs)
@@ -171,7 +170,11 @@ private struct DharmaBackgroundModifier: ViewModifier {
                 LinearGradient(
                     colors: colorScheme == .dark
                         ? [Color(hex: "2A1F0A"), Color(hex: "1A1206")]
-                        : [Color(hex: "FBF0DC"), Color(hex: "EDD9A3")],
+                        : [
+                            Color(hex: "FFF9E8"),
+                            Color(hex: "F2DCA8"),
+                            Color(hex: "D8BF8A")
+                        ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -179,13 +182,13 @@ private struct DharmaBackgroundModifier: ViewModifier {
 
                 VStack {
                     HStack {
-                        Spacer()
                         Text("ॐ")
-                            .font(.system(size: 300, weight: .ultraLight, design: .serif))
+                            .font(.system(size: 350, weight: .ultraLight, design: .serif))
                             .foregroundColor(Color(hex: "C9821E"))
                             .opacity(colorScheme == .dark ? 0.13 : 0.10)
                             .rotationEffect(.degrees(10))
-                            .offset(x: 80, y: -80)
+                            .offset(x: -3`0, y: -50)
+                        Spacer(minLength: 0)
                     }
                     Spacer()
                 }

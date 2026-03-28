@@ -3,6 +3,7 @@ import SwiftUI
 struct TodayView: View {
     @EnvironmentObject var store: ScriptureStore
     @State private var showKrishna = false
+    @State private var showSettings = false
 
     private var dailyVerse: ScriptureItem? {
         let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 1
@@ -150,8 +151,23 @@ struct TodayView: View {
             }
             .navigationTitle("Today")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 18, weight: .regular))
+                            .foregroundColor(.dharmaGold)
+                    }
+                    .accessibilityLabel("Settings")
+                }
+            }
             .transparentNavigationBar()
             .dharmaBackground()
+            .fullScreenCover(isPresented: $showSettings) {
+                SettingsView()
+            }
         }
     }
 }
@@ -230,7 +246,7 @@ struct JourneyCard: View {
     }
 
     private var otherJourneyCategories: [ScriptureCategory] {
-        [.upanishads, .rigVeda, .mantras, .bhajans].filter { store.lastReadItem(for: $0) != nil }
+        [.mantras].filter { store.lastReadItem(for: $0) != nil }
     }
 
     var body: some View {
@@ -253,6 +269,12 @@ struct JourneyCard: View {
 
             VStack(alignment: .leading, spacing: DharmaSpacing.lg) {
                 gitaJourneyBlock
+
+                Divider().background(Color.dharmaDivider)
+                upanishadJourneyBlock
+
+                Divider().background(Color.dharmaDivider)
+                rigVedaJourneyBlock
 
                 ForEach(otherJourneyCategories, id: \.self) { category in
                     if let item = store.lastReadItem(for: category) {
@@ -297,6 +319,80 @@ struct JourneyCard: View {
                 .buttonStyle(.plain)
             } else {
                 NavigationLink(destination: ChapterListView()) {
+                    journeyActionRowLabel("Start reading")
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var upanishadJourneyBlock: some View {
+        let readCnt = store.readCount(for: .upanishads)
+        let total = store.items(for: .upanishads).count
+        let progress = total > 0 ? Double(readCnt) / Double(total) : 0.0
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: ScriptureCategory.upanishads.icon)
+                        .font(.system(size: 14))
+                        .foregroundColor(.categoryUpanishads)
+                    Text("Upanishads")
+                        .font(DharmaFont.heading(16))
+                        .foregroundColor(.dharmaTextPrimary)
+                }
+                Spacer()
+                Text("\(readCnt) / \(total) verses")
+                    .font(DharmaFont.caption(12))
+                    .foregroundColor(.dharmaTextMuted)
+            }
+
+            ProgressView(value: progress)
+                .tint(.categoryUpanishads)
+
+            if let lastItem = store.lastReadItem(for: .upanishads) {
+                NavigationLink(destination: ScriptureDetailView(item: lastItem, store: store)) {
+                    journeyActionRowLabel("Continue reading")
+                }
+                .buttonStyle(.plain)
+            } else if let firstItem = store.items(for: .upanishads).first {
+                NavigationLink(destination: ScriptureDetailView(item: firstItem, store: store)) {
+                    journeyActionRowLabel("Start reading")
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var rigVedaJourneyBlock: some View {
+        let readCnt = store.readCount(for: .rigVeda)
+        let total = store.items(for: .rigVeda).count
+        let progress = total > 0 ? Double(readCnt) / Double(total) : 0.0
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: ScriptureCategory.rigVeda.icon)
+                        .font(.system(size: 14))
+                        .foregroundColor(.categoryRigVeda)
+                    Text("Rig Veda")
+                        .font(DharmaFont.heading(16))
+                        .foregroundColor(.dharmaTextPrimary)
+                }
+                Spacer()
+                Text("\(readCnt) / \(total) hymns")
+                    .font(DharmaFont.caption(12))
+                    .foregroundColor(.dharmaTextMuted)
+            }
+
+            ProgressView(value: progress)
+                .tint(.categoryRigVeda)
+
+            if let lastItem = store.lastReadItem(for: .rigVeda) {
+                NavigationLink(destination: ScriptureDetailView(item: lastItem, store: store)) {
+                    journeyActionRowLabel("Continue reading")
+                }
+                .buttonStyle(.plain)
+            } else if let firstItem = store.items(for: .rigVeda).first {
+                NavigationLink(destination: ScriptureDetailView(item: firstItem, store: store)) {
                     journeyActionRowLabel("Start reading")
                 }
                 .buttonStyle(.plain)

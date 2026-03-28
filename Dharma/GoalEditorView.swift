@@ -77,7 +77,9 @@ struct GoalEditorView: View {
                 // Save button
                 VStack(spacing: 0) {
                     Button {
-                        goalsManager.saveGoals(Array(selectedGoals))
+                        let saved = Array(selectedGoals)
+                        goalsManager.saveGoals(saved)
+                        GoalPathManager.shared.syncPaths(with: saved)
                         dismiss()
                     } label: {
                         Text("Save goals")

@@ -75,7 +75,9 @@ final class SearchService: ObservableObject {
             request.timeoutInterval = 10
 
             do {
-                let (data, _) = try await URLSession.shared.data(for: request)
+                let (data, response) = try await URLSession.shared.data(for: request)
+                guard let httpResponse = response as? HTTPURLResponse,
+                      httpResponse.statusCode == 200 else { return }
                 guard !Task.isCancelled else { return }
                 let decoded = try JSONDecoder().decode(SearchResponse.self, from: data)
                 self.results = decoded.results

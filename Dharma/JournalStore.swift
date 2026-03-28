@@ -6,8 +6,6 @@ final class JournalStore: ObservableObject {
 
     @Published var entries: [JournalEntry] = []
 
-    private let storageKey = "journalEntries"
-
     init() {
         load()
     }
@@ -42,17 +40,28 @@ final class JournalStore: ObservableObject {
         entries.filter { $0.goalContext == goal }
     }
 
+    private func journalFileURL() -> URL {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return docs.appendingPathComponent("journal_entries.json")
+    }
+
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey),
-              let decoded = try? JSONDecoder().decode([JournalEntry].self, from: data)
-        else { return }
-        entries = decoded.sorted { $0.date > $1.date }
+        do {
+            let data = try Data(contentsOf: journalFileURL())
+            entries = try JSONDecoder().decode([JournalEntry].self, from: data)
+                .sorted { $0.date > $1.date }
+        } catch {
+            entries = []
+        }
     }
 
     private func persist() {
         entries.sort { $0.date > $1.date }
-        if let data = try? JSONEncoder().encode(entries) {
-            UserDefaults.standard.set(data, forKey: storageKey)
+        do {
+            let data = try JSONEncoder().encode(entries)
+            try data.write(to: journalFileURL(), options: [.atomic, .completeFileProtection])
+        } catch {
+            print("Journal save error: \(error)")
         }
     }
 }

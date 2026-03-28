@@ -41,7 +41,7 @@ class ScriptureStore: ObservableObject {
         let gitaItems = loadGita()
         let upanishadItems = loadUpanishads()
         let rigVedaItems = loadRigVeda()
-        let otherItems = mantras + bhajans
+        let otherItems = mantras
         items = gitaItems + upanishadItems + rigVedaItems + otherItems
     }
 
@@ -225,21 +225,25 @@ class ScriptureStore: ObservableObject {
 
     // MARK: - Reading Progress
     func markAsRead(_ item: ScriptureItem) {
-        lastReadByCategory[item.category.rawValue] = item.source
-        saveLastReadByCategory()
-
         if item.category == .gita {
+            lastReadByCategory[item.category.rawValue] = item.source
             let ref = item.source.replacingOccurrences(of: "Bhagavad Gita ", with: "")
             readVerseIDs.insert(ref)
-            UserDefaults.standard.set(Array(readVerseIDs), forKey: readVersesKey)
+        } else {
+            lastReadByCategory[item.category.rawValue] = item.id.uuidString
+            readVerseIDs.insert(item.id.uuidString)
         }
-
+        UserDefaults.standard.set(Array(readVerseIDs), forKey: readVersesKey)
+        saveLastReadByCategory()
         updateStreak()
     }
 
     func lastReadItem(for category: ScriptureCategory) -> ScriptureItem? {
-        guard let source = lastReadByCategory[category.rawValue] else { return nil }
-        return items.first { $0.source == source }
+        guard let stored = lastReadByCategory[category.rawValue] else { return nil }
+        if category == .gita {
+            return items.first { $0.source == stored }
+        }
+        return items.first { $0.id.uuidString == stored } ?? items.first { $0.source == stored }
     }
 
     var totalGitaVerses: Int {
@@ -247,11 +251,17 @@ class ScriptureStore: ObservableObject {
     }
 
     var readCount: Int {
-        readVerseIDs.count
+        readVerseIDs.filter { !$0.contains("-") }.count
     }
 
     func readCountForChapter(_ chapter: Int) -> Int {
         readVerseIDs.filter { $0.hasPrefix("\(chapter).") }.count
+    }
+
+    func readCount(for category: ScriptureCategory) -> Int {
+        if category == .gita { return readCount }
+        let categoryItemIDs = Set(items(for: category).map { $0.id.uuidString })
+        return readVerseIDs.intersection(categoryItemIDs).count
     }
 
     var lastReadItem: ScriptureItem? {

@@ -53,8 +53,6 @@ struct ShareCardView: View {
             return "RV \(ref)"
         case .mantras:
             return item.source
-        case .bhajans:
-            return item.source
         }
     }
 

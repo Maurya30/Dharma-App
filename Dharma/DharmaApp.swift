@@ -7,6 +7,10 @@ struct DharmaApp: App {
     @StateObject private var onboarding = OnboardingManager()
     @StateObject private var goalsManager = GoalsManager.shared
     @StateObject private var journalStore = JournalStore.shared
+    @StateObject private var streakManager = StreakManager.shared
+
+    @AppStorage("userDarkMode") private var userDarkMode: Bool = false
+    @State private var showDeferredGoalsFlow = false
 
     init() {
         let appearance = UINavigationBarAppearance()
@@ -38,21 +42,29 @@ struct DharmaApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if onboarding.hasCompletedOnboarding {
-                ContentView()
-                    .environmentObject(store)
-                    .environmentObject(goalsManager)
-                    .environmentObject(journalStore)
-                    .fullScreenCover(isPresented: .init(
-                        get: { !goalsManager.hasCompletedGoalSelection },
-                        set: { _ in }
-                    )) {
-                        GoalsOnboardingView()
-                            .environmentObject(goalsManager)
-                    }
-            } else {
-                OnboardingView(manager: onboarding)
+            Group {
+                if onboarding.hasCompletedOnboarding {
+                    ContentView()
+                        .environmentObject(store)
+                        .environmentObject(goalsManager)
+                        .environmentObject(journalStore)
+                        .environmentObject(streakManager)
+                        .fullScreenCover(isPresented: $showDeferredGoalsFlow) {
+                            DeferredGoalsToVerseFlow()
+                                .environmentObject(goalsManager)
+                        }
+                        .onAppear {
+                            showDeferredGoalsFlow = !goalsManager.hasCompletedGoalSelection
+                        }
+                        .onChange(of: goalsManager.hasCompletedGoalSelection) { _, done in
+                            if done { showDeferredGoalsFlow = false }
+                        }
+                } else {
+                    OnboardingFlowView(manager: onboarding)
+                        .environmentObject(goalsManager)
+                }
             }
+            .preferredColorScheme(userDarkMode ? .dark : .light)
         }
     }
 }

@@ -1,5 +1,7 @@
 import SwiftUI
 import UIKit
+import AVFoundation
+import Combine
 
 struct ScriptureDetailView: View {
     let item: ScriptureItem
@@ -185,24 +187,41 @@ struct ScriptureDetailView: View {
                     .padding(.top, hasOriginalText || (item.category == .gita && verseChapter != nil && verseNumber != nil) ? 22 : 20)
                     .padding(.bottom, 22)
 
-                VStack(alignment: .leading, spacing: 0) {
-                    VerseSectionLabel("Translation")
-                    HStack(alignment: .top, spacing: 14) {
-                        Rectangle()
-                            .fill(Color.dharmaGold)
-                            .frame(width: 4)
-                            .clipShape(Capsule())
-
+                if item.category == .mantras {
+                    VStack(alignment: .leading, spacing: 0) {
+                        VerseSectionLabel("Translation")
                         Text(item.textEnglish)
-                            .font(DharmaFont.georgia(19))
-                            .foregroundColor(.dharmaTextBody)
-                            .lineSpacing(10)
+                            .font(.system(size: 15, weight: .regular, design: .serif))
+                            .italic()
+                            .foregroundColor(.dharmaTextSecondary)
+                            .lineSpacing(8)
                             .fixedSize(horizontal: false, vertical: true)
                             .padding(.top, 8)
                     }
-                    .padding(.top, 4)
+                    .padding(DharmaSpacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .glassCard(cornerRadius: DharmaRadius.lg)
+                    .padding(.bottom, 8)
+                } else {
+                    VStack(alignment: .leading, spacing: 0) {
+                        VerseSectionLabel("Translation")
+                        HStack(alignment: .top, spacing: 14) {
+                            Rectangle()
+                                .fill(Color.dharmaGold)
+                                .frame(width: 4)
+                                .clipShape(Capsule())
+
+                            Text(item.textEnglish)
+                                .font(DharmaFont.georgia(19))
+                                .foregroundColor(.dharmaTextBody)
+                                .lineSpacing(10)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.top, 8)
+                        }
+                        .padding(.top, 4)
+                    }
+                    .padding(.bottom, 8)
                 }
-                .padding(.bottom, 8)
 
                 // Source attribution
                 Text(item.source)
@@ -213,10 +232,59 @@ struct ScriptureDetailView: View {
                 // Goal connection card
                 GoalConnectionCard(item: item)
 
-                // Local audio player (Mantras/Bhajans)
-                if item.audioFileName != nil {
-                    AudioPlayerView(fileName: item.audioFileName!)
+                // Mantra Sanskrit + transliteration cards
+                if item.category == .mantras {
+                    if let sanskrit = item.mantraSanskrit, !sanskrit.isEmpty {
+                        VStack(alignment: .leading, spacing: 0) {
+                            VerseSectionLabel("Sanskrit")
+                            Text(sanskrit)
+                                .font(.system(size: 22, weight: .regular, design: .serif))
+                                .foregroundColor(.dharmaTextPrimary)
+                                .lineSpacing(11)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.top, 8)
+                        }
+                        .padding(DharmaSpacing.md)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .glassCard(cornerRadius: DharmaRadius.lg)
                         .padding(.top, 16)
+                    }
+
+                    if let translit = item.mantraTransliteration, !translit.isEmpty {
+                        VStack(alignment: .leading, spacing: 0) {
+                            VerseSectionLabel("Transliteration")
+                            HStack(alignment: .top, spacing: 14) {
+                                Rectangle()
+                                    .fill(Color.dharmaGold)
+                                    .frame(width: 4)
+                                    .clipShape(Capsule())
+
+                                Text(translit)
+                                    .font(DharmaFont.georgia(19))
+                                    .foregroundColor(.dharmaTextBody)
+                                    .lineSpacing(10)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .padding(.top, 8)
+                            }
+                            .padding(.top, 4)
+                        }
+                        .padding(.top, 16)
+                    }
+                }
+
+                // Local audio player (Mantras)
+                if item.audioFileName != nil {
+                    AudioPlayerView(
+                        fileName: item.audioFileName!,
+                        spokenText: item.mantraTransliteration ?? item.textEnglish
+                    )
+                    .padding(.top, 16)
+                }
+
+                // Mantra info sections
+                if item.category == .mantras {
+                    mantraInfoSections
+                        .padding(.top, DharmaSpacing.md)
                 }
 
                 // Reflect on this verse
@@ -351,6 +419,7 @@ struct ScriptureDetailView: View {
         }
         .onAppear {
             store.markAsRead(item)
+            StreakManager.shared.recordVerseRead()
             if openJournalOnAppear {
                 showingJournal = true
             }
@@ -360,6 +429,111 @@ struct ScriptureDetailView: View {
         }
         .transparentNavigationBar()
         .dharmaBackground()
+    }
+
+    // MARK: - Mantra Info Sections
+
+    @ViewBuilder
+    private var mantraInfoSections: some View {
+        VStack(alignment: .leading, spacing: DharmaSpacing.md) {
+
+            if let meaning = item.mantraMeaning {
+                VStack(alignment: .leading, spacing: 0) {
+                    VerseSectionLabel("WHAT THIS MEANS")
+                    Text(meaning)
+                        .font(DharmaFont.georgia(15))
+                        .foregroundColor(.dharmaTextBody)
+                        .lineSpacing(8)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 8)
+                }
+                .padding(DharmaSpacing.md)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .glassCard(cornerRadius: DharmaRadius.lg)
+            }
+
+            if let howTo = item.mantraHowToChant {
+                VStack(alignment: .leading, spacing: 0) {
+                    VerseSectionLabel("HOW TO CHANT")
+                    Text(howTo)
+                        .font(DharmaFont.georgia(15))
+                        .foregroundColor(.dharmaTextBody)
+                        .lineSpacing(8)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 8)
+                }
+                .padding(DharmaSpacing.md)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .glassCard(cornerRadius: DharmaRadius.lg)
+            }
+
+            if let benefits = item.mantraBenefits, !benefits.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    VerseSectionLabel("BENEFITS")
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(benefits, id: \.self) { benefit in
+                            HStack(alignment: .top, spacing: 10) {
+                                Circle()
+                                    .fill(Color.dharmaGold)
+                                    .frame(width: 5, height: 5)
+                                    .padding(.top, 7)
+                                Text(benefit)
+                                    .font(DharmaFont.georgia(14))
+                                    .foregroundColor(.dharmaTextBody)
+                                    .lineSpacing(4)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                    .padding(.top, 10)
+                }
+                .padding(DharmaSpacing.md)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .glassCard(cornerRadius: DharmaRadius.lg)
+            }
+
+            if let reps = item.mantraRepetitions {
+                Text(repetitionsLabel(reps))
+                    .font(DharmaFont.caption(12))
+                    .foregroundColor(.dharmaTextMuted)
+                    .padding(.horizontal, DharmaSpacing.xs)
+            }
+
+            HStack(spacing: 8) {
+                if let deity = item.mantraDeity {
+                    Text(deity)
+                        .font(DharmaFont.caption(11))
+                        .foregroundColor(.dharmaGold)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.dharmaGold.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+                if item.mantraIsBeej == true {
+                    Text("Beej mantra")
+                        .font(DharmaFont.caption(11))
+                        .foregroundColor(.dharmaGold)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.dharmaGold.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+            }
+
+            Text(item.source)
+                .font(DharmaFont.caption(11))
+                .foregroundColor(.dharmaTextMuted)
+                .padding(.horizontal, DharmaSpacing.xs)
+        }
+    }
+
+    private func repetitionsLabel(_ reps: Int) -> String {
+        switch reps {
+        case 108: return "Chant 108 times · one full mala"
+        case 3:   return "Chant 3 times"
+        case 0:   return "Synchronize with the breath — no counting needed"
+        default:  return "Chant \(reps) times"
+        }
     }
 
     private var shareText: String {
@@ -521,10 +695,31 @@ struct AnimatedWaveform: View {
     }
 }
 
-// MARK: - Audio Player View (Mantras/Bhajans)
+// MARK: - Audio Player View (Mantras)
+
+@MainActor
+private final class MantraSpeechState: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
+    let synthesizer = AVSpeechSynthesizer()
+    @Published var isPlaying = false
+
+    override init() {
+        super.init()
+        synthesizer.delegate = self
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        isPlaying = false
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        isPlaying = false
+    }
+}
+
 struct AudioPlayerView: View {
     let fileName: String
-    @State private var isPlaying = false
+    let spokenText: String
+    @StateObject private var speech = MantraSpeechState()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -536,17 +731,29 @@ struct AudioPlayerView: View {
 
             HStack(spacing: DharmaSpacing.md) {
                 Button {
-                    isPlaying.toggle()
+                    if speech.isPlaying {
+                        speech.synthesizer.stopSpeaking(at: .immediate)
+                        HapticManager.light()
+                    } else {
+                        HapticManager.medium()
+                        let utterance = AVSpeechUtterance(string: spokenText)
+                        utterance.voice = AVSpeechSynthesisVoice(language: "hi-IN")
+                        utterance.rate = 0.35
+                        utterance.pitchMultiplier = 0.85
+                        speech.synthesizer.speak(utterance)
+                        speech.isPlaying = true
+                    }
                 } label: {
                     ZStack {
                         Circle()
                             .fill(Color.dharmaGold)
                             .frame(width: 48, height: 48)
-                        Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                        Image(systemName: speech.isPlaying ? "pause.fill" : "play.fill")
                             .font(.system(size: 18))
                             .foregroundColor(.white)
                     }
                 }
+                .buttonStyle(.plain)
 
                 VStack(alignment: .leading, spacing: 4) {
                     RoundedRectangle(cornerRadius: 2)

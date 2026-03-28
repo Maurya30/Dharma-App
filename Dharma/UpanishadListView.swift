@@ -16,9 +16,10 @@ struct UpanishadListView: View {
             .padding(DharmaSpacing.md)
             .padding(.bottom, DharmaSpacing.xl)
         }
-        .background(Color.dharmaBackground)
+        .scrollContentBackground(.hidden)
         .navigationTitle("Upanishads")
         .navigationBarTitleDisplayMode(.large)
+        .dharmaBackground()
     }
 }
 
@@ -94,8 +95,9 @@ struct UpanishadVerseListView: View {
             .padding(DharmaSpacing.md)
             .padding(.bottom, DharmaSpacing.xl)
         }
-        .background(Color.dharmaBackground)
+        .scrollContentBackground(.hidden)
         .navigationTitle(sourceName)
         .navigationBarTitleDisplayMode(.large)
+        .dharmaBackground()
     }
 }

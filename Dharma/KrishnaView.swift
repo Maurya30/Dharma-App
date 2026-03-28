@@ -203,7 +203,7 @@ struct KrishnaView: View {
     private func send() {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
-        DharmaHaptics.medium()
+        HapticManager.light()
         inputText = ""
         service.sendMessage(text, verse: verse)
     }
