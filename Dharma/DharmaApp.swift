@@ -3,6 +3,7 @@ import UIKit
 
 @main
 struct DharmaApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var store = ScriptureStore()
     @StateObject private var onboarding = OnboardingManager()
     @StateObject private var goalsManager = GoalsManager.shared
@@ -49,6 +50,7 @@ struct DharmaApp: App {
                         .environmentObject(goalsManager)
                         .environmentObject(journalStore)
                         .environmentObject(streakManager)
+                        .environmentObject(NotificationNavigationState.shared)
                         .fullScreenCover(isPresented: $showDeferredGoalsFlow) {
                             DeferredGoalsToVerseFlow()
                                 .environmentObject(goalsManager)
@@ -65,6 +67,9 @@ struct DharmaApp: App {
                 }
             }
             .preferredColorScheme(userDarkMode ? .dark : .light)
+            .onAppear {
+                NotificationManager.shared.setup()
+            }
         }
     }
 }

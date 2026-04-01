@@ -3,6 +3,7 @@ import SwiftUI
 // MARK: - Calendar View
 struct CalendarView: View {
     @EnvironmentObject var store: ScriptureStore
+    @EnvironmentObject private var notificationNav: NotificationNavigationState
     @State private var selectedYear: Int = Calendar.current.component(.year, from: Date())
     @State private var selectedType: FestivalType? = nil
     @State private var selectedMonth: Int = Calendar.current.component(.month, from: Date())
@@ -141,6 +142,21 @@ struct CalendarView: View {
             }
             .transparentNavigationBar()
             .dharmaBackground()
+            .onChange(of: notificationNav.pendingFestivalDate) { _, dateStr in
+                guard let dateStr, !dateStr.isEmpty else { return }
+                let df = DateFormatter()
+                df.dateFormat = "yyyy-MM-dd"
+                df.locale = Locale(identifier: "en_US_POSIX")
+                guard let d = df.date(from: dateStr) else {
+                    notificationNav.resetFestivalHighlight()
+                    return
+                }
+                let cal = Calendar.current
+                selectedYear = cal.component(.year, from: d)
+                selectedMonth = cal.component(.month, from: d)
+                selectedDate = d
+                notificationNav.resetFestivalHighlight()
+            }
         }
     }
 

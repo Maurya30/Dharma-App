@@ -9,9 +9,7 @@
 /* Begin PBXBuildFile section */
 		770D67BE2F68DAD70051CA78 /* DharmaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 770D67AA2F68DAD40051CA78 /* DharmaWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		770D67CA2F69D8980051CA78 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 770D67AE2F68DAD40051CA78 /* SwiftUI.framework */; };
-		770D67CB2F69D8980051CA78 /* SwiftUI.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 770D67AE2F68DAD40051CA78 /* SwiftUI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		770D67CD2F69D8990051CA78 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 770D67AC2F68DAD40051CA78 /* WidgetKit.framework */; };
-		770D67CE2F69D8990051CA78 /* WidgetKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 770D67AC2F68DAD40051CA78 /* WidgetKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,8 +40,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				770D67CB2F69D8980051CA78 /* SwiftUI.framework in Embed Frameworks */,
-				770D67CE2F69D8990051CA78 /* WidgetKit.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -59,6 +55,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		770AC6692F7CB27D00322CEB /* Exceptions for "Dharma" folder in "Dharma" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 77507B9D2F6611EC0035217C /* Dharma */;
+		};
 		770D67BF2F68DAD70051CA78 /* Exceptions for "DharmaWidget" folder in "DharmaWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -87,6 +90,7 @@
 		77507BA02F6611EC0035217C /* Dharma */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				770AC6692F7CB27D00322CEB /* Exceptions for "Dharma" folder in "Dharma" target */,
 				770D67C92F68DCB30051CA78 /* Exceptions for "Dharma" folder in "DharmaWidgetExtension" target */,
 			);
 			path = Dharma;
@@ -466,9 +470,11 @@
 				DEVELOPMENT_TEAM = 6H9QGC48R5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Dharma/Info.plist;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Dharma would like to add Hindu festivals to your calendar\n\n";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = "remote-notification";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -501,9 +507,11 @@
 				DEVELOPMENT_TEAM = 6H9QGC48R5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Dharma/Info.plist;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Dharma would like to add Hindu festivals to your calendar\n\n";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = "remote-notification";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

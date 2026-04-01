@@ -187,7 +187,7 @@ private struct DharmaBackgroundModifier: ViewModifier {
                             .foregroundColor(Color(hex: "C9821E"))
                             .opacity(colorScheme == .dark ? 0.13 : 0.10)
                             .rotationEffect(.degrees(10))
-                            .offset(x: -3`0, y: -50)
+                            .offset(x: -30, y: -50)
                         Spacer(minLength: 0)
                     }
                     Spacer()

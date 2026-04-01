@@ -17,6 +17,11 @@ struct ScriptureDetailView: View {
     @ObservedObject private var journalStore = JournalStore.shared
     @Environment(\.colorScheme) private var colorScheme
 
+    /// Resolves the verse from the store so `isFavourite` updates after toggling (the `item` capture is stale).
+    private var liveItem: ScriptureItem {
+        store.items.first { $0.id == item.id } ?? item
+    }
+
     private var verseChapter: Int? {
         let parts = item.source.replacingOccurrences(of: "Bhagavad Gita ", with: "").split(separator: ".")
         guard parts.count == 2, let ch = Int(parts[0]) else { return nil }
@@ -392,11 +397,11 @@ struct ScriptureDetailView: View {
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
                 Button {
-                    store.toggleFavourite(item)
+                    store.toggleFavourite(liveItem)
                     DharmaHaptics.light()
                 } label: {
-                    Image(systemName: item.isFavourite ? "heart.fill" : "heart")
-                        .foregroundColor(item.isFavourite ? .dharmaGold : .dharmaTextSecondary)
+                    Image(systemName: liveItem.isFavourite ? "heart.fill" : "heart")
+                        .foregroundColor(liveItem.isFavourite ? .dharmaGold : .dharmaTextSecondary)
                 }
 
                 Button {

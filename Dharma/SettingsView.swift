@@ -42,6 +42,9 @@ struct SettingsView: View {
                 }
             }
         }
+        // Keep in sync with the theme picker: fullScreenCover does not always inherit
+        // root `preferredColorScheme` updates immediately, so the sheet can look stuck until dismiss.
+        .preferredColorScheme(userDarkMode ? .dark : .light)
         .onAppear {
             krishnaService.refreshMessageUsageFromPersistence()
         }
@@ -253,6 +256,22 @@ struct SettingsView: View {
                         .foregroundColor(.dharmaTextPrimary)
                     Spacer()
                     Text(appVersion)
+                        .font(DharmaFont.caption())
+                        .foregroundColor(.dharmaTextSecondary)
+                }
+                .padding(.horizontal, DharmaSpacing.md)
+                .frame(minHeight: 52)
+
+                Rectangle()
+                    .fill(Color.dharmaDivider)
+                    .frame(height: 1)
+
+                HStack {
+                    Text("Device Token")
+                        .font(DharmaFont.body())
+                        .foregroundColor(.dharmaTextPrimary)
+                    Spacer()
+                    Text(UserDefaults.standard.string(forKey: "apnsDeviceToken") ?? "Not registered")
                         .font(DharmaFont.caption())
                         .foregroundColor(.dharmaTextSecondary)
                 }

@@ -4,6 +4,7 @@ struct JourneyView: View {
     @EnvironmentObject var store: ScriptureStore
     @EnvironmentObject var goalsManager: GoalsManager
     @EnvironmentObject var streakManager: StreakManager
+    @EnvironmentObject private var notificationNav: NotificationNavigationState
     @ObservedObject private var journalStore = JournalStore.shared
     @State private var exploreFurther: [RelatedVerse] = []
     @State private var showingGoalEditor = false
@@ -107,6 +108,16 @@ struct JourneyView: View {
                 if let gid = presentedGoalPathMapGoalId {
                     GoalPathMapView(goalId: gid)
                 }
+            }
+            .onChange(of: notificationNav.pendingGoalIdForPathMap) { _, gid in
+                guard let gid, !gid.isEmpty else { return }
+                goalPathManager.syncPaths(with: goalsManager.selectedGoals)
+                guard goalPathManager.pathForGoal(gid) != nil else {
+                    notificationNav.pendingGoalIdForPathMap = nil
+                    return
+                }
+                presentedGoalPathMapGoalId = gid
+                notificationNav.pendingGoalIdForPathMap = nil
             }
         }
     }
