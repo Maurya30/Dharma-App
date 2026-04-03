@@ -7,9 +7,35 @@ final class NotificationManager {
     static let shared = NotificationManager()
 
     private static let deviceTokenKey = "apnsDeviceToken"
+    private static let sadhanaMorningId = "sadhana_morning"
     private let registerURL = BackendConfig.baseURL.appendingPathComponent("register-device")
 
     private init() {}
+
+    /// Daily 7:00 local notification for Sadhana; body uses first 80 chars of verse.
+    func scheduleSadhanaNotification(verseText: String) {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [Self.sadhanaMorningId])
+
+        let prefix = String(verseText.prefix(80))
+        let body = prefix + "..."
+
+        let content = UNMutableNotificationContent()
+        content.title = "ॐ Your Sadhana awaits"
+        content.body = body
+
+        var components = DateComponents()
+        components.hour = 7
+        components.minute = 0
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+        let request = UNNotificationRequest(identifier: Self.sadhanaMorningId, content: content, trigger: trigger)
+
+        center.add(request) { error in
+            if let error {
+                print("Sadhana notification schedule failed: \(error.localizedDescription)")
+            }
+        }
+    }
 
     /// Request permission, register for remote notifications, persist token when received.
     func setup() {

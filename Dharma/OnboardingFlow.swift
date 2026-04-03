@@ -2,7 +2,7 @@ import SwiftUI
 
 struct OnboardingProgressDots: View {
     var activeIndex: Int
-    var total: Int = 4
+    var total: Int = 6
 
     var body: some View {
         HStack(spacing: 8) {
@@ -23,14 +23,14 @@ struct OnboardingFlowView: View {
     enum Step: Int {
         case welcome = 0
         case appearance = 1
-        case goals = 2
-        case verseSwipe = 3
+        case name = 2
+        case goals = 3
+        case verseSwipe = 4
+        case signIn = 5
     }
 
     @State private var step: Step = .welcome
     @State private var fadeIn = false
-
-    private let primaryInk = Color(hex: "2A1A00")
 
     var body: some View {
         ZStack {
@@ -39,21 +39,33 @@ struct OnboardingFlowView: View {
                 case .welcome:
                     welcomeStep
                 case .appearance:
-                    AppearanceOnboardingView(onContinue: { goTo(.goals) }, activeStepIndex: 1)
+                    AppearanceOnboardingView(onContinue: { goTo(.name) }, activeStepIndex: 1, totalSteps: 6)
+                case .name:
+                    NameOnboardingView(
+                        manager: manager,
+                        onContinue: { goTo(.goals) },
+                        activeStepIndex: 2,
+                        totalSteps: 6
+                    )
                 case .goals:
                     GoalsOnboardingView(
                         onGoalsFinished: { goTo(.verseSwipe) },
-                        activeStepIndex: 2,
-                        totalSteps: 4
+                        activeStepIndex: 3,
+                        totalSteps: 6
                     )
                 case .verseSwipe:
                     VerseSwipeOnboardingView(
                         onFinished: {
                             goalsManager.completeGoalSelection()
-                            manager.completeFirstRun()
+                            goTo(.signIn)
                         },
-                        activeStepIndex: 3
+                        activeStepIndex: 4,
+                        totalSteps: 6
                     )
+                case .signIn:
+                    SignInView(onFinished: {
+                        manager.completeFirstRun()
+                    })
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -87,15 +99,15 @@ struct OnboardingFlowView: View {
 
                 Text("Welcome to Dharma")
                     .font(DharmaFont.title(28))
-                    .foregroundColor(primaryInk)
+                    .foregroundColor(.dharmaTextPrimary)
 
                 Text("A sacred space for the Bhagavad Gita,\nancient wisdom, and daily practice.")
                     .font(DharmaFont.body(15))
-                    .foregroundColor(primaryInk.opacity(0.6))
+                    .foregroundColor(.dharmaTextSecondary)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
 
-                OnboardingProgressDots(activeIndex: 0, total: 4)
+                OnboardingProgressDots(activeIndex: 0, total: 6)
                     .padding(.top, DharmaSpacing.sm)
             }
             .padding(.horizontal, DharmaSpacing.xl)

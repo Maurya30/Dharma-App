@@ -32,6 +32,13 @@ final class GoalsManager: ObservableObject {
         UserDefaults.standard.removeObject(forKey: selectionKey)
     }
 
+    func replaceFromCloud(selectedGoals goals: [String], hasCompletedSelection: Bool) {
+        selectedGoals = goals
+        hasCompletedGoalSelection = hasCompletedSelection
+        UserDefaults.standard.set(goals, forKey: goalsKey)
+        UserDefaults.standard.set(hasCompletedSelection, forKey: selectionKey)
+    }
+
     static let allGoals: [GoalDefinition] = [
         // Spiritual
         .init(name: "Understand the nature of the Self (Atman)", section: "Spiritual"),

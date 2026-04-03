@@ -10,6 +10,11 @@ private struct PushVerseDetail: Identifiable, Hashable {
 struct ContentView: View {
     @EnvironmentObject private var store: ScriptureStore
     @EnvironmentObject private var notificationNav: NotificationNavigationState
+    @Environment(\.scenePhase) private var scenePhase
+
+    @ObservedObject private var sadhana = SadhanaManager.shared
+    @AppStorage("sadhana_open_krishna") private var openKrishnaFromSadhana = false
+    @State private var krishnaPresented = false
 
     @State private var pushDetail: PushVerseDetail?
 
@@ -30,7 +35,15 @@ struct ContentView: View {
 
             JourneyView()
                 .tabItem {
-                    Label("Journey", systemImage: "figure.walk")
+                    ZStack(alignment: .topTrailing) {
+                        Label("Journey", systemImage: "figure.walk")
+                        if !sadhana.isFullyComplete && sadhana.completedCount == 0 {
+                            Circle()
+                                .fill(Color(hex: "C9821E"))
+                                .frame(width: 8, height: 8)
+                                .offset(x: 10, y: -4)
+                        }
+                    }
                 }
                 .tag(2)
 
@@ -67,6 +80,25 @@ struct ContentView: View {
             NavigationStack {
                 ScriptureDetailView(item: wrap.item, store: store)
             }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background {
+                Task {
+                    await AuthManager.shared.syncToCloud()
+                }
+            }
+        }
+        .onChange(of: openKrishnaFromSadhana) { _, v in
+            guard v else { return }
+            notificationNav.selectedTab = 0
+            krishnaPresented = true
+            DispatchQueue.main.async {
+                openKrishnaFromSadhana = false
+            }
+        }
+        .fullScreenCover(isPresented: $krishnaPresented) {
+            KrishnaView(verse: nil)
+                .environmentObject(store)
         }
     }
 }

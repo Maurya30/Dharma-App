@@ -3,6 +3,7 @@ import SwiftUI
 struct AppearanceOnboardingView: View {
     var onContinue: () -> Void
     var activeStepIndex: Int = 1
+    var totalSteps: Int = 6
 
     @AppStorage("userDarkMode") private var userDarkMode: Bool = false
     @State private var selectionIsDark: Bool = false
@@ -20,7 +21,7 @@ struct AppearanceOnboardingView: View {
                     .foregroundColor(.dharmaTextSecondary)
                     .multilineTextAlignment(.center)
 
-                OnboardingProgressDots(activeIndex: activeStepIndex, total: 4)
+                OnboardingProgressDots(activeIndex: activeStepIndex, total: totalSteps)
                     .padding(.top, DharmaSpacing.sm)
             }
             .padding(.horizontal, DharmaSpacing.xl)

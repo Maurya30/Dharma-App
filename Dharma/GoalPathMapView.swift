@@ -11,8 +11,7 @@ struct GoalPathMapView: View {
     @State private var levelCompletePayload: (completed: PathLevel, next: PathLevel?)?
     @State private var lockShake: CGFloat = 0
     @State private var scrollTarget: String?
-    @State private var reviewLevel: PathLevel?
-    @State private var showReviewSheet = false
+    @State private var completedLevelForDetail: PathLevel?
 
     private let baseRowHeight: CGFloat = 200
     private let todayCardSpacing: CGFloat = 16
@@ -67,11 +66,9 @@ struct GoalPathMapView: View {
                 )
             }
         }
-        .sheet(isPresented: $showReviewSheet) {
-            if let level = reviewLevel {
-                LevelDayReviewView(level: level)
-                    .presentationDetents([.medium, .large])
-            }
+        .sheet(item: $completedLevelForDetail) { level in
+            GoalCompletedLevelSheet(goalId: goalId, level: level)
+                .presentationDetents([.medium, .large])
         }
     }
 
@@ -354,17 +351,9 @@ struct GoalPathMapView: View {
             ZStack {
                 if isDone {
                     Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "F5C832"), Color.dharmaGold],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(Color.dharmaGold)
                         .frame(width: nodeSize, height: nodeSize)
-                        .overlay(Circle().strokeBorder(Color(hex: "FFDC50").opacity(0.6), lineWidth: 2.5))
-                        .overlay(Circle().stroke(Color.dharmaGold.opacity(0.15), lineWidth: 6))
-                        .animation(.spring(response: 0.5, dampingFraction: 0.7), value: isDone)
+                        .overlay(Circle().strokeBorder(Color(hex: "FFDC50").opacity(0.45), lineWidth: 2))
                 } else if locked {
                     Circle()
                         .fill(Color.dharmaGold.opacity(0.10))
@@ -426,8 +415,7 @@ struct GoalPathMapView: View {
                 }
             } else if isDone {
                 HapticManager.light()
-                reviewLevel = level
-                showReviewSheet = true
+                completedLevelForDetail = level
             } else if isActive, let dayIdx = pathManager.todaysDayIndex(for: path), let day = level.days[safe: dayIdx] {
                 HapticManager.light()
                 dailySheetPayload = DailyVerseSheetPayload(
@@ -494,50 +482,6 @@ private struct BreathingGlow: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
                 breatheOut = true
             }
-        }
-    }
-}
-
-// MARK: - Level review
-
-struct LevelDayReviewView: View {
-    let level: PathLevel
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: DharmaSpacing.md) {
-                    Text("Level \(level.levelNumber) — \(level.levelName)")
-                        .font(DharmaFont.heading(18))
-                        .foregroundColor(.dharmaTextPrimary)
-
-                    ForEach(level.days) { day in
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(day.verseReference)
-                                .font(DharmaFont.caption(11))
-                                .foregroundColor(.dharmaGold)
-                            Text(day.verseText)
-                                .font(DharmaFont.body(14))
-                                .foregroundColor(.dharmaTextBody)
-                        }
-                        .padding(DharmaSpacing.sm)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .glassCard(cornerRadius: DharmaRadius.sm)
-                    }
-                }
-                .padding(DharmaSpacing.md)
-            }
-            .navigationTitle("Verses")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundColor(.dharmaGold)
-                }
-            }
-            .transparentNavigationBar()
-            .dharmaBackground()
         }
     }
 }

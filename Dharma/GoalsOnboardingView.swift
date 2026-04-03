@@ -10,10 +10,7 @@ struct GoalsOnboardingView: View {
     /// When set, navigating to verse swipe is handled by the parent instead of completing goal selection immediately.
     var onGoalsFinished: (() -> Void)? = nil
     var activeStepIndex: Int? = nil
-    var totalSteps: Int = 4
-
-    private let primaryInk = Color(hex: "2A1A00")
-    private let saffron = Color(hex: "C9821E")
+    var totalSteps: Int = 6
 
     private let sections: [(title: String, goals: [GoalDefinition])] = {
         let grouped = Dictionary(grouping: GoalsManager.allGoals, by: \.section)
@@ -30,17 +27,17 @@ struct GoalsOnboardingView: View {
                     VStack(spacing: DharmaSpacing.md) {
                         Image(systemName: "seal.fill")
                             .font(.system(size: 36))
-                            .foregroundColor(saffron)
+                            .foregroundColor(.dharmaGold)
                             .padding(.top, DharmaSpacing.xl)
 
                         Text("What are you here for?")
                             .font(.custom("Georgia-Bold", size: 28))
-                            .foregroundColor(primaryInk)
+                            .foregroundColor(.dharmaTextPrimary)
                             .multilineTextAlignment(.center)
 
                         Text("Choose 3 goals to shape your journey")
                             .font(DharmaFont.body(16))
-                            .foregroundColor(primaryInk.opacity(0.6))
+                            .foregroundColor(.dharmaTextSecondary)
 
                         if let idx = activeStepIndex {
                             OnboardingProgressDots(activeIndex: idx, total: totalSteps)
@@ -52,10 +49,10 @@ struct GoalsOnboardingView: View {
                     if showLimitMessage {
                         Text("Choose only 3 goals")
                             .font(DharmaFont.caption(13))
-                            .foregroundColor(saffron)
+                            .foregroundColor(.dharmaGold)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
-                            .background(saffron.opacity(0.12))
+                            .background(Color.dharmaGold.opacity(0.12))
                             .clipShape(Capsule())
                             .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     }
@@ -64,7 +61,7 @@ struct GoalsOnboardingView: View {
                         VStack(alignment: .leading, spacing: DharmaSpacing.md) {
                             Text(section.title.uppercased())
                                 .font(DharmaFont.caption(11))
-                                .foregroundColor(saffron)
+                                .foregroundColor(.dharmaGold)
                                 .tracking(0.8)
                                 .padding(.horizontal, DharmaSpacing.md)
 
@@ -97,7 +94,7 @@ struct GoalsOnboardingView: View {
                         .padding(.vertical, 16)
                         .background(
                             RoundedRectangle(cornerRadius: DharmaRadius.md)
-                                .fill(selected.count == 3 ? saffron : saffron.opacity(0.3))
+                                .fill(selected.count == 3 ? Color.dharmaGold : Color.dharmaGold.opacity(0.3))
                         )
                 }
                 .disabled(selected.count != 3)
@@ -111,7 +108,7 @@ struct GoalsOnboardingView: View {
                 } label: {
                     Text("Skip for now")
                         .font(DharmaFont.caption(14))
-                        .foregroundColor(primaryInk.opacity(0.45))
+                        .foregroundColor(.dharmaTextMuted)
                 }
             }
             .padding(.horizontal, DharmaSpacing.lg)
@@ -141,32 +138,28 @@ struct GoalsOnboardingView: View {
                 }
             }
         } label: {
-            HStack(spacing: 6) {
+            Group {
                 if isSelected {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
-                        .transition(.scale.combined(with: .opacity))
-                }
-                Text(GoalsManager.shortName(for: name))
-                    .font(DharmaFont.body(14))
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                Group {
-                    if isSelected {
-                        Capsule().fill(saffron)
-                    } else {
-                        Capsule().fill(.ultraThinMaterial)
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 11, weight: .bold))
+                            .transition(.scale.combined(with: .opacity))
+                        Text(GoalsManager.shortName(for: name))
+                            .font(DharmaFont.body(14))
                     }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .foregroundColor(.white)
+                    .background(Capsule().fill(Color.dharmaGold))
+                } else {
+                    Text(GoalsManager.shortName(for: name))
+                        .font(DharmaFont.body(14))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .foregroundColor(.dharmaTextPrimary)
+                        .glassCapsuleCard()
                 }
-            )
-            .foregroundColor(isSelected ? .white : primaryInk)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .strokeBorder(isSelected ? Color.clear : saffron.opacity(0.25), lineWidth: 1)
-            )
+            }
             .offset(x: shakeOffset)
         }
         .buttonStyle(.plain)

@@ -298,6 +298,26 @@ private struct AnyShape: Shape {
     }
 }
 
+/// Small pill for auto-saved journal entries (Sadhana / goal path).
+struct JournalEntrySourceTag: View {
+    let entry: JournalEntry
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: entry.source == "sadhana" ? "moon.stars.fill" : "flame.fill")
+                .font(.system(size: 9))
+                .foregroundColor(Color(hex: "C9821E"))
+            Text(entry.sourceLabel)
+                .font(.system(size: 10))
+                .foregroundColor(Color(hex: "C9821E"))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(Color(hex: "C9821E").opacity(0.12))
+        .clipShape(Capsule())
+    }
+}
+
 extension View {
     func glassCard(cornerRadius: CGFloat = 16, tint: GlassCardTint = .standard) -> some View {
         modifier(GlassCardModifier(cornerRadius: cornerRadius, tint: tint, isCapsule: false))

@@ -2,7 +2,9 @@ import SwiftUI
 
 struct AllReflectionsView: View {
     @EnvironmentObject var store: ScriptureStore
+    @EnvironmentObject private var notificationNav: NotificationNavigationState
     @ObservedObject private var journalStore = JournalStore.shared
+    @State private var detailEntry: JournalEntry?
 
     var body: some View {
         ScrollView {
@@ -18,27 +20,18 @@ struct AllReflectionsView: View {
             } else {
                 LazyVStack(spacing: 12) {
                     ForEach(journalStore.entries) { entry in
-                        if let item = store.items.first(where: { $0.id.uuidString == entry.verseId }) {
-                            NavigationLink(destination: ScriptureDetailView(item: item, store: store)) {
-                                reflectionCard(entry)
-                            }
-                            .buttonStyle(.plain)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    journalStore.delete(entry: entry)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                        } else {
+                        Button {
+                            detailEntry = entry
+                        } label: {
                             reflectionCard(entry)
-                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                    Button(role: .destructive) {
-                                        journalStore.delete(entry: entry)
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
-                                }
+                        }
+                        .buttonStyle(.plain)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                journalStore.delete(entry: entry)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
                         }
                     }
                 }
@@ -55,6 +48,12 @@ struct AllReflectionsView: View {
         .navigationBarTitleDisplayMode(.large)
         .transparentNavigationBar()
         .dharmaBackground()
+        .sheet(item: $detailEntry) { entry in
+            JournalDetailView(entry: entry) {
+                detailEntry = nil
+            }
+            .environmentObject(notificationNav)
+        }
     }
 
     private func reflectionCard(_ entry: JournalEntry) -> some View {
@@ -106,6 +105,13 @@ struct AllReflectionsView: View {
                 .foregroundColor(.dharmaTextBody)
                 .lineSpacing(4)
                 .lineLimit(3)
+
+            if !entry.sourceLabel.isEmpty {
+                HStack {
+                    Spacer()
+                    JournalEntrySourceTag(entry: entry)
+                }
+            }
 
             HStack {
                 Spacer()

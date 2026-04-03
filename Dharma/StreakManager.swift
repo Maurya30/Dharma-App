@@ -94,6 +94,9 @@ final class StreakManager: ObservableObject {
         refreshActiveDays()
         checkMilestones()
         persist()
+        Task {
+            await AuthManager.shared.syncToCloud()
+        }
     }
 
     // MARK: - Milestones
@@ -271,5 +274,12 @@ final class StreakManager: ObservableObject {
         weeklyInsightDate = UserDefaults.standard.object(forKey: insightDateKey) as? Date
 
         checkMilestones()
+    }
+
+    func applyFromCloud(streakDays: Int, totalVersesRead cloudTotal: Int) {
+        currentStreak = streakDays
+        totalVersesRead = cloudTotal
+        longestStreak = max(longestStreak, currentStreak)
+        persist()
     }
 }

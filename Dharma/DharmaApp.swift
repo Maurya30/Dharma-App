@@ -4,7 +4,7 @@ import UIKit
 @main
 struct DharmaApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @StateObject private var store = ScriptureStore()
+    @StateObject private var store = ScriptureStore.shared
     @StateObject private var onboarding = OnboardingManager()
     @StateObject private var goalsManager = GoalsManager.shared
     @StateObject private var journalStore = JournalStore.shared
@@ -69,6 +69,9 @@ struct DharmaApp: App {
             .preferredColorScheme(userDarkMode ? .dark : .light)
             .onAppear {
                 NotificationManager.shared.setup()
+            }
+            .task {
+                await AuthManager.shared.restoreFromCloudOnLaunchIfNeeded()
             }
         }
     }

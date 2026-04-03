@@ -224,6 +224,23 @@ final class KrishnaService: ObservableObject {
             }
         }
     }
+
+    /// One-shot reply without mutating `conversationHistory` (e.g. Sadhana, daily path sheet).
+    func fetchOneShotResponse(message: String) async throws -> String {
+        let goalList = GoalsManager.shared.selectedGoals.isEmpty ? Self.fallbackGoals : GoalsManager.shared.selectedGoals
+        let request = KrishnaRequest(
+            message: message,
+            currentVerse: nil,
+            goals: goalList,
+            reflection: nil,
+            conversationHistory: nil
+        )
+        var result = ""
+        for try await chunk in streamResponse(request: request) {
+            result += chunk
+        }
+        return result.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }
 
 // MARK: - SSE Delegate

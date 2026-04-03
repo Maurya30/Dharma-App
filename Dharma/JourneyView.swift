@@ -11,12 +11,13 @@ struct JourneyView: View {
     @State private var showingStreakDetail = false
     @State private var showingReadingHistory = false
     @State private var stackExpanded = false
-    @State private var showingEntryDetail = false
     @State private var selectedEntry: JournalEntry? = nil
     @State private var showingAllReflectionsSheet = false
     @State private var exploreFallbackItems: [ScriptureItem] = []
     @ObservedObject private var goalPathManager = GoalPathManager.shared
+    @ObservedObject private var sadhana = SadhanaManager.shared
     @State private var presentedGoalPathMapGoalId: String?
+    @State private var showSadhana = false
 
     var body: some View {
         NavigationStack {
@@ -65,12 +66,6 @@ struct JourneyView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .navigationDestination(isPresented: $showingEntryDetail) {
-                if let entry = selectedEntry,
-                   let item = store.items.first(where: { $0.id.uuidString == entry.verseId }) {
-                    ScriptureDetailView(item: item, openJournalOnAppear: true, store: store)
-                }
-            }
             .refreshable {
                 await store.refreshLibraryContent()
                 await loadExploreFurther()
@@ -99,7 +94,14 @@ struct JourneyView: View {
                 NavigationStack {
                     AllReflectionsView()
                         .environmentObject(store)
+                        .environmentObject(notificationNav)
                 }
+            }
+            .sheet(item: $selectedEntry) { entry in
+                JournalDetailView(entry: entry) {
+                    selectedEntry = nil
+                }
+                .environmentObject(notificationNav)
             }
             .fullScreenCover(isPresented: Binding(
                 get: { presentedGoalPathMapGoalId != nil },
@@ -119,6 +121,13 @@ struct JourneyView: View {
                 presentedGoalPathMapGoalId = gid
                 notificationNav.pendingGoalIdForPathMap = nil
             }
+            .onAppear {
+                sadhana.checkAndResetIfNewDay()
+            }
+            .fullScreenCover(isPresented: $showSadhana) {
+                SadhanaView()
+                    .environmentObject(notificationNav)
+            }
         }
     }
 
@@ -126,6 +135,8 @@ struct JourneyView: View {
 
     private var goalsSection: some View {
         VStack(alignment: .leading, spacing: DharmaSpacing.md) {
+            sadhanaJourneyCard
+
             HStack {
                 Text("Your Goals")
                     .font(DharmaFont.caption(11))
@@ -158,6 +169,50 @@ struct JourneyView: View {
                 }
             }
         }
+    }
+
+    private var sadhanaJourneyCard: some View {
+        Button {
+            HapticManager.light()
+            showSadhana = true
+        } label: {
+            ZStack {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(sadhana.isFullyComplete ? "Sadhana complete" : "Sadhana")
+                            .font(.system(size: 16, weight: .regular, design: .serif))
+                            .foregroundColor(sadhana.isFullyComplete ? Color(hex: "C9821E") : Color(hex: "F5E6C8"))
+                        if !sadhana.sanskritTitle.isEmpty {
+                            Text(sadhana.sanskritTitle)
+                                .font(.system(size: 11))
+                                .foregroundColor(Color(hex: "C9821E"))
+                        }
+                    }
+                    Spacer()
+                    HStack(spacing: 6) {
+                        ForEach(0..<3, id: \.self) { i in
+                            Circle()
+                                .frame(width: 8, height: 8)
+                                .foregroundColor(
+                                    i < sadhana.completedCount
+                                    ? Color(hex: "C9821E")
+                                    : Color.clear
+                                )
+                                .overlay(Circle().stroke(Color(hex: "C9821E"), lineWidth: 1))
+                        }
+                    }
+                }
+                .padding(DharmaSpacing.md)
+
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color(hex: "C9821E"), lineWidth: 1.5)
+                    .opacity(sadhana.isFullyComplete ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.5), value: sadhana.isFullyComplete)
+                    .allowsHitTesting(false)
+            }
+            .glassCard(cornerRadius: DharmaRadius.md)
+        }
+        .buttonStyle(.plain)
     }
 
     private var goalsEmptyState: some View {
@@ -361,7 +416,6 @@ struct JourneyView: View {
                         .onTapGesture {
                             DharmaHaptics.selection()
                             selectedEntry = entry
-                            showingEntryDetail = true
                         }
 
                     Button(action: { journalStore.delete(entry: entry) }) {
@@ -459,6 +513,13 @@ struct JourneyView: View {
                 .lineSpacing(4)
                 .lineLimit(isCollapsedStack ? 1 : nil)
                 .fixedSize(horizontal: false, vertical: !isCollapsedStack)
+
+            if !entry.sourceLabel.isEmpty {
+                HStack {
+                    Spacer()
+                    JournalEntrySourceTag(entry: entry)
+                }
+            }
 
             HStack {
                 Spacer()

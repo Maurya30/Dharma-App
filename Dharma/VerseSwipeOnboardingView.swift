@@ -69,7 +69,8 @@ private let onboardingVerses: [OnboardingVerse] = [
 
 struct VerseSwipeOnboardingView: View {
     var onFinished: () -> Void
-    var activeStepIndex: Int = 3
+    var activeStepIndex: Int = 4
+    var totalSteps: Int = 6
 
     @State private var stack: [OnboardingVerse] = onboardingVerses
     @State private var findingPath = false
@@ -90,7 +91,7 @@ struct VerseSwipeOnboardingView: View {
                         .foregroundColor(.dharmaTextSecondary)
                         .multilineTextAlignment(.center)
 
-                    OnboardingProgressDots(activeIndex: activeStepIndex, total: 4)
+                    OnboardingProgressDots(activeIndex: activeStepIndex, total: totalSteps)
                         .padding(.top, DharmaSpacing.xs)
                 }
                 .padding(.horizontal, DharmaSpacing.lg)

@@ -14,7 +14,8 @@ struct DeferredGoalsToVerseFlow: View {
                         goalsManager.completeGoalSelection()
                         dismiss()
                     },
-                    activeStepIndex: 3
+                    activeStepIndex: 4,
+                    totalSteps: 6
                 )
             } else {
                 GoalsOnboardingView(
@@ -23,8 +24,8 @@ struct DeferredGoalsToVerseFlow: View {
                             showVerse = true
                         }
                     },
-                    activeStepIndex: 2,
-                    totalSteps: 4
+                    activeStepIndex: 3,
+                    totalSteps: 6
                 )
             }
         }

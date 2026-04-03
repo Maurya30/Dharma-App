@@ -79,12 +79,7 @@ struct ChapterRow: View {
             }
         }
         .padding(DharmaSpacing.md)
-        .background(Color.dharmaSurface)
-        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: DharmaRadius.md)
-                .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-        )
+        .glassCard(cornerRadius: DharmaRadius.md)
     }
 }
 
@@ -114,12 +109,7 @@ struct ChapterVerseListView: View {
                     }
                     .padding(DharmaSpacing.md)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.dharmaSurface)
-                    .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DharmaRadius.md)
-                            .strokeBorder(Color.dharmaCardBorder, lineWidth: 1)
-                    )
+                    .glassCard(cornerRadius: DharmaRadius.md)
                 }
 
                 ForEach(store.versesForChapter(chapter)) { item in

@@ -8,12 +8,20 @@ struct DailyVerseSheetView: View {
     let day: PathDay
 
     @ObservedObject private var pathManager = GoalPathManager.shared
+    @ObservedObject private var journalStore = JournalStore.shared
     @Environment(\.dismiss) private var dismiss
     @FocusState private var editorFocused: Bool
 
     @State private var reflection = ""
     @State private var showMarkSuccess = false
+    @State private var krishnaReflectionResponse = ""
+    @State private var showKrishnaReflection = false
+    @State private var isLoadingKrishnaReflection = false
     var onLevelComplete: (() -> Void)?
+
+    private var reflectionNonEmpty: Bool {
+        !reflection.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     private var liveLevel: PathLevel {
         pathManager.pathForGoal(goalId)?.levels[levelIndex] ?? level
@@ -132,7 +140,28 @@ struct DailyVerseSheetView: View {
     }
 
     private var bottomBar: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 12) {
+            if isLoadingKrishnaReflection {
+                ProgressView()
+                    .tint(Color.dharmaGold)
+            }
+
+            if showKrishnaReflection && !krishnaReflectionResponse.isEmpty {
+                HStack(alignment: .top, spacing: 8) {
+                    Text("✦")
+                        .font(.system(size: 12))
+                        .foregroundColor(.dharmaGold)
+                    Text(krishnaReflectionResponse)
+                        .font(.system(size: 13, design: .serif))
+                        .italic()
+                        .foregroundColor(.dharmaTextPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 4)
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+
             if dayAlreadyDone {
                 Text("Come back tomorrow")
                     .font(DharmaFont.heading(15))
@@ -143,30 +172,47 @@ struct DailyVerseSheetView: View {
                     .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
             } else {
                 Button {
-                    guard !showMarkSuccess else { return }
+                    guard !showMarkSuccess, reflectionNonEmpty else { return }
+                    let trimmedReflection = reflection.trimmingCharacters(in: .whitespacesAndNewlines)
                     let leveled = pathManager.markDayComplete(goalId: goalId, levelIndex: levelIndex, dayIndex: dayIndex)
+                    if !trimmedReflection.isEmpty {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "MMM d"
+                        let dateStr = formatter.string(from: Date())
+                        let journalEntry = JournalEntry(
+                            verseId: displayDay.id,
+                            verseReference: displayDay.verseReference,
+                            verseSource: displayDay.verseReference,
+                            verseEnglish: displayDay.verseText,
+                            noteText: trimmedReflection,
+                            goalContext: goalId,
+                            source: "goalPath",
+                            sourceLabel: "\(goalId) · \(dateStr)"
+                        )
+                        JournalStore.shared.save(entry: journalEntry)
+                    }
                     HapticManager.success()
                     withAnimation(.easeInOut(duration: 0.35)) {
                         showMarkSuccess = true
                     }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                        HapticManager.medium()
-                        dismiss()
-                        if leveled {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                                onLevelComplete?()
-                            }
+                    Task {
+                        await loadKrishnaReflectionReply()
+                    }
+                    if leveled {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            onLevelComplete?()
                         }
                     }
                 } label: {
                     ZStack {
                         RoundedRectangle(cornerRadius: DharmaRadius.md)
                             .fill(Color.dharmaGold)
+                            .opacity(showMarkSuccess ? 0.4 : (reflectionNonEmpty ? 1 : 0.4))
                         if showMarkSuccess {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 28))
-                                .foregroundColor(.green)
-                                .transition(.scale.combined(with: .opacity))
+                            Text("Completed ✓")
+                                .font(DharmaFont.heading(16))
+                                .foregroundColor(.white.opacity(0.9))
+                                .transition(.opacity)
                         } else {
                             Text("Mark complete")
                                 .font(DharmaFont.heading(16))
@@ -176,11 +222,36 @@ struct DailyVerseSheetView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
                 }
-                .disabled(showMarkSuccess)
+                .disabled(showMarkSuccess || !reflectionNonEmpty)
             }
         }
         .padding(DharmaSpacing.md)
         .background(.ultraThinMaterial)
+    }
+
+    private func loadKrishnaReflectionReply() async {
+        await MainActor.run { isLoadingKrishnaReflection = true }
+        let trimmed = reflection.trimmingCharacters(in: .whitespacesAndNewlines)
+        let verseId = displayDay.id
+        let msg = "The seeker on the path of \(goalId) reflects: '\(trimmed)'. Respond in exactly one sentence as Krishna. Warm, brief, no questions."
+        do {
+            let text = try await KrishnaService.shared.fetchOneShotResponse(message: msg)
+            await MainActor.run {
+                isLoadingKrishnaReflection = false
+                krishnaReflectionResponse = text
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    showKrishnaReflection = true
+                }
+                if var existing = journalStore.entry(for: verseId) {
+                    existing.krishnaResponse = text
+                    journalStore.save(entry: existing)
+                }
+            }
+        } catch {
+            await MainActor.run {
+                isLoadingKrishnaReflection = false
+            }
+        }
     }
 
     private var verseCard: some View {

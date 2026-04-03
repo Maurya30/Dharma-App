@@ -15,10 +15,16 @@ final class JournalStore: ObservableObject {
             entries[idx].noteText = entry.noteText
             entries[idx].goalContext = entry.goalContext
             entries[idx].spokenWithKrishna = entry.spokenWithKrishna
+            entries[idx].source = entry.source
+            entries[idx].sourceLabel = entry.sourceLabel
+            entries[idx].krishnaResponse = entry.krishnaResponse
         } else {
             entries.insert(entry, at: 0)
         }
         persist()
+        Task {
+            await AuthManager.shared.syncToCloud()
+        }
     }
 
     func entry(for verseId: String) -> JournalEntry? {
@@ -29,11 +35,17 @@ final class JournalStore: ObservableObject {
         guard let idx = entries.firstIndex(where: { $0.verseId == verseId }) else { return }
         entries[idx].spokenWithKrishna = true
         persist()
+        Task {
+            await AuthManager.shared.syncToCloud()
+        }
     }
 
     func delete(entry: JournalEntry) {
         entries.removeAll { $0.id == entry.id }
         persist()
+        Task {
+            await AuthManager.shared.syncToCloud()
+        }
     }
 
     func entriesForGoal(_ goal: String) -> [JournalEntry] {
@@ -63,5 +75,10 @@ final class JournalStore: ObservableObject {
         } catch {
             print("Journal save error: \(error)")
         }
+    }
+
+    func replaceFromCloud(_ newEntries: [JournalEntry]) {
+        entries = newEntries.sorted { $0.date > $1.date }
+        persist()
     }
 }

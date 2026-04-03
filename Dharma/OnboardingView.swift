@@ -65,7 +65,7 @@ class OnboardingManager: ObservableObject {
         self.hasCompletedOnboarding = true
     }
 
-    /// Finishes the new multi-step onboarding (welcome → appearance → goals → verse swipe).
+    /// Finishes the new multi-step onboarding (welcome → appearance → name → goals → verse swipe → sign in).
     func completeFirstRun() {
         if intention.isEmpty { intention = DharmaIntention.explore.rawValue }
         if pace.isEmpty { pace = DharmaPace.fiveMin.rawValue }

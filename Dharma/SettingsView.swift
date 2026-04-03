@@ -3,6 +3,10 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @ObservedObject private var auth = AuthManager.shared
+
+    @State private var showSignInSheet = false
+    @State private var showSignOutConfirm = false
 
     @AppStorage("userDarkMode") private var userDarkMode = false
     @AppStorage("dharma_notify_daily_verse") private var notifyDailyVerse = true
@@ -23,6 +27,11 @@ struct SettingsView: View {
         colorScheme == .dark ? Color.dharmaTextPrimary : Color.dharmaBackground
     }
 
+    private var accountDisplayName: String {
+        let n = auth.currentUser?.fullName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return n.isEmpty ? "Apple User" : n
+    }
+
     var body: some View {
         ZStack {
             Color.clear
@@ -32,6 +41,7 @@ struct SettingsView: View {
                 header
                 ScrollView {
                     VStack(spacing: DharmaSpacing.lg) {
+                        accountSection
                         appearanceSection
                         krishnaSection
                         notificationsSection
@@ -47,6 +57,110 @@ struct SettingsView: View {
         .preferredColorScheme(userDarkMode ? .dark : .light)
         .onAppear {
             krishnaService.refreshMessageUsageFromPersistence()
+        }
+        .sheet(isPresented: $showSignInSheet) {
+            SignInView(onFinished: { showSignInSheet = false })
+        }
+        .alert("Sign out?", isPresented: $showSignOutConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button("Sign out", role: .destructive) {
+                auth.signOut()
+            }
+        } message: {
+            Text("Your local data stays on this device until you sign in again.")
+        }
+    }
+
+    private var accountSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader("ACCOUNT")
+            VStack(spacing: 0) {
+                if auth.isSignedIn && !auth.isGuest {
+                    VStack(alignment: .leading, spacing: DharmaSpacing.xs) {
+                        Text(accountDisplayName)
+                            .font(DharmaFont.heading(16))
+                            .foregroundColor(.dharmaTextPrimary)
+                        Text(auth.currentUser?.email ?? "Hidden email")
+                            .font(DharmaFont.body(14))
+                            .foregroundColor(.dharmaTextSecondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, DharmaSpacing.md)
+                    .padding(.vertical, DharmaSpacing.sm)
+
+                    Rectangle()
+                        .fill(Color.dharmaDivider)
+                        .frame(height: 1)
+
+                    Button {
+                        Task {
+                            await auth.syncToCloud()
+                        }
+                    } label: {
+                        HStack {
+                            Text("Sync now")
+                                .font(DharmaFont.body())
+                                .foregroundColor(.dharmaTextPrimary)
+                            Spacer()
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .foregroundColor(.dharmaGold)
+                        }
+                        .padding(.horizontal, DharmaSpacing.md)
+                        .frame(minHeight: 52)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+
+                    Rectangle()
+                        .fill(Color.dharmaDivider)
+                        .frame(height: 1)
+
+                    Button {
+                        showSignOutConfirm = true
+                    } label: {
+                        HStack {
+                            Text("Sign out")
+                                .font(DharmaFont.body())
+                                .foregroundColor(.dharmaTextPrimary)
+                            Spacer()
+                        }
+                        .padding(.horizontal, DharmaSpacing.md)
+                        .frame(minHeight: 52)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Text("Your progress isn't backed up")
+                        .font(DharmaFont.body())
+                        .foregroundColor(Color(hex: "C9821E"))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, DharmaSpacing.md)
+                        .padding(.vertical, DharmaSpacing.sm)
+
+                    Rectangle()
+                        .fill(Color.dharmaDivider)
+                        .frame(height: 1)
+
+                    Button {
+                        showSignInSheet = true
+                    } label: {
+                        HStack {
+                            Text("Sign in to save your progress")
+                                .font(DharmaFont.body())
+                                .foregroundColor(.dharmaTextPrimary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(DharmaFont.body(14))
+                                .foregroundColor(.dharmaTextSecondary)
+                        }
+                        .padding(.horizontal, DharmaSpacing.md)
+                        .frame(minHeight: 52)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .glassCard(cornerRadius: DharmaRadius.md)
         }
     }
 

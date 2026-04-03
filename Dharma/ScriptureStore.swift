@@ -3,6 +3,8 @@ import Combine
 
 // MARK: - Scripture Store
 class ScriptureStore: ObservableObject {
+    static let shared = ScriptureStore()
+
     @Published var items: [ScriptureItem] = []
     @Published var chapterInfos: [GitaChapterInfo] = []
     @Published var readVerseIDs: Set<String> = []
@@ -204,6 +206,9 @@ class ScriptureStore: ObservableObject {
         items[index].isFavourite.toggle()
         saveFavourites()
         syncToWidget()
+        Task {
+            await AuthManager.shared.syncToCloud()
+        }
     }
 
     var favourites: [ScriptureItem] {
@@ -333,6 +338,19 @@ class ScriptureStore: ObservableObject {
     private func saveFavourites() {
         let ids = items.filter { $0.isFavourite }.map { $0.id.uuidString }
         UserDefaults.standard.set(ids, forKey: favouritesKey)
+    }
+
+    func applyFavouriteUUIDsFromCloud(_ ids: [String]) {
+        let set = Set(ids)
+        for index in items.indices {
+            items[index].isFavourite = set.contains(items[index].id.uuidString)
+        }
+        saveFavourites()
+        syncToWidget()
+    }
+
+    var favouriteUUIDStrings: [String] {
+        items.filter { $0.isFavourite }.map { $0.id.uuidString }
     }
 
     private func loadFavourites() {

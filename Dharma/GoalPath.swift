@@ -10,8 +10,50 @@ struct GoalPath: Identifiable, Codable {
     var earnedTitles: [EarnedTitle]
     /// Set when user marks any day complete; used for "come back tomorrow."
     var lastCompletionDate: Date?
+    /// Sadhana and other practice-based points on this path.
+    var practicePoints: Int
 
     var id: String { goalId }
+
+    enum CodingKeys: String, CodingKey {
+        case goalId, levels, currentLevelIndex, earnedTitles, lastCompletionDate, practicePoints
+    }
+
+    init(
+        goalId: String,
+        levels: [PathLevel],
+        currentLevelIndex: Int,
+        earnedTitles: [EarnedTitle],
+        lastCompletionDate: Date?,
+        practicePoints: Int = 0
+    ) {
+        self.goalId = goalId
+        self.levels = levels
+        self.currentLevelIndex = currentLevelIndex
+        self.earnedTitles = earnedTitles
+        self.lastCompletionDate = lastCompletionDate
+        self.practicePoints = practicePoints
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        goalId = try c.decode(String.self, forKey: .goalId)
+        levels = try c.decode([PathLevel].self, forKey: .levels)
+        currentLevelIndex = try c.decode(Int.self, forKey: .currentLevelIndex)
+        earnedTitles = try c.decode([EarnedTitle].self, forKey: .earnedTitles)
+        lastCompletionDate = try c.decodeIfPresent(Date.self, forKey: .lastCompletionDate)
+        practicePoints = try c.decodeIfPresent(Int.self, forKey: .practicePoints) ?? 0
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(goalId, forKey: .goalId)
+        try c.encode(levels, forKey: .levels)
+        try c.encode(currentLevelIndex, forKey: .currentLevelIndex)
+        try c.encode(earnedTitles, forKey: .earnedTitles)
+        try c.encodeIfPresent(lastCompletionDate, forKey: .lastCompletionDate)
+        try c.encode(practicePoints, forKey: .practicePoints)
+    }
 }
 
 struct PathLevel: Identifiable, Codable {
@@ -99,7 +141,8 @@ final class GoalPathManager: ObservableObject {
             levels: levels,
             currentLevelIndex: 0,
             earnedTitles: [],
-            lastCompletionDate: nil
+            lastCompletionDate: nil,
+            practicePoints: 0
         )
         paths.append(path)
         savePaths()
@@ -147,6 +190,9 @@ final class GoalPathManager: ObservableObject {
             applyLevelCompletion(goalId: goalId, levelIndex: levelIndex, pathIndex: idx, path: &path)
             savePaths()
             objectWillChange.send()
+            Task {
+                await AuthManager.shared.syncToCloud()
+            }
             return true
         } else {
             paths[idx] = path
@@ -176,5 +222,22 @@ final class GoalPathManager: ObservableObject {
         }
 
         paths[pathIndex] = path
+    }
+
+    func replaceFromCloud(_ newPaths: [GoalPath]) {
+        paths = newPaths
+        savePaths()
+        objectWillChange.send()
+    }
+
+    /// Awards one practice point on the active path (first selected goal that has a path).
+    func awardSadhanaPoint() {
+        for goalId in GoalsManager.shared.selectedGoals {
+            guard let idx = paths.firstIndex(where: { $0.goalId == goalId }) else { continue }
+            paths[idx].practicePoints += 1
+            savePaths()
+            objectWillChange.send()
+            return
+        }
     }
 }

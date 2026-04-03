@@ -2,6 +2,9 @@
 """
 Scrape selected Rig Veda hymns from sacred-texts.com into Dharma/rigveda.json
 with a unified schema compatible with Dharma loaders.
+
+Merges with an existing rigveda.json: skips hymns already present (by book + hymn),
+appends new verses, dedupes by id, and can write rigveda_new_ids.json for embedding.
 """
 
 from __future__ import annotations
@@ -9,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 import time
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Set, Tuple
@@ -16,12 +20,15 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple
 import requests
 from bs4 import BeautifulSoup
 
-REQUEST_DELAY_SECONDS = 1.0
+_SCRIPT_DIR = Path(__file__).resolve().parent
+
+REQUEST_DELAY_SECONDS = 2.0
 MAX_RETRIES = 3
 BACKOFF_BASE = 1.0
 
-DEFAULT_GITA_PATH = Path.home() / "Desktop" / "Dharma" / "Dharma" / "gita.json"
-DEFAULT_OUTPUT_PATH = Path.home() / "Desktop" / "Dharma" / "Dharma" / "rigveda.json"
+DEFAULT_GITA_PATH = _SCRIPT_DIR / "gita.json"
+DEFAULT_OUTPUT_PATH = _SCRIPT_DIR / "rigveda.json"
+DEFAULT_NEW_IDS_PATH = _SCRIPT_DIR / "rigveda_new_ids.json"
 
 REQUIRED_FIELDS = [
     "id",
@@ -38,17 +45,103 @@ REQUIRED_FIELDS = [
     "wordMeanings",
 ]
 
-HYMNS: Sequence[Tuple[int, int, str]] = [
-    (1, 1, "Agni Sukta"),
-    (1, 89, "Universal Blessings"),
-    (1, 90, ""),
-    (3, 62, "Gayatri context"),
-    (7, 89, "Varuna"),
-    (10, 90, "Purusha Sukta"),
-    (10, 121, "Hiranyagarbha"),
-    (10, 129, "Nasadiya Sukta"),
-    (10, 191, "Harmony"),
-]
+
+def _build_hymns_list() -> List[Tuple[int, int, str]]:
+    """Full target list (book, hymn, label); deduped by (book, hymn)."""
+    raw: Sequence[Tuple[int, int, str]] = [
+        # Mandala 1
+        (1, 1, "Agni Sukta"),
+        (1, 3, ""),
+        (1, 22, ""),
+        (1, 89, "Universal Blessings"),
+        (1, 90, ""),
+        (1, 115, ""),
+        (1, 154, ""),
+        (1, 155, ""),
+        (1, 156, ""),
+        (1, 164, ""),
+        # Mandala 2
+        (2, 1, ""),
+        (2, 12, ""),
+        (2, 23, ""),
+        (2, 28, ""),
+        (2, 33, ""),
+        (2, 35, ""),
+        (2, 38, ""),
+        (2, 41, ""),
+        # Mandala 3
+        (3, 1, ""),
+        (3, 33, ""),
+        (3, 54, ""),
+        (3, 59, ""),
+        (3, 62, "Gayatri context"),
+        # Mandala 4
+        (4, 1, ""),
+        (4, 26, ""),
+        (4, 40, ""),
+        (4, 50, ""),
+        (4, 51, ""),
+        (4, 58, ""),
+        # Mandala 5
+        (5, 1, ""),
+        (5, 47, ""),
+        (5, 51, ""),
+        (5, 63, ""),
+        (5, 82, ""),
+        (5, 85, ""),
+        # Mandala 6
+        (6, 1, ""),
+        (6, 47, ""),
+        (6, 54, ""),
+        (6, 61, ""),
+        (6, 69, ""),
+        (6, 75, ""),
+        # Mandala 7
+        (7, 1, ""),
+        (7, 32, ""),
+        (7, 49, ""),
+        (7, 59, ""),
+        (7, 63, ""),
+        (7, 71, ""),
+        (7, 86, ""),
+        (7, 89, "Varuna"),
+        # Mandala 8
+        (8, 1, ""),
+        (8, 29, ""),
+        (8, 48, ""),
+        (8, 58, ""),
+        (8, 89, ""),
+        # Mandala 9
+        (9, 1, ""),
+        (9, 10, ""),
+        (9, 96, ""),
+        (9, 107, ""),
+        (9, 113, ""),
+        # Mandala 10
+        (10, 9, ""),
+        (10, 14, ""),
+        (10, 71, ""),
+        (10, 85, ""),
+        (10, 90, "Purusha Sukta"),
+        (10, 97, ""),
+        (10, 121, "Hiranyagarbha"),
+        (10, 125, ""),
+        (10, 127, ""),
+        (10, 129, "Nasadiya Sukta"),
+        (10, 154, ""),
+        (10, 190, ""),
+    ]
+    seen: Set[Tuple[int, int]] = set()
+    out: List[Tuple[int, int, str]] = []
+    for b, h, lab in raw:
+        if (b, h) in seen:
+            continue
+        seen.add((b, h))
+        out.append((b, h, lab))
+    return out
+
+
+HYMNS: Sequence[Tuple[int, int, str]] = _build_hymns_list()
 
 
 class RequestLimiter:
@@ -83,6 +176,34 @@ def _ensure_unified_schema_matches_gita(gita_path: Path) -> None:
     print("Detected gita.json verse fields:", sorted(list(verse0.keys())))
     if "wordMeanings" not in verse0:
         raise RuntimeError("gita.json does not contain `wordMeanings`; field naming mismatch risk.")
+
+
+def _load_existing_rigveda(path: Path) -> List[Dict[str, object]]:
+    if not path.is_file():
+        return []
+    try:
+        data = _read_json(path)
+    except (json.JSONDecodeError, OSError) as exc:
+        print(f"[warn] Could not read {path}: {exc}. Starting empty.", file=sys.stderr)
+        return []
+    if not isinstance(data, list):
+        print(f"[warn] {path} is not a JSON array. Starting empty.", file=sys.stderr)
+        return []
+    return data  # type: ignore[return-value]
+
+
+def _hymns_from_entries(entries: List[Dict[str, object]]) -> Set[Tuple[int, int]]:
+    """Parse rv-book-hymn-verse ids -> (book, hymn) set."""
+    out: Set[Tuple[int, int]] = set()
+    for e in entries:
+        sid = str(e.get("id", ""))
+        parts = sid.split("-")
+        if len(parts) >= 4 and parts[0] == "rv":
+            try:
+                out.add((int(parts[1]), int(parts[2])))
+            except ValueError:
+                continue
+    return out
 
 
 def _fetch(url: str, limiter: RequestLimiter, timeout: int = 30) -> str:
@@ -232,6 +353,22 @@ def _validate(entries: List[Dict[str, object]]) -> None:
         raise RuntimeError(f"Duplicate IDs detected: {sorted(dupes)[:20]}")
 
 
+def _sort_key_entry(e: Dict[str, object]) -> Tuple[int, int, int]:
+    parts = str(e["id"]).split("-")
+    return tuple(int(x) for x in parts[1:4])  # type: ignore[return-value]
+
+
+def _merge_entries(
+    existing: List[Dict[str, object]], new_rows: List[Dict[str, object]]
+) -> List[Dict[str, object]]:
+    by_id: Dict[str, Dict[str, object]] = {str(e["id"]): e for e in existing}
+    for e in new_rows:
+        by_id[str(e["id"])] = e
+    combined = list(by_id.values())
+    combined.sort(key=_sort_key_entry)
+    return combined
+
+
 def _summary(entries: List[Dict[str, object]]) -> None:
     by_hymn: Dict[str, int] = {}
     for e in entries:
@@ -248,6 +385,14 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Scrape selected Rig Veda hymns into unified schema JSON.")
     p.add_argument("--gita", type=Path, default=DEFAULT_GITA_PATH, help="Path to existing gita.json")
     p.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_PATH, help="Output rigveda.json path")
+    p.add_argument(
+        "--new-ids-output",
+        type=Path,
+        default=DEFAULT_NEW_IDS_PATH,
+        help="Write JSON array of ids added this run (for embed_verses.js --only-ids)",
+    )
+    p.add_argument("--dry-run", action="store_true", help="Print hymns to scrape/ skip; do not fetch or write")
+    p.add_argument("--verbose", action="store_true", help="Print HTML snippet for first fetched page")
     return p.parse_args()
 
 
@@ -255,20 +400,46 @@ def main() -> None:
     args = parse_args()
     _ensure_unified_schema_matches_gita(args.gita)
 
+    existing_entries = _load_existing_rigveda(args.output)
+    have_hymns = _hymns_from_entries(existing_entries)
+
+    to_scrape: List[Tuple[int, int, str]] = []
+    skipped_hymns: List[Tuple[int, int]] = []
+    for book, hymn, label in HYMNS:
+        if (book, hymn) in have_hymns:
+            skipped_hymns.append((book, hymn))
+        else:
+            to_scrape.append((book, hymn, label))
+
+    print(f"Existing rigveda.json entries: {len(existing_entries)}")
+    print(f"Hymns in target list: {len(HYMNS)} (unique book/hymn pairs)")
+    print(f"Hymns skipped (already in file): {len(skipped_hymns)}")
+    print(f"Hymns to scrape: {len(to_scrape)}")
+
+    if args.dry_run:
+        print("\n[dry-run] Would scrape:")
+        for b, h, lab in to_scrape:
+            print(f"  Book {b}, Hymn {h} {f'({lab})' if lab else ''}")
+        print("\n[dry-run] No files written.")
+        return
+
     limiter = RequestLimiter()
-    rows: List[Dict[str, object]] = []
+    new_rows: List[Dict[str, object]] = []
+    scraped_hymns: List[Tuple[int, int]] = []
+    failed_hymns: List[Tuple[int, int]] = []
 
     printed_debug = False
-    for book, hymn, label in HYMNS:
+    for book, hymn, label in to_scrape:
         url = _hymn_url(book, hymn)
         print(f"\n== Scraping Book {book}, Hymn {hymn} {f'({label})' if label else ''} ==")
         try:
             html = _fetch(url, limiter)
         except Exception as exc:  # noqa: BLE001
             print(f"[warn] Failed {url}: {exc}. Skipping hymn.")
+            failed_hymns.append((book, hymn))
             continue
 
-        if not printed_debug:
+        if args.verbose and not printed_debug:
             print(f"\n[debug] Raw HTML for first hymn page: {url}")
             print(html[:5000])
             printed_debug = True
@@ -285,19 +456,30 @@ def main() -> None:
             verses = _extract_numbered_verses_from_plain_text(html)
         if not verses:
             print(f"[warn] Unexpected structure for {url}: no numbered verses found. Skipping hymn.")
+            failed_hymns.append((book, hymn))
             continue
 
+        scraped_hymns.append((book, hymn))
         for vno, vtext in verses:
-            rows.append(_make_entry(book, hymn, vno, vtext))
+            new_rows.append(_make_entry(book, hymn, vno, vtext))
 
-    # deterministic order
-    rows.sort(key=lambda e: tuple(int(x) for x in str(e["id"]).split("-")[1:4]))
-    _validate(rows)
-    _write_json(args.output, rows)
+    combined = _merge_entries(existing_entries, new_rows)
+    _validate(combined)
+    _write_json(args.output, combined)
+
+    new_ids = [str(e["id"]) for e in new_rows]
+    _write_json(args.new_ids_output, new_ids)
+
     print(f"\nWrote {args.output}")
-    _summary(rows)
+    print(f"Wrote {len(new_ids)} new verse ids to {args.new_ids_output}")
+    print(f"\n== Counts ==")
+    print(f"New verses added this run: {len(new_rows)}")
+    print(f"Total verses in rigveda.json: {len(combined)}")
+    print(f"Hymns scraped successfully: {len(scraped_hymns)}")
+    if failed_hymns:
+        print(f"Hymns failed/skipped (no verses): {failed_hymns}")
+    _summary(combined)
 
 
 if __name__ == "__main__":
     main()
-
