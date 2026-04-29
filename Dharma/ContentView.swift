@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 private struct PushVerseDetail: Identifiable, Hashable {
@@ -19,39 +20,41 @@ struct ContentView: View {
     @State private var pushDetail: PushVerseDetail?
 
     var body: some View {
-        TabView(selection: $notificationNav.selectedTab) {
+        ZStack {
+            TabView(selection: $notificationNav.selectedTab) {
 
-            TodayView()
-                .tabItem {
-                    Label("Today", systemImage: "sun.horizon.fill")
-                }
-                .tag(0)
+                TodayView()
+                    .tabItem {
+                        Label("Today", systemImage: "sun.horizon.fill")
+                    }
+                    .tag(0)
 
-            LibraryView()
-                .tabItem {
-                    Label("Library", systemImage: "books.vertical.fill")
-                }
-                .tag(1)
+                LibraryView()
+                    .tabItem {
+                        Label("Library", systemImage: "books.vertical.fill")
+                    }
+                    .tag(1)
 
-            JourneyView()
-                .tabItem {
-                    ZStack(alignment: .topTrailing) {
-                        Label("Journey", systemImage: "figure.walk")
-                        if !sadhana.isFullyComplete && sadhana.completedCount == 0 {
-                            Circle()
-                                .fill(Color(hex: "C9821E"))
-                                .frame(width: 8, height: 8)
-                                .offset(x: 10, y: -4)
+                JourneyView()
+                    .tabItem {
+                        ZStack(alignment: .topTrailing) {
+                            Label("Journey", systemImage: "figure.walk")
+                            if !sadhana.isFullyComplete && sadhana.completedCount == 0 {
+                                Circle()
+                                    .fill(Color(hex: "C9821E"))
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: 10, y: -4)
+                            }
                         }
                     }
-                }
-                .tag(2)
+                    .tag(2)
 
-            CalendarView()
-                .tabItem {
-                    Label("Calendar", systemImage: "calendar")
-                }
-                .tag(3)
+                CalendarView()
+                    .tabItem {
+                        Label("Calendar", systemImage: "calendar")
+                    }
+                    .tag(3)
+            }
         }
         .tint(.dharmaGold)
         .onChange(of: notificationNav.selectedTab) { _, _ in

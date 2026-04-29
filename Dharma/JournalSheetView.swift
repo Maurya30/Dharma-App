@@ -37,12 +37,12 @@ struct JournalSheetView: View {
                     // Prompts
                     VStack(alignment: .leading, spacing: DharmaSpacing.md) {
                         Text("Prompts")
-                            .font(DharmaFont.caption(11))
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundColor(.dharmaGold)
                             .textCase(.uppercase)
-                            .kerning(0.8)
+                            .kerning(1.4)
 
-                        FlowLayout(spacing: 8) {
+                        FlowLayout(spacing: 10) {
                             ForEach(prompts, id: \.self) { prompt in
                                 Button {
                                     if noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -50,10 +50,10 @@ struct JournalSheetView: View {
                                     }
                                 } label: {
                                     Text(prompt)
-                                        .font(DharmaFont.caption(12))
+                                        .font(DharmaFont.caption())
                                         .foregroundColor(.dharmaTextBody)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 8)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 10)
                                         .glassCard(cornerRadius: DharmaRadius.sm)
                                 }
                                 .buttonStyle(.plain)
@@ -62,24 +62,24 @@ struct JournalSheetView: View {
                     }
 
                     // Text editor
-                    VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+                    VStack(alignment: .leading, spacing: DharmaSpacing.md) {
                         Text("Your reflection")
-                            .font(DharmaFont.caption(11))
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundColor(.dharmaGold)
                             .textCase(.uppercase)
-                            .kerning(0.8)
+                            .kerning(1.4)
 
                         TextEditor(text: $noteText)
-                            .font(DharmaFont.georgia(16))
+                            .font(DharmaFont.georgia())
                             .foregroundColor(.dharmaTextBody)
                             .scrollContentBackground(.hidden)
-                            .frame(minHeight: 200)
+                            .frame(minHeight: 220)
                             .padding(DharmaSpacing.md)
                             .background(Color.clear)
                             .overlay(alignment: .topLeading) {
                                 if noteText.isEmpty {
                                     Text("Write your reflection…")
-                                        .font(DharmaFont.georgia(16))
+                                        .font(DharmaFont.georgia())
                                         .foregroundColor(.dharmaTextMuted)
                                         .padding(DharmaSpacing.md)
                                         .padding(.top, 8)
@@ -92,24 +92,25 @@ struct JournalSheetView: View {
 
                     // Saved confirmation
                     if showSaved {
-                        HStack(spacing: 6) {
+                        HStack(spacing: 8) {
                             Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 18))
                                 .foregroundColor(.dharmaGold)
                             Text("Saved")
-                                .font(DharmaFont.caption(13))
+                                .font(DharmaFont.caption())
                                 .foregroundColor(.dharmaGold)
                         }
                         .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     }
 
                     // Action buttons
-                    VStack(spacing: DharmaSpacing.sm) {
+                    VStack(spacing: DharmaSpacing.md) {
                         Button { saveReflection() } label: {
                             Text("Save reflection")
-                                .font(DharmaFont.heading(16))
+                                .font(.system(size: 18, weight: .semibold))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
+                                .frame(height: 56)
                                 .background(
                                     RoundedRectangle(cornerRadius: DharmaRadius.md)
                                         .fill(noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -123,19 +124,19 @@ struct JournalSheetView: View {
                             HStack(spacing: DharmaSpacing.sm) {
                                 if isKrishnaLoading {
                                     ProgressView()
-                                        .scaleEffect(0.8)
+                                        .scaleEffect(0.9)
                                         .tint(Color(hex: "C9821E"))
                                 } else {
                                     Image(systemName: "sparkles")
-                                        .font(.system(size: 14))
+                                        .font(.system(size: 18))
                                         .foregroundColor(Color(hex: "C9821E"))
                                 }
                                 Text(isKrishnaLoading ? "Krishna is reflecting..." : "Ask Krishna about this")
-                                    .font(DharmaFont.heading(16))
+                                    .font(.system(size: 18, weight: .semibold))
                                     .foregroundColor(Color(hex: "C9821E"))
                             }
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
+                            .frame(height: 56)
                             .glassCard(cornerRadius: DharmaRadius.md)
                             .overlay(
                                 RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
@@ -146,13 +147,14 @@ struct JournalSheetView: View {
                         .disabled(isKrishnaLoading)
 
                         if showingKrishnaResponse && !krishnaResponse.isEmpty {
-                            VStack(alignment: .leading, spacing: 10) {
+                            VStack(alignment: .leading, spacing: 12) {
                                 HStack {
                                     Image(systemName: "sparkles")
                                         .foregroundColor(Color(hex: "C9821E"))
-                                        .font(.system(size: 12))
+                                        .font(.system(size: 15))
                                     Text("Krishna")
-                                        .font(.system(size: 11, weight: .medium))
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .kerning(1.4)
                                         .foregroundColor(Color(hex: "C9821E"))
                                     Spacer()
                                     Button(action: {
@@ -162,21 +164,21 @@ struct JournalSheetView: View {
                                     }) {
                                         HStack(spacing: 4) {
                                             Image(systemName: "plus.circle")
-                                                .font(.system(size: 11))
+                                                .font(.system(size: 13))
                                             Text("Add to reflection")
-                                                .font(.system(size: 11))
+                                                .font(.system(size: 13, weight: .medium))
                                         }
                                         .foregroundColor(Color(hex: "C9821E"))
                                     }
                                 }
                                 Text(krishnaResponse)
-                                    .font(Font.custom("Georgia", size: 13))
+                                    .font(Font.custom("Georgia", size: 17))
                                     .foregroundColor(Color(hex: "2A1A00"))
                                     .italic()
-                                    .lineSpacing(4)
+                                    .lineSpacing(5)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
-                            .padding(12)
+                            .padding(DharmaSpacing.lg)
                             .glassCard(cornerRadius: DharmaRadius.md)
                             .padding(.top, 4)
                         }
@@ -222,36 +224,29 @@ struct JournalSheetView: View {
     // MARK: - Verse Context Card
 
     private var verseContextCard: some View {
-        HStack(alignment: .top, spacing: 0) {
-            Rectangle()
-                .fill(Color.dharmaGold)
-                .frame(width: 2)
-                .clipShape(Capsule())
+        VStack(alignment: .leading, spacing: DharmaSpacing.md) {
+            HStack(spacing: 8) {
+                Label(item.category.rawValue, systemImage: item.category.icon)
+                    .font(DharmaFont.caption(13))
+                    .foregroundColor(item.category.color)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(item.category.color.opacity(0.12))
+                    .clipShape(Capsule())
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 6) {
-                    Label(item.category.rawValue, systemImage: item.category.icon)
-                        .font(DharmaFont.caption(10))
-                        .foregroundColor(item.category.color)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(item.category.color.opacity(0.12))
-                        .clipShape(Capsule())
-
-                    Text(item.source)
-                        .font(DharmaFont.caption(11))
-                        .foregroundColor(.dharmaTextMuted)
-                }
-
-                Text(String(item.textEnglish.prefix(120)) + (item.textEnglish.count > 120 ? "…" : ""))
-                    .font(DharmaFont.georgia(13))
-                    .foregroundColor(.dharmaTextBody)
-                    .lineSpacing(5)
-                    .lineLimit(3)
+                Text(item.source)
+                    .font(DharmaFont.caption(13))
+                    .foregroundColor(.dharmaTextMuted)
             }
-            .padding(.leading, DharmaSpacing.md)
+
+            Text(String(item.textEnglish.prefix(120)) + (item.textEnglish.count > 120 ? "…" : ""))
+                .font(DharmaFont.georgia(17))
+                .foregroundColor(.dharmaTextBody)
+                .lineSpacing(6)
+                .lineLimit(4)
         }
-        .padding(DharmaSpacing.md)
+        .saffronLeftBar()
+        .padding(DharmaSpacing.lg)
         .glassCard(cornerRadius: DharmaRadius.md)
     }
 
@@ -288,6 +283,11 @@ struct JournalSheetView: View {
             ? "What does this verse mean and how can I apply it? Give a single focused insight in 3-5 sentences only. Do not ask follow up questions."
             : "I wrote this reflection on the verse: \(noteText)\n\nRespond to my reflection with a single focused insight in 3-5 sentences. Speak directly to what I wrote. Do not ask follow up questions."
 
+        let offeringSummary: String? = {
+            let s = AuthManager.shared.lastOfferingSummary
+            return s.isEmpty ? nil : s
+        }()
+
         let request = KrishnaRequest(
             message: message,
             currentVerse: KrishnaVerse(
@@ -297,7 +297,8 @@ struct JournalSheetView: View {
             ),
             goals: GoalsManager.shared.selectedGoals,
             reflection: noteText.trimmingCharacters(in: .whitespaces).isEmpty ? nil : noteText,
-            conversationHistory: nil
+            conversationHistory: nil,
+            lastOfferingSummary: offeringSummary
         )
 
         Task {

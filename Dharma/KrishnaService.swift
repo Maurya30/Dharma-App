@@ -9,6 +9,7 @@ struct KrishnaRequest: Codable {
     let goals: [String]
     let reflection: String?
     let conversationHistory: [KrishnaMessage]?
+    let lastOfferingSummary: String?
 }
 
 struct KrishnaVerse: Codable {
@@ -52,6 +53,35 @@ struct KrishnaMessage: Codable, Identifiable {
 final class KrishnaService: ObservableObject {
     static let shared = KrishnaService()
 
+    // #region agent log
+    fileprivate nonisolated static func debugLog(
+        hypothesisId: String,
+        location: String,
+        message: String,
+        data: [String: Any] = [:]
+    ) {
+        #if DEBUG
+        guard let url = URL(string: "http://127.0.0.1:7914/ingest/6ac49fb4-6cd8-4bd2-9f4f-411bd80ceae6") else { return }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue("461672", forHTTPHeaderField: "X-Debug-Session-Id")
+        let payload: [String: Any] = [
+            "sessionId": "461672",
+            "runId": "pre-fix",
+            "hypothesisId": hypothesisId,
+            "location": location,
+            "message": message,
+            "data": data,
+            "timestamp": Int(Date().timeIntervalSince1970 * 1000)
+        ]
+        guard JSONSerialization.isValidJSONObject(payload),
+              let body = try? JSONSerialization.data(withJSONObject: payload) else { return }
+        URLSession.shared.uploadTask(with: req, from: body).resume()
+        #endif
+    }
+    // #endregion
+
     /// Free-tier cap for settings display; increment when the user sends a message.
     static let dailyMessageLimit = 25
 
@@ -62,10 +92,30 @@ final class KrishnaService: ObservableObject {
     @Published var isStreaming: Bool = false
     @Published var conversationHistory: [KrishnaMessage] = []
 
+    /// Shown by Krishna chat UI as a top banner (network / HTTP / stream failure).
+    @Published var chatBannerError: String?
+
+    /// After a successful HTTP stream with no assistant text, show inline copy in the chat.
+    @Published var showEmptyAssistantInline: Bool = false
+
     /// User messages sent today (resets per calendar day in the current timezone).
     @Published private(set) var messagesSentToday: Int = 0
 
     private let endpoint = BackendConfig.baseURL.appendingPathComponent("chat")
+
+    /// Set when `cancel()` runs so the URLSession completion does not apply stream outcome twice.
+    private var suppressNextStreamOutcome = false
+
+    static let chatReachabilityBannerMessage =
+        "Krishna couldn't be reached. Check your connection and try again."
+
+    func clearChatBannerError() {
+        chatBannerError = nil
+    }
+
+    func clearEmptyAssistantInline() {
+        showEmptyAssistantInline = false
+    }
 
     private static let fallbackGoals = [
         "Develop non-attachment",
@@ -121,7 +171,10 @@ final class KrishnaService: ObservableObject {
     }
 
     func sendMessage(_ text: String, verse: KrishnaVerse?) {
-        recordOutgoingUserMessage()
+        chatBannerError = nil
+        showEmptyAssistantInline = false
+        suppressNextStreamOutcome = false
+
         let userMessage = KrishnaMessage(role: "user", content: text)
         conversationHistory.append(userMessage)
 
@@ -134,16 +187,42 @@ final class KrishnaService: ObservableObject {
             currentVerse: verse,
             goals: goals,
             reflection: nil,
-            conversationHistory: Array(historyForAPI)
+            conversationHistory: Array(historyForAPI),
+            lastOfferingSummary: AuthManager.shared.lastOfferingSummary.isEmpty
+                ? nil
+                : AuthManager.shared.lastOfferingSummary
         )
 
-        guard let body = try? JSONEncoder().encode(request) else { return }
+        guard let body = try? JSONEncoder().encode(request) else {
+            Self.debugLog(
+                hypothesisId: "H5",
+                location: "Dharma/KrishnaService.swift:sendMessage",
+                message: "JSONEncoder.encode failed; request not sent",
+                data: ["hasVerse": verse != nil, "goalsCount": goals.count]
+            )
+            conversationHistory.removeLast()
+            chatBannerError = Self.chatReachabilityBannerMessage
+            return
+        }
+
+        recordOutgoingUserMessage()
 
         var urlRequest = URLRequest(url: endpoint)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.setValue("text/event-stream", forHTTPHeaderField: "Accept")
         urlRequest.httpBody = body
+
+        Self.debugLog(
+            hypothesisId: "H5",
+            location: "Dharma/KrishnaService.swift:sendMessage",
+            message: "Starting chat request",
+            data: [
+                "url": endpoint.absoluteString,
+                "bodyBytes": body.count,
+                "historyCount": conversationHistory.count
+            ]
+        )
 
         streamingResponse = ""
         isStreaming = true
@@ -152,17 +231,28 @@ final class KrishnaService: ObservableObject {
             Task { @MainActor in
                 self?.streamingResponse += chunk
             }
-        } onComplete: { [weak self] in
+        } onStreamFinished: { [weak self] httpRejected, error in
             Task { @MainActor in
                 guard let self else { return }
-                let full = self.streamingResponse
-                if !full.isEmpty {
+                if self.suppressNextStreamOutcome {
+                    self.suppressNextStreamOutcome = false
+                    return
+                }
+                let full = self.streamingResponse.trimmingCharacters(in: .whitespacesAndNewlines)
+                self.streamingResponse = ""
+                self.isStreaming = false
+
+                if httpRejected || error != nil {
+                    self.chatBannerError = Self.chatReachabilityBannerMessage
+                    return
+                }
+                if full.isEmpty {
+                    self.showEmptyAssistantInline = true
+                } else {
                     self.conversationHistory.append(
                         KrishnaMessage(role: "assistant", content: full)
                     )
                 }
-                self.streamingResponse = ""
-                self.isStreaming = false
             }
         }
 
@@ -173,6 +263,7 @@ final class KrishnaService: ObservableObject {
     }
 
     func cancel() {
+        suppressNextStreamOutcome = true
         activeTask?.cancel()
         activeTask = nil
         if isStreaming {
@@ -228,12 +319,17 @@ final class KrishnaService: ObservableObject {
     /// One-shot reply without mutating `conversationHistory` (e.g. Sadhana, daily path sheet).
     func fetchOneShotResponse(message: String) async throws -> String {
         let goalList = GoalsManager.shared.selectedGoals.isEmpty ? Self.fallbackGoals : GoalsManager.shared.selectedGoals
+        let lastOfferingSummary: String? = await MainActor.run {
+            let s = AuthManager.shared.lastOfferingSummary
+            return s.isEmpty ? nil : s
+        }
         let request = KrishnaRequest(
             message: message,
             currentVerse: nil,
             goals: goalList,
             reflection: nil,
-            conversationHistory: nil
+            conversationHistory: nil,
+            lastOfferingSummary: lastOfferingSummary
         )
         var result = ""
         for try await chunk in streamResponse(request: request) {
@@ -247,18 +343,65 @@ final class KrishnaService: ObservableObject {
 
 private final class SSEDelegate: NSObject, URLSessionDataDelegate {
     private let onChunk: (String) -> Void
-    private let onComplete: () -> Void
+    private let onStreamFinished: (_ httpRejected: Bool, _ error: Error?) -> Void
     private var buffer = ""
     private var totalBytes = 0
     private let maxStreamBytes = 50_000
+    private var responseLogged = false
+    private var httpRejected = false
 
-    init(onChunk: @escaping (String) -> Void, onComplete: @escaping () -> Void) {
+    init(
+        onChunk: @escaping (String) -> Void,
+        onStreamFinished: @escaping (_ httpRejected: Bool, _ error: Error?) -> Void
+    ) {
         self.onChunk = onChunk
-        self.onComplete = onComplete
+        self.onStreamFinished = onStreamFinished
+    }
+
+    // #region agent log
+    private func debugLog(_ hypothesisId: String, _ location: String, _ message: String, _ data: [String: Any] = [:]) {
+        KrishnaService.debugLog(hypothesisId: hypothesisId, location: location, message: message, data: data)
+    }
+    // #endregion
+
+    func urlSession(
+        _ session: URLSession,
+        dataTask: URLSessionDataTask,
+        didReceive response: URLResponse,
+        completionHandler: @escaping (URLSession.ResponseDisposition) -> Void
+    ) {
+        if !responseLogged {
+            responseLogged = true
+            let http = response as? HTTPURLResponse
+            debugLog(
+                "H6",
+                "Dharma/KrishnaService.swift:SSEDelegate.didReceiveResponse",
+                "Received response headers",
+                [
+                    "status": http?.statusCode as Any,
+                    "contentType": http?.value(forHTTPHeaderField: "Content-Type") as Any,
+                    "url": response.url?.absoluteString as Any
+                ]
+            )
+            if let http, !(200...299).contains(http.statusCode) {
+                httpRejected = true
+                completionHandler(.cancel)
+                return
+            }
+        }
+        completionHandler(.allow)
     }
 
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         totalBytes += data.count
+        if totalBytes == data.count {
+            debugLog(
+                "H7",
+                "Dharma/KrishnaService.swift:SSEDelegate.didReceiveData",
+                "Received first data chunk",
+                ["chunkBytes": data.count]
+            )
+        }
         if totalBytes > maxStreamBytes {
             dataTask.cancel()
             return
@@ -281,6 +424,14 @@ private final class SSEDelegate: NSObject, URLSessionDataDelegate {
         if let data = payload.data(using: .utf8),
            let json = try? JSONDecoder().decode([String: String].self, from: data),
            let chunk = json["text"] {
+            if chunk.count > 0, totalBytes < 4096 {
+                debugLog(
+                    "H7",
+                    "Dharma/KrishnaService.swift:SSEDelegate.parseLine",
+                    "Parsed text frame",
+                    ["sample": String(chunk.prefix(80))]
+                )
+            }
             onChunk(chunk)
         }
     }
@@ -288,6 +439,21 @@ private final class SSEDelegate: NSObject, URLSessionDataDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         // flush any leftover line
         if !buffer.isEmpty { parseLine(buffer); buffer = "" }
-        onComplete()
+        if let error {
+            debugLog(
+                "H8",
+                "Dharma/KrishnaService.swift:SSEDelegate.didCompleteWithError",
+                "Stream completed with error",
+                ["error": String(describing: error), "totalBytes": totalBytes]
+            )
+        } else {
+            debugLog(
+                "H8",
+                "Dharma/KrishnaService.swift:SSEDelegate.didCompleteWithError",
+                "Stream completed (no error)",
+                ["totalBytes": totalBytes]
+            )
+        }
+        onStreamFinished(httpRejected, error)
     }
 }

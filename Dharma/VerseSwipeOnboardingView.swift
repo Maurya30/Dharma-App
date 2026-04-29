@@ -69,8 +69,8 @@ private let onboardingVerses: [OnboardingVerse] = [
 
 struct VerseSwipeOnboardingView: View {
     var onFinished: () -> Void
-    var activeStepIndex: Int = 4
-    var totalSteps: Int = 6
+    var activeStepIndex: Int = 5
+    var totalSteps: Int = 7
 
     @State private var stack: [OnboardingVerse] = onboardingVerses
     @State private var findingPath = false
@@ -84,6 +84,11 @@ struct VerseSwipeOnboardingView: View {
                     Text("What speaks to you?")
                         .font(.custom("Georgia-Bold", size: 28))
                         .foregroundColor(.dharmaTextPrimary)
+                        .multilineTextAlignment(.center)
+
+                    Text("Swipe through — the verses you connect with help us understand what speaks to you. There are no wrong answers.")
+                        .font(.system(size: 11))
+                        .foregroundColor(.dharmaTextMuted)
                         .multilineTextAlignment(.center)
 
                     Text("Swipe right on verses that resonate")

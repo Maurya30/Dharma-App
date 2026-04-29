@@ -9,12 +9,13 @@ struct AllReflectionsView: View {
     var body: some View {
         ScrollView {
             if journalStore.entries.isEmpty {
-                WarmEmptyState(
-                    icon: "square.and.pencil",
-                    title: "Your reflections live here",
-                    message: "Each note you write is a thread in your practice — nothing is lost; it all gathers in one place.",
-                    hint: "From any verse, tap Reflect on this verse to begin."
-                )
+                ContentUnavailableView {
+                    Label("No reflections yet", systemImage: "text.book.closed")
+                        .foregroundColor(Color.dharmaGold)
+                } description: {
+                    Text("Your reflections from Sadhana, Goal Path, and Krishna will appear here.")
+                        .foregroundColor(Color.dharmaTextSecondary)
+                }
                 .padding(.top, 56)
                 .padding(.horizontal, DharmaSpacing.md)
             } else {
@@ -57,22 +58,22 @@ struct AllReflectionsView: View {
     }
 
     private func reflectionCard(_ entry: JournalEntry) -> some View {
-        VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+        VStack(alignment: .leading, spacing: DharmaSpacing.md) {
             HStack(spacing: 8) {
                 Text(entry.verseSource)
-                    .font(DharmaFont.caption(10))
+                    .font(DharmaFont.caption(13))
                     .foregroundColor(.dharmaGold)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
                     .background(Color.dharmaGold.opacity(0.12))
                     .clipShape(Capsule())
 
                 if entry.spokenWithKrishna {
                     Text("Spoke with Krishna")
-                        .font(DharmaFont.caption(9))
+                        .font(DharmaFont.caption(12))
                         .foregroundColor(.dharmaGold)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
                         .background(Color.dharmaGold.opacity(0.12))
                         .clipShape(Capsule())
                 }
@@ -81,29 +82,29 @@ struct AllReflectionsView: View {
 
                 Button(action: { journalStore.delete(entry: entry) }) {
                     Image(systemName: "trash")
-                        .font(.system(size: 12))
+                        .font(.system(size: 15))
                         .foregroundColor(.dharmaTextSecondary)
-                        .padding(6)
+                        .padding(8)
                 }
                 .buttonStyle(.plain)
             }
 
             Text(entry.verseReference)
-                .font(DharmaFont.caption(11))
+                .font(DharmaFont.caption(13))
                 .foregroundColor(.dharmaTextMuted)
 
             Text(String(entry.verseEnglish.prefix(80)) + (entry.verseEnglish.count > 80 ? "…" : ""))
-                .font(DharmaFont.georgia(13))
+                .font(DharmaFont.georgia(17))
                 .foregroundColor(.dharmaTextBody)
-                .lineSpacing(4)
-                .lineLimit(2)
+                .lineSpacing(5)
+                .lineLimit(3)
 
             Divider().background(Color.dharmaDivider)
 
             Text(String(entry.noteText.prefix(100)) + (entry.noteText.count > 100 ? "…" : ""))
-                .font(DharmaFont.body(13))
+                .font(DharmaFont.body(16))
                 .foregroundColor(.dharmaTextBody)
-                .lineSpacing(4)
+                .lineSpacing(5)
                 .lineLimit(3)
 
             if !entry.sourceLabel.isEmpty {
@@ -116,11 +117,11 @@ struct AllReflectionsView: View {
             HStack {
                 Spacer()
                 Text(entry.date.formatted(date: .abbreviated, time: .omitted))
-                    .font(DharmaFont.caption(10))
+                    .font(DharmaFont.caption(13))
                     .foregroundColor(.dharmaTextMuted)
             }
         }
-        .padding(DharmaSpacing.md)
+        .padding(DharmaSpacing.lg)
         .glassCard(cornerRadius: DharmaRadius.md)
     }
 }

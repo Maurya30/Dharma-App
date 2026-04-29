@@ -102,23 +102,99 @@ extension UIColor {
 
 // MARK: - Typography
 struct DharmaFont {
-    static func title(_ size: CGFloat = 22) -> Font {
+    static func title(_ size: CGFloat = 28) -> Font {
         .system(size: size, weight: .medium, design: .serif)
     }
-    static func heading(_ size: CGFloat = 17) -> Font {
+    static func heading(_ size: CGFloat = 20) -> Font {
         .system(size: size, weight: .medium, design: .default)
     }
-    static func body(_ size: CGFloat = 15) -> Font {
+    static func body(_ size: CGFloat = 17) -> Font {
         .system(size: size, weight: .regular, design: .default)
     }
-    static func caption(_ size: CGFloat = 12) -> Font {
+    static func caption(_ size: CGFloat = 13) -> Font {
         .system(size: size, weight: .regular, design: .default)
     }
-    static func sanskrit(_ size: CGFloat = 15) -> Font {
+    static func sanskrit(_ size: CGFloat = 22) -> Font {
         .system(size: size, weight: .regular, design: .serif)
     }
-    static func georgia(_ size: CGFloat = 14) -> Font {
+    static func georgia(_ size: CGFloat = 17) -> Font {
         .custom("Georgia", size: size)
+    }
+
+    // MARK: Verse roles (use everywhere a verse appears for uniformity)
+    static func verseSanskrit(_ size: CGFloat = 26) -> Font {
+        .system(size: size, weight: .regular, design: .serif)
+    }
+    static func verseTransliteration(_ size: CGFloat = 17) -> Font {
+        .system(size: size, weight: .regular, design: .serif).italic()
+    }
+    static func verseTranslation(_ size: CGFloat = 22) -> Font {
+        .custom("Georgia", size: size)
+    }
+    static func verseSource(_ size: CGFloat = 13) -> Font {
+        .system(size: size, weight: .regular, design: .serif).italic()
+    }
+}
+
+// MARK: - Verse display (unified across screens)
+
+/// Unified verse rendering used everywhere a verse (Sanskrit/transliteration/translation/source)
+/// is shown. Keep sizing, line-spacing, and color tokens identical at every call site.
+struct VerseBody: View {
+    var sanskrit: String? = nil
+    var transliteration: String? = nil
+    var translation: String
+    var source: String? = nil
+    /// `true` produces slightly smaller variants for list/previews, e.g. Today daily verse card.
+    var compact: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DharmaSpacing.md) {
+            if let s = sanskrit, !s.isEmpty {
+                Text(s)
+                    .font(DharmaFont.verseSanskrit(compact ? 22 : 26))
+                    .lineSpacing(12)
+                    .foregroundColor(.dharmaTextPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let t = transliteration, !t.isEmpty {
+                Text(t)
+                    .font(DharmaFont.verseTransliteration(compact ? 15 : 17))
+                    .foregroundColor(.dharmaTextSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Text(translation)
+                .font(DharmaFont.verseTranslation(compact ? 19 : 22))
+                .lineSpacing(8)
+                .foregroundColor(.dharmaTextPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            if let src = source, !src.isEmpty {
+                Text(src)
+                    .font(DharmaFont.verseSource())
+                    .foregroundColor(.dharmaTextSecondary)
+            }
+        }
+    }
+}
+
+private struct SaffronLeftBarModifier: ViewModifier {
+    var width: CGFloat
+    func body(content: Content) -> some View {
+        HStack(alignment: .top, spacing: DharmaSpacing.md) {
+            Rectangle()
+                .fill(Color.dharmaGold)
+                .frame(width: width)
+            content
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+extension View {
+    /// Attaches a thick saffron left rule used on all verse blocks.
+    func saffronLeftBar(width: CGFloat = 4) -> some View {
+        modifier(SaffronLeftBarModifier(width: width))
     }
 }
 
@@ -286,7 +362,7 @@ private struct GlassCardModifier: ViewModifier {
 }
 
 /// Type-erased shape for `clipShape` when switching between capsule and rounded rect.
-private struct AnyShape: Shape {
+private struct AnyShape: Shape, @unchecked Sendable {
     private let buildPath: (CGRect) -> Path
 
     init<S: Shape>(_ shape: S) {

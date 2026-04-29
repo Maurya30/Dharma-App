@@ -60,7 +60,6 @@ class ScriptureStore: ObservableObject {
               let data = try? Data(contentsOf: url),
               let gitaData = try? JSONDecoder().decode(GitaData.self, from: data)
         else {
-            print("⚠️ Could not load gita.json — falling back to sample data")
             return gitaVerses
         }
 
@@ -90,7 +89,6 @@ class ScriptureStore: ObservableObject {
             }
         }
 
-        print("✅ Loaded \(result.count) Gita verses from gita.json")
         return result
     }
 
@@ -98,7 +96,6 @@ class ScriptureStore: ObservableObject {
         guard let url = Bundle.main.url(forResource: "upanishads", withExtension: "json"),
               let data = try? Data(contentsOf: url)
         else {
-            print("⚠️ Could not read upanishads.json from bundle — falling back to sample data")
             return upanishadPassages
         }
 
@@ -106,7 +103,6 @@ class ScriptureStore: ObservableObject {
         do {
             entries = try JSONDecoder().decode([UpanishadEntry].self, from: data)
         } catch {
-            print("⚠️ upanishads.json decode failed: \(error.localizedDescription) — falling back to sample data")
             return upanishadPassages
         }
 
@@ -125,7 +121,6 @@ class ScriptureStore: ObservableObject {
             )
         }
 
-        print("✅ Loaded \(result.count) Upanishad verses from upanishads.json")
         return result
     }
 
@@ -134,7 +129,6 @@ class ScriptureStore: ObservableObject {
               let data = try? Data(contentsOf: url),
               let entries = try? JSONDecoder().decode([RigVedaEntry].self, from: data)
         else {
-            print("⚠️ Could not load rigveda.json")
             return []
         }
 
@@ -153,7 +147,6 @@ class ScriptureStore: ObservableObject {
             )
         }
 
-        print("✅ Loaded \(result.count) Rig Veda verses from rigveda.json")
         return result
     }
 

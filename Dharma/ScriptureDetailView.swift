@@ -1,7 +1,5 @@
 import SwiftUI
 import UIKit
-import AVFoundation
-import Combine
 
 struct ScriptureDetailView: View {
     let item: ScriptureItem
@@ -16,7 +14,7 @@ struct ScriptureDetailView: View {
     @State private var loadingRelated = false
     @ObservedObject private var journalStore = JournalStore.shared
     @Environment(\.colorScheme) private var colorScheme
-
+    @State private var showChantMode = false
     /// Resolves the verse from the store so `isFavourite` updates after toggling (the `item` capture is stale).
     private var liveItem: ScriptureItem {
         store.items.first { $0.id == item.id } ?? item
@@ -104,50 +102,49 @@ struct ScriptureDetailView: View {
 
                 // Category badge
                 Label(item.category.rawValue, systemImage: item.category.icon)
-                    .font(DharmaFont.caption(13))
+                    .font(DharmaFont.caption().weight(.semibold))
                     .foregroundColor(item.category.color)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
                     .background(item.category.color.opacity(0.12))
                     .clipShape(Capsule())
-                    .padding(.bottom, 12)
+                    .padding(.bottom, 16)
 
                 // Title
                 Text(item.title)
-                    .font(DharmaFont.title(28))
+                    .font(DharmaFont.title(34))
                     .foregroundColor(.dharmaTextPrimary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 // Subtitle + quill if reflected
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Text(item.subtitle)
-                        .font(DharmaFont.body(16))
+                        .font(DharmaFont.body())
                         .foregroundColor(.dharmaTextSecondary)
 
                     if journalStore.entry(for: item.id.uuidString) != nil {
                         Image(systemName: "square.and.pencil")
-                            .font(.system(size: 12))
+                            .font(.system(size: 16))
                             .foregroundColor(.dharmaGold)
                     }
                 }
-                .padding(.top, 6)
+                .padding(.top, 8)
 
                 // Speaker context badge
                 if let context = speakerContext {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 8) {
                         Circle()
                             .fill(Color.dharmaGold)
-                            .frame(width: 6, height: 6)
+                            .frame(width: 7, height: 7)
                         Text(context)
-                            .font(DharmaFont.caption(12))
+                            .font(.system(size: 15, design: .serif).italic())
                             .foregroundColor(.dharmaSpeakerText)
-                            .italic()
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
                     .background(Color.dharmaSpeakerBg)
                     .clipShape(Capsule())
-                    .padding(.top, 12)
+                    .padding(.top, 14)
                 }
 
                 // Sanskrit + transliteration: one calm card, clear labels, generous spacing
@@ -156,27 +153,26 @@ struct ScriptureDetailView: View {
                         if let sanskrit = item.textSanskrit, !sanskrit.isEmpty {
                             VerseSectionLabel("Sanskrit")
                             Text(sanskrit)
-                                .font(.system(size: 22, weight: .regular, design: .serif))
+                                .font(DharmaFont.verseSanskrit(26))
                                 .foregroundColor(.dharmaTextPrimary)
-                                .lineSpacing(11)
+                                .lineSpacing(12)
                                 .fixedSize(horizontal: false, vertical: true)
-                                .padding(.top, 8)
+                                .padding(.top, 12)
                         }
 
                         if let translit = item.textTransliteration, !translit.isEmpty {
                             VerseSectionLabel("Transliteration")
-                                .padding(.top, item.textSanskrit == nil || item.textSanskrit?.isEmpty == true ? 0 : 26)
+                                .padding(.top, item.textSanskrit == nil || item.textSanskrit?.isEmpty == true ? 0 : 28)
 
                             Text(translit)
-                                .font(.system(size: 15, weight: .regular, design: .serif))
-                                .italic()
+                                .font(DharmaFont.verseTransliteration(17))
                                 .foregroundColor(.dharmaTextSecondary)
                                 .lineSpacing(8)
                                 .fixedSize(horizontal: false, vertical: true)
-                                .padding(.top, 8)
+                                .padding(.top, 12)
                         }
                     }
-                    .padding(DharmaSpacing.md)
+                    .padding(DharmaSpacing.lg)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .glassCard(cornerRadius: DharmaRadius.lg)
                 }
@@ -196,43 +192,35 @@ struct ScriptureDetailView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         VerseSectionLabel("Translation")
                         Text(item.textEnglish)
-                            .font(.system(size: 15, weight: .regular, design: .serif))
+                            .font(DharmaFont.verseTranslation(19))
                             .italic()
                             .foregroundColor(.dharmaTextSecondary)
                             .lineSpacing(8)
                             .fixedSize(horizontal: false, vertical: true)
-                            .padding(.top, 8)
+                            .padding(.top, 12)
                     }
-                    .padding(DharmaSpacing.md)
+                    .padding(DharmaSpacing.lg)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .glassCard(cornerRadius: DharmaRadius.lg)
                     .padding(.bottom, 8)
                 } else {
-                    VStack(alignment: .leading, spacing: 0) {
+                    VStack(alignment: .leading, spacing: DharmaSpacing.md) {
                         VerseSectionLabel("Translation")
-                        HStack(alignment: .top, spacing: 14) {
-                            Rectangle()
-                                .fill(Color.dharmaGold)
-                                .frame(width: 4)
-                                .clipShape(Capsule())
-
-                            Text(item.textEnglish)
-                                .font(DharmaFont.georgia(19))
-                                .foregroundColor(.dharmaTextBody)
-                                .lineSpacing(10)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .padding(.top, 8)
-                        }
-                        .padding(.top, 4)
+                        Text(item.textEnglish)
+                            .font(DharmaFont.verseTranslation(22))
+                            .foregroundColor(.dharmaTextBody)
+                            .lineSpacing(10)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .saffronLeftBar()
                     }
                     .padding(.bottom, 8)
                 }
 
                 // Source attribution
                 Text(item.source)
-                    .font(.system(size: 13, weight: .regular, design: .default).italic())
+                    .font(.system(size: 15, weight: .regular, design: .serif).italic())
                     .foregroundColor(.dharmaGold)
-                    .padding(.top, 12)
+                    .padding(.top, 14)
 
                 // Goal connection card
                 GoalConnectionCard(item: item)
@@ -243,46 +231,47 @@ struct ScriptureDetailView: View {
                         VStack(alignment: .leading, spacing: 0) {
                             VerseSectionLabel("Sanskrit")
                             Text(sanskrit)
-                                .font(.system(size: 22, weight: .regular, design: .serif))
+                                .font(DharmaFont.verseSanskrit(26))
                                 .foregroundColor(.dharmaTextPrimary)
-                                .lineSpacing(11)
+                                .lineSpacing(12)
                                 .fixedSize(horizontal: false, vertical: true)
-                                .padding(.top, 8)
+                                .padding(.top, 12)
                         }
-                        .padding(DharmaSpacing.md)
+                        .padding(DharmaSpacing.lg)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .glassCard(cornerRadius: DharmaRadius.lg)
-                        .padding(.top, 16)
+                        .padding(.top, 18)
                     }
 
                     if let translit = item.mantraTransliteration, !translit.isEmpty {
-                        VStack(alignment: .leading, spacing: 0) {
+                        VStack(alignment: .leading, spacing: DharmaSpacing.md) {
                             VerseSectionLabel("Transliteration")
-                            HStack(alignment: .top, spacing: 14) {
-                                Rectangle()
-                                    .fill(Color.dharmaGold)
-                                    .frame(width: 4)
-                                    .clipShape(Capsule())
-
-                                Text(translit)
-                                    .font(DharmaFont.georgia(19))
-                                    .foregroundColor(.dharmaTextBody)
-                                    .lineSpacing(10)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .padding(.top, 8)
-                            }
-                            .padding(.top, 4)
+                            Text(translit)
+                                .font(DharmaFont.verseTranslation(22))
+                                .foregroundColor(.dharmaTextBody)
+                                .lineSpacing(10)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .saffronLeftBar()
                         }
-                        .padding(.top, 16)
+                        .padding(.top, 18)
                     }
                 }
 
-                // Local audio player (Mantras)
-                if item.audioFileName != nil {
-                    AudioPlayerView(
-                        fileName: item.audioFileName!,
-                        spokenText: item.mantraTransliteration ?? item.textEnglish
-                    )
+                // Mantra chant (always for mantras)
+                if item.category == .mantras {
+                    Button {
+                        showChantMode = true
+                        HapticManager.light()
+                    } label: {
+                        Text("Begin chanting")
+                            .font(.system(size: 18, weight: .semibold, design: .serif))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(Color.dharmaGold)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
                     .padding(.top, 16)
                 }
 
@@ -300,16 +289,16 @@ struct ScriptureDetailView: View {
                         Image(systemName: journalStore.entry(for: item.id.uuidString) != nil
                               ? "pencil.circle.fill"
                               : "square.and.pencil")
-                            .font(.system(size: 15))
+                            .font(.system(size: 18))
                             .foregroundColor(.dharmaGold)
                         Text(journalStore.entry(for: item.id.uuidString) != nil
                              ? "View / Edit Reflection"
                              : "Reflect on this verse")
-                            .font(DharmaFont.georgia(16))
+                            .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(.dharmaGold)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, DharmaSpacing.md)
+                    .frame(height: 56)
                     .glassCard(cornerRadius: DharmaRadius.lg)
                     .overlay(
                         RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
@@ -332,14 +321,14 @@ struct ScriptureDetailView: View {
                 } label: {
                     HStack(spacing: DharmaSpacing.sm) {
                         Image(systemName: "seal.fill")
-                            .font(.system(size: 15))
+                            .font(.system(size: 18))
                             .foregroundColor(.dharmaGold)
                         Text("Speak with Krishna about this verse")
-                            .font(DharmaFont.georgia(16))
+                            .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(.dharmaGold)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, DharmaSpacing.md)
+                    .frame(height: 56)
                     .glassCard(cornerRadius: DharmaRadius.lg)
                     .overlay(
                         RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
@@ -347,7 +336,7 @@ struct ScriptureDetailView: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .padding(.top, DharmaSpacing.sm)
+                .padding(.top, DharmaSpacing.md)
                 .fullScreenCover(isPresented: $showKrishna) {
                     KrishnaView(verse: KrishnaVerse(
                         id: item.id.uuidString,
@@ -370,7 +359,7 @@ struct ScriptureDetailView: View {
                 // Bottom breathing room — nav is pinned via safeAreaInset
                 Color.clear.frame(height: 12)
                 }
-                .padding(.horizontal, DharmaSpacing.md)
+                .padding(.horizontal, DharmaSpacing.lg)
                 .padding(.top, DharmaSpacing.sm)
                 .padding(.bottom, DharmaSpacing.md)
             }
@@ -422,6 +411,10 @@ struct ScriptureDetailView: View {
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(items: shareItems)
         }
+        .fullScreenCover(isPresented: $showChantMode) {
+            MantraChantView(item: item)
+                .environmentObject(store)
+        }
         .onAppear {
             store.markAsRead(item)
             StreakManager.shared.recordVerseRead()
@@ -443,63 +436,60 @@ struct ScriptureDetailView: View {
         VStack(alignment: .leading, spacing: DharmaSpacing.md) {
 
             if let meaning = item.mantraMeaning {
-                VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: DharmaSpacing.md) {
                     VerseSectionLabel("WHAT THIS MEANS")
                     Text(meaning)
-                        .font(DharmaFont.georgia(15))
+                        .font(DharmaFont.georgia(17))
                         .foregroundColor(.dharmaTextBody)
                         .lineSpacing(8)
                         .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 8)
                 }
-                .padding(DharmaSpacing.md)
+                .padding(DharmaSpacing.lg)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .glassCard(cornerRadius: DharmaRadius.lg)
             }
 
             if let howTo = item.mantraHowToChant {
-                VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: DharmaSpacing.md) {
                     VerseSectionLabel("HOW TO CHANT")
                     Text(howTo)
-                        .font(DharmaFont.georgia(15))
+                        .font(DharmaFont.georgia(17))
                         .foregroundColor(.dharmaTextBody)
                         .lineSpacing(8)
                         .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 8)
                 }
-                .padding(DharmaSpacing.md)
+                .padding(DharmaSpacing.lg)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .glassCard(cornerRadius: DharmaRadius.lg)
             }
 
             if let benefits = item.mantraBenefits, !benefits.isEmpty {
-                VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: DharmaSpacing.md) {
                     VerseSectionLabel("BENEFITS")
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 12) {
                         ForEach(benefits, id: \.self) { benefit in
-                            HStack(alignment: .top, spacing: 10) {
+                            HStack(alignment: .top, spacing: 12) {
                                 Circle()
                                     .fill(Color.dharmaGold)
-                                    .frame(width: 5, height: 5)
-                                    .padding(.top, 7)
+                                    .frame(width: 6, height: 6)
+                                    .padding(.top, 9)
                                 Text(benefit)
-                                    .font(DharmaFont.georgia(14))
+                                    .font(DharmaFont.georgia(16))
                                     .foregroundColor(.dharmaTextBody)
-                                    .lineSpacing(4)
+                                    .lineSpacing(5)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                         }
                     }
-                    .padding(.top, 10)
                 }
-                .padding(DharmaSpacing.md)
+                .padding(DharmaSpacing.lg)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .glassCard(cornerRadius: DharmaRadius.lg)
             }
 
             if let reps = item.mantraRepetitions {
                 Text(repetitionsLabel(reps))
-                    .font(DharmaFont.caption(12))
+                    .font(DharmaFont.caption())
                     .foregroundColor(.dharmaTextMuted)
                     .padding(.horizontal, DharmaSpacing.xs)
             }
@@ -507,26 +497,26 @@ struct ScriptureDetailView: View {
             HStack(spacing: 8) {
                 if let deity = item.mantraDeity {
                     Text(deity)
-                        .font(DharmaFont.caption(11))
+                        .font(DharmaFont.caption(13))
                         .foregroundColor(.dharmaGold)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
                         .background(Color.dharmaGold.opacity(0.12))
                         .clipShape(Capsule())
                 }
                 if item.mantraIsBeej == true {
                     Text("Beej mantra")
-                        .font(DharmaFont.caption(11))
+                        .font(DharmaFont.caption(13))
                         .foregroundColor(.dharmaGold)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
                         .background(Color.dharmaGold.opacity(0.12))
                         .clipShape(Capsule())
                 }
             }
 
             Text(item.source)
-                .font(DharmaFont.caption(11))
+                .font(DharmaFont.caption(13))
                 .foregroundColor(.dharmaTextMuted)
                 .padding(.horizontal, DharmaSpacing.xs)
         }
@@ -554,7 +544,7 @@ private struct VerseSectionLabel: View {
 
     var body: some View {
         Text(text.uppercased())
-            .font(DharmaFont.caption(11))
+            .font(.system(size: 13, weight: .semibold))
             .tracking(1.4)
             .foregroundColor(.dharmaTextMuted)
     }
@@ -571,10 +561,10 @@ struct VerseNavigationRow: View {
             if let prev = previousItem {
                 NavigationLink(destination: ScriptureDetailView(item: prev, store: store)) {
                     Label("Previous", systemImage: "chevron.left")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(Color(hex: "C9821E"))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
+                        .padding(.horizontal, 22)
+                        .padding(.vertical, 14)
                 }
                 .buttonStyle(.plain)
                 .background(.ultraThinMaterial)
@@ -588,10 +578,10 @@ struct VerseNavigationRow: View {
             if let next = nextItem {
                 NavigationLink(destination: ScriptureDetailView(item: next, store: store)) {
                     Label("Next", systemImage: "chevron.right")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(Color(hex: "C9821E"))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
+                        .padding(.horizontal, 22)
+                        .padding(.vertical, 14)
                 }
                 .buttonStyle(.plain)
                 .background(.ultraThinMaterial)
@@ -600,7 +590,7 @@ struct VerseNavigationRow: View {
                 .shadow(color: Color(hex: "8B5A0A").opacity(0.10), radius: 8, x: 0, y: 4)
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 10)
     }
 }
 
@@ -616,7 +606,7 @@ struct VerseAudioCard: View {
     }
 
     var body: some View {
-        HStack(spacing: DharmaSpacing.md) {
+        HStack(spacing: DharmaSpacing.lg) {
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 audioManager.togglePlayPause(chapter: chapter, verse: verse)
@@ -624,7 +614,7 @@ struct VerseAudioCard: View {
                 ZStack {
                     Circle()
                         .fill(Color.dharmaGold)
-                        .frame(width: 44, height: 44)
+                        .frame(width: 56, height: 56)
                         .shadow(color: Color.dharmaGold.opacity(localState == .playing ? 0.4 : 0), radius: 8)
 
                     if localState == .buffering {
@@ -632,7 +622,7 @@ struct VerseAudioCard: View {
                             .tint(.white)
                     } else {
                         Image(systemName: localState == .playing ? "pause.fill" : "play.fill")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.system(size: 22, weight: .semibold))
                             .foregroundColor(.white)
                             .contentTransition(.symbolEffect(.replace))
                     }
@@ -641,16 +631,16 @@ struct VerseAudioCard: View {
             }
             .buttonStyle(.plain)
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 AnimatedWaveform(isAnimating: localState == .playing)
 
                 Text(statusLabel)
-                    .font(DharmaFont.caption(11))
+                    .font(DharmaFont.caption(13))
                     .foregroundColor(localState == .playing ? .dharmaGold : .dharmaTextMuted)
                     .animation(.easeInOut(duration: 0.2), value: localState)
             }
         }
-        .padding(DharmaSpacing.md)
+        .padding(DharmaSpacing.lg)
         .glassCard(cornerRadius: DharmaRadius.md)
         .overlay(
             RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
@@ -700,90 +690,6 @@ struct AnimatedWaveform: View {
     }
 }
 
-// MARK: - Audio Player View (Mantras)
-
-@MainActor
-private final class MantraSpeechState: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
-    let synthesizer = AVSpeechSynthesizer()
-    @Published var isPlaying = false
-
-    override init() {
-        super.init()
-        synthesizer.delegate = self
-    }
-
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        isPlaying = false
-    }
-
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        isPlaying = false
-    }
-}
-
-struct AudioPlayerView: View {
-    let fileName: String
-    let spokenText: String
-    @StateObject private var speech = MantraSpeechState()
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Audio")
-                .font(DharmaFont.caption(12))
-                .foregroundColor(.dharmaTextMuted)
-                .textCase(.uppercase)
-                .kerning(0.8)
-
-            HStack(spacing: DharmaSpacing.md) {
-                Button {
-                    if speech.isPlaying {
-                        speech.synthesizer.stopSpeaking(at: .immediate)
-                        HapticManager.light()
-                    } else {
-                        HapticManager.medium()
-                        let utterance = AVSpeechUtterance(string: spokenText)
-                        utterance.voice = AVSpeechSynthesisVoice(language: "hi-IN")
-                        utterance.rate = 0.35
-                        utterance.pitchMultiplier = 0.85
-                        speech.synthesizer.speak(utterance)
-                        speech.isPlaying = true
-                    }
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(Color.dharmaGold)
-                            .frame(width: 48, height: 48)
-                        Image(systemName: speech.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 18))
-                            .foregroundColor(.white)
-                    }
-                }
-                .buttonStyle(.plain)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.dharmaGold.opacity(0.3))
-                        .frame(height: 28)
-                        .overlay(
-                            HStack(spacing: 2) {
-                                ForEach(0..<30, id: \.self) { _ in
-                                    RoundedRectangle(cornerRadius: 1)
-                                        .fill(Color.dharmaGold.opacity(0.6))
-                                        .frame(width: 2, height: CGFloat.random(in: 4...24))
-                                }
-                            }
-                        )
-                    Text(fileName.replacingOccurrences(of: "_", with: " ").replacingOccurrences(of: ".mp3", with: ""))
-                        .font(DharmaFont.caption(11))
-                        .foregroundColor(.dharmaTextMuted)
-                }
-            }
-            .padding(DharmaSpacing.md)
-            .glassCard(cornerRadius: DharmaRadius.md)
-        }
-    }
-}
-
 // MARK: - Share Sheet
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
@@ -806,34 +712,27 @@ private struct GoalConnectionCard: View {
 
     var body: some View {
         if let firstGoal = matchingGoals.first {
-            HStack(alignment: .top, spacing: 0) {
-                Rectangle()
-                    .fill(Color.dharmaGold)
-                    .frame(width: 2)
-                    .clipShape(Capsule())
+            VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+                Text("Connects to your goal")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.dharmaGold)
+                    .textCase(.uppercase)
+                    .kerning(1.4)
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Connects to your goal")
-                        .font(DharmaFont.caption(11))
-                        .foregroundColor(.dharmaGold)
-                        .textCase(.uppercase)
-                        .kerning(0.5)
+                Text(GoalsManager.shortName(for: firstGoal))
+                    .font(DharmaFont.georgia())
+                    .foregroundColor(.dharmaTextBody)
 
-                    Text(GoalsManager.shortName(for: firstGoal))
-                        .font(DharmaFont.georgia(15))
-                        .foregroundColor(.dharmaTextBody)
-
-                    if let explanation = GoalsManager.explanations[firstGoal] {
-                        Text(explanation)
-                            .font(DharmaFont.body(13))
-                            .foregroundColor(.dharmaTextSecondary)
-                            .lineSpacing(4)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                if let explanation = GoalsManager.explanations[firstGoal] {
+                    Text(explanation)
+                        .font(DharmaFont.body(16))
+                        .foregroundColor(.dharmaTextSecondary)
+                        .lineSpacing(5)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.leading, DharmaSpacing.md)
             }
-            .padding(DharmaSpacing.md)
+            .saffronLeftBar()
+            .padding(DharmaSpacing.lg)
             .glassCard(cornerRadius: DharmaRadius.md)
             .padding(.top, DharmaSpacing.md)
         }
@@ -860,10 +759,10 @@ private struct RelatedVersesSection: View {
             }
 
             Text("Related across all texts")
-                .font(DharmaFont.caption(11))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.dharmaGold)
                 .textCase(.uppercase)
-                .kerning(0.8)
+                .kerning(1.4)
 
             if isLoading {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -905,28 +804,28 @@ private struct RelatedVersesSection: View {
     }
 
     private func cardContent(_ rv: RelatedVerse) -> some View {
-        VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+        VStack(alignment: .leading, spacing: DharmaSpacing.md) {
             Text(rv.categoryBadge)
-                .font(DharmaFont.caption(10))
+                .font(DharmaFont.caption(13))
                 .foregroundColor(.dharmaGold)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
                 .background(Color.dharmaGold.opacity(0.12))
                 .clipShape(Capsule())
 
             Text(rv.truncatedEnglish)
-                .font(DharmaFont.georgia(13))
+                .font(DharmaFont.georgia(17))
                 .foregroundColor(.dharmaTextBody)
-                .lineSpacing(5)
-                .lineLimit(4)
+                .lineSpacing(6)
+                .lineLimit(5)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(rv.id)
-                .font(DharmaFont.caption(10))
+                .font(DharmaFont.caption(13))
                 .foregroundColor(.dharmaTextMuted)
         }
-        .padding(DharmaSpacing.md)
-        .frame(width: 200, alignment: .topLeading)
+        .padding(DharmaSpacing.lg)
+        .frame(width: 260, alignment: .topLeading)
         .glassCard(cornerRadius: DharmaRadius.md)
     }
 }

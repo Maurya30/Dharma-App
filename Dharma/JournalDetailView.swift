@@ -18,21 +18,19 @@ struct JournalDetailView: View {
                     }
 
                     if !entry.verseEnglish.isEmpty {
-                        Text("Today's verse")
-                            .font(DharmaFont.caption(10))
-                            .foregroundColor(.dharmaGold)
-                            .textCase(.uppercase)
-                            .tracking(0.6)
+                        VStack(alignment: .leading, spacing: DharmaSpacing.md) {
+                            Text("Today's verse")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(.dharmaGold)
+                                .textCase(.uppercase)
+                                .tracking(1.4)
 
-                        Text(entry.verseEnglish)
-                            .font(.system(size: 14, design: .serif))
-                            .foregroundColor(.dharmaTextPrimary)
-                            .lineSpacing(5)
-
-                        Text(entry.verseReference)
-                            .font(.system(size: 11, design: .serif))
-                            .foregroundColor(.dharmaGold)
-                            .italic()
+                            VerseBody(
+                                translation: entry.verseEnglish,
+                                source: entry.verseReference
+                            )
+                        }
+                        .saffronLeftBar()
                     }
 
                     if !entry.verseEnglish.isEmpty {
@@ -41,34 +39,36 @@ struct JournalDetailView: View {
                     }
 
                     Text("Your reflection")
-                        .font(DharmaFont.caption(10))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.dharmaGold)
                         .textCase(.uppercase)
-                        .tracking(0.6)
+                        .tracking(1.4)
 
                     Text(entry.noteText)
-                        .font(.system(size: 14, design: .serif))
+                        .font(.system(size: 17, design: .serif))
                         .foregroundColor(.dharmaTextPrimary)
-                        .lineSpacing(5)
+                        .lineSpacing(6)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     if !entry.krishnaResponse.isEmpty {
                         Divider()
                             .background(Color.dharmaGold.opacity(0.3))
-                        HStack(alignment: .top, spacing: 6) {
+                        HStack(alignment: .top, spacing: 10) {
                             Text("✦")
-                                .font(.system(size: 12))
+                                .font(.system(size: 16))
                                 .foregroundColor(.dharmaGold)
                             Text(entry.krishnaResponse)
-                                .font(.system(size: 13, design: .serif))
+                                .font(.system(size: 17, design: .serif))
                                 .italic()
                                 .foregroundColor(.dharmaTextPrimary)
-                                .lineSpacing(4)
+                                .lineSpacing(5)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
 
                     if entry.source != "manual", !entry.sourceLabel.isEmpty {
                         Text("from \(entry.sourceLabel)")
-                            .font(DharmaFont.caption(12))
+                            .font(DharmaFont.caption(14))
                             .foregroundColor(.dharmaTextMuted)
                             .padding(.top, DharmaSpacing.sm)
                     }
@@ -80,16 +80,18 @@ struct JournalDetailView: View {
                             notificationNav.pendingGoalIdForPathMap = gid
                         } label: {
                             Text("View goal path →")
-                                .font(DharmaFont.heading(15))
+                                .font(.system(size: 18, weight: .semibold))
                                 .foregroundColor(.dharmaGold)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, DharmaSpacing.sm)
+                                .frame(height: 56)
+                                .background(Color.dharmaGold.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
                         .buttonStyle(.plain)
                         .padding(.top, DharmaSpacing.sm)
                     }
                 }
-                .padding(DharmaSpacing.md)
+                .padding(DharmaSpacing.lg)
                 .padding(.bottom, DharmaSpacing.xl)
             }
             .scrollContentBackground(.hidden)
@@ -100,7 +102,7 @@ struct JournalDetailView: View {
                         onDismiss()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 22))
+                            .font(.system(size: 28))
                             .symbolRenderingMode(.hierarchical)
                             .foregroundColor(.dharmaGold)
                     }

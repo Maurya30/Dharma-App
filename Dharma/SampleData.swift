@@ -392,25 +392,6 @@ let mantras: [ScriptureItem] = [
 
     ScriptureItem(
         category: .mantras,
-        title: "Om Namo Narayanaya",
-        subtitle: "Salutation to Narayana",
-        textEnglish: "One of the eight-syllable (ashtakshara) mantras of Vishnu. Each syllable corresponds to one of the eight forms of Narayana. Chanting connects the devotee to the all-pervading sustainer.",
-        source: "Vishnu Sahasranama · Yajur Veda",
-        audioFileName: nil,
-        isFavourite: false,
-        mantraTransliteration: "Om Namo Narayanaya",
-        mantraSanskrit: "ॐ नमो नारायणाय",
-        mantraMeaning: "I bow to Narayana — the one who dwells in all beings, the sustainer of the universe.",
-        mantraBenefits: ["Invokes divine protection", "Cultivates devotion", "Brings peace and clarity", "Removes obstacles", "Connects to the sustaining force of the universe"],
-        mantraHowToChant: "Sit facing east. Place your right hand on your heart. Chant each syllable clearly — Om Na-mo Na-ra-ya-na-ya. Allow each repetition to slow your breath naturally.",
-        mantraRepetitions: 108,
-        mantraDeity: "Vishnu",
-        mantraIsBeej: false,
-        mantraCategory: "Devotional"
-    ),
-
-    ScriptureItem(
-        category: .mantras,
         title: "Om Namo Bhagavate Vasudevaya",
         subtitle: "The liberation mantra of Vishnu",
         textEnglish: "The dvadashakshara — twelve-syllable mantra of Vishnu. Considered the Mukti mantra, the mantra of liberation. First taught by Narada to Dhruva.",
@@ -449,25 +430,6 @@ let mantras: [ScriptureItem] = [
 
     ScriptureItem(
         category: .mantras,
-        title: "Om Gam Ganapataye Namaha",
-        subtitle: "Beej mantra of Ganesha",
-        textEnglish: "The beej or seed mantra of Ganesha. GAM is the bija sound — a single syllable carrying the concentrated essence of Ganesha's energy. More potent per syllable than longer mantras.",
-        source: "Ganapati Atharva Shirsha",
-        audioFileName: nil,
-        isFavourite: false,
-        mantraTransliteration: "Om Gam Ganapataye Namaha",
-        mantraSanskrit: "ॐ गं गणपतये नमः",
-        mantraMeaning: "Salutations to Ganesha — GAM is the seed sound that carries his energy directly.",
-        mantraBenefits: ["Removes mental blocks", "Activates wisdom", "Clears path to success", "Reduces fear", "Strengthens focus"],
-        mantraHowToChant: "GAM is the seed syllable — feel it vibrate in your navel center. Chant 108 times on Wednesday, Ganesha's day, for best results.",
-        mantraRepetitions: 108,
-        mantraDeity: "Ganesha",
-        mantraIsBeej: true,
-        mantraCategory: "Beej"
-    ),
-
-    ScriptureItem(
-        category: .mantras,
         title: "Asato Ma Sadgamaya",
         subtitle: "Lead me from untruth to truth",
         textEnglish: "One of the most profound prayers in all of Vedic literature. Three movements — from untruth to truth, from darkness to light, from death to immortality. The triple Shanti at the end addresses disturbances from self, nature, and the divine.",
@@ -502,82 +464,6 @@ let mantras: [ScriptureItem] = [
         mantraDeity: "Brahman (the Absolute)",
         mantraIsBeej: false,
         mantraCategory: "Universal"
-    ),
-
-    ScriptureItem(
-        category: .mantras,
-        title: "Lokah Samastah Sukhino Bhavantu",
-        subtitle: "May all beings be happy",
-        textEnglish: "A closing mantra used at the end of yoga classes and meditation. Not traced to a single scripture but part of the living oral tradition. A prayer that dissolves the boundary between self and other.",
-        source: "Rishi tradition · Yoga Sutras",
-        audioFileName: nil,
-        isFavourite: false,
-        mantraTransliteration: "Lokah Samastah Sukhino Bhavantu",
-        mantraSanskrit: "लोकाः समस्ताः सुखिनो भवन्तु",
-        mantraMeaning: "May all beings in all worlds be happy and free. May my thoughts, words, and actions contribute to that happiness and freedom.",
-        mantraBenefits: ["Cultivates compassion", "Expands the heart", "Reduces self-centeredness", "Generates merit", "Brings inner peace through giving"],
-        mantraHowToChant: "Chant with arms open or hands on heart. Visualize all beings — those you love, those you struggle with, strangers, animals — all becoming free and happy. Three repetitions minimum.",
-        mantraRepetitions: 3,
-        mantraDeity: "Universal",
-        mantraIsBeej: false,
-        mantraCategory: "Universal"
-    ),
-
-    ScriptureItem(
-        category: .mantras,
-        title: "Om Aim Saraswatyai Namaha",
-        subtitle: "Salutation to Saraswati",
-        textEnglish: "The core mantra of Saraswati, goddess of wisdom, learning, music, and art. AIM is her seed syllable. Chanted by students, scholars, musicians, and artists across India before beginning their work.",
-        source: "Devi Mahatmya · Tantric tradition",
-        audioFileName: nil,
-        isFavourite: false,
-        mantraTransliteration: "Om Aim Saraswatyai Namaha",
-        mantraSanskrit: "ॐ ऐं सरस्वत्यै नमः",
-        mantraMeaning: "I bow to Saraswati — AIM is her seed sound, activating the energy of wisdom, speech, and creative intelligence.",
-        mantraBenefits: ["Sharpens intellect", "Enhances creativity", "Improves memory and learning", "Blesses students and artists", "Purifies speech"],
-        mantraHowToChant: "Chant before studying, writing, speaking, or creating. AIM (pronounced like 'I'm') is Saraswati's bija. Feel it activate clarity in the mind.",
-        mantraRepetitions: 108,
-        mantraDeity: "Saraswati",
-        mantraIsBeej: true,
-        mantraCategory: "Beej"
-    ),
-
-    ScriptureItem(
-        category: .mantras,
-        title: "Om Shreem Mahalakshmyai Namaha",
-        subtitle: "Salutation to Lakshmi",
-        textEnglish: "The primary mantra of Lakshmi, goddess of wealth, beauty, and grace. SHREEM is among the most powerful beej syllables — said to attract all forms of abundance, inner and outer.",
-        source: "Sri Sukta · Lakshmi Tantra",
-        audioFileName: nil,
-        isFavourite: false,
-        mantraTransliteration: "Om Shreem Mahalakshmyai Namaha",
-        mantraSanskrit: "ॐ श्रीं महालक्ष्म्यै नमः",
-        mantraMeaning: "I bow to Mahalakshmi — SHREEM is her seed sound, the vibration of abundance, beauty, and grace.",
-        mantraBenefits: ["Attracts abundance", "Opens to grace", "Removes financial obstacles", "Cultivates gratitude", "Brings beauty and harmony"],
-        mantraHowToChant: "Chant on Fridays, Lakshmi's day. SHREEM (rhymes with 'dream') is her bija. Chant with an open hand, symbolizing both giving and receiving.",
-        mantraRepetitions: 108,
-        mantraDeity: "Lakshmi",
-        mantraIsBeej: true,
-        mantraCategory: "Beej"
-    ),
-
-    ScriptureItem(
-        category: .mantras,
-        title: "Om Dum Durgayai Namaha",
-        subtitle: "Salutation to Durga",
-        textEnglish: "The beej mantra of Durga, the warrior goddess who destroys evil and protects devotees. DUM is her seed syllable. Chanted during Navratri and whenever courage or protection is needed.",
-        source: "Devi Mahatmya · Markandeya Purana",
-        audioFileName: nil,
-        isFavourite: false,
-        mantraTransliteration: "Om Dum Durgayai Namaha",
-        mantraSanskrit: "ॐ दुं दुर्गायै नमः",
-        mantraMeaning: "I bow to Durga — DUM is her seed sound, invoking the fierce protective energy of the mother.",
-        mantraBenefits: ["Protection from harm", "Destroys inner demons", "Builds courage and strength", "Removes deep fears", "Invokes the divine mother's fierce love"],
-        mantraHowToChant: "Chant with conviction. Durga removes what no longer serves you — approach with courage, not timidity. Best chanted at dusk or during Navratri.",
-        mantraRepetitions: 108,
-        mantraDeity: "Durga",
-        mantraIsBeej: true,
-        mantraCategory: "Beej"
     ),
 
     ScriptureItem(
@@ -772,44 +658,6 @@ let mantras: [ScriptureItem] = [
 
     ScriptureItem(
         category: .mantras,
-        title: "Tryambakam — Maha Mrityunjaya",
-        subtitle: "The great victory over death",
-        textEnglish: "One of the most powerful mantras in all of Vedic tradition. The three eyes of Shiva see past, present, and future. The cucumber metaphor is exact — when ripe, it detaches naturally from the vine. Liberation is like that: natural, not forced.",
-        source: "Rig Veda 7.59.12 · Yajur Veda",
-        audioFileName: nil,
-        isFavourite: false,
-        mantraTransliteration: "Om Tryambakam Yajamahe Sugandhim Pushtivardhanam. Urvarukamiva Bandhanat Mrityor Mukshiya Mamritat.",
-        mantraSanskrit: "ॐ त्र्यम्बकं यजामहे सुगन्धिं पुष्टिवर्धनम्। उर्वारुकमिव बन्धनान् मृत्योर्मुक्षीय माऽमृतात्॥",
-        mantraMeaning: "We worship the three-eyed one who is fragrant and nourishes all. Like a cucumber freed from its vine, may I be freed from death — not from immortality.",
-        mantraBenefits: ["Heals physical illness", "Removes fear of death", "Brings liberation", "Protects from accidents", "Deeply calming"],
-        mantraHowToChant: "Chant slowly, especially the last line — 'freed from death, not from immortality' is the key. You are asking not to escape death but to transcend the fear of it. 108 times with a mala.",
-        mantraRepetitions: 108,
-        mantraDeity: "Shiva",
-        mantraIsBeej: false,
-        mantraCategory: "Healing"
-    ),
-
-    ScriptureItem(
-        category: .mantras,
-        title: "Om Namah Shivaya — Extended",
-        subtitle: "The five-element Panchakshara",
-        textEnglish: "The Panchakshara — five-syllable mantra. The most important Shaiva mantra. Each syllable is one of the five elements that make up all of existence. To chant it is to honor the divine in all of nature.",
-        source: "Krishna Yajurveda · Shri Rudram",
-        audioFileName: nil,
-        isFavourite: false,
-        mantraTransliteration: "Om Namah Shivaya",
-        mantraSanskrit: "ॐ नमः शिवाय",
-        mantraMeaning: "Na — earth. Ma — water. Shi — fire. Va — air. Ya — space. The five syllables are the five elements. I bow to Shiva who is all of these.",
-        mantraBenefits: ["Purifies the five elements in the body", "Deeply calming", "Removes ego", "Connects to cosmic consciousness", "Universal — works for all regardless of tradition"],
-        mantraHowToChant: "Each syllable corresponds to an element — feel them in the body as you chant. Na at the base, Ma in the abdomen, Shi at the heart, Va at the throat, Ya at the crown.",
-        mantraRepetitions: 108,
-        mantraDeity: "Shiva",
-        mantraIsBeej: false,
-        mantraCategory: "Devotional"
-    ),
-
-    ScriptureItem(
-        category: .mantras,
         title: "Pavamana Suktam",
         subtitle: "Purification mantra from Rig Veda",
         textEnglish: "The purification mantra used before Hindu rituals. Its teaching is revolutionary — purity is not a state you achieve through effort but a quality that flows from remembering the divine. It dissolves the shame of feeling unworthy.",
@@ -825,25 +673,6 @@ let mantras: [ScriptureItem] = [
         mantraDeity: "Vishnu",
         mantraIsBeej: false,
         mantraCategory: "Purification"
-    ),
-
-    ScriptureItem(
-        category: .mantras,
-        title: "Shri Ram Jay Ram",
-        subtitle: "The Ram naam — mantra of liberation",
-        textEnglish: "The mantra of Rama — considered by Tulsidas and many saints to be the greatest of all mantras because it contains RAM, the fire-seed. Mahatma Gandhi's final words were Ram Ram. The simplest mantra with the deepest roots.",
-        source: "Valmiki Ramayana · Ramcharitmanas",
-        audioFileName: nil,
-        isFavourite: false,
-        mantraTransliteration: "Shri Ram Jay Ram Jay Jay Ram",
-        mantraSanskrit: "श्री राम जय राम जय जय राम",
-        mantraMeaning: "Victory to Ram, victory to Ram, victory victory to Ram. RAM is the beej — the seed sound of fire and liberation.",
-        mantraBenefits: ["Purifies speech", "Brings peace and contentment", "RAM is itself a beej of fire that burns karma", "Cultivates virtue", "Connects to dharmic living"],
-        mantraHowToChant: "Simple and powerful. RAM is itself a beej syllable — the seed of fire. Chant continuously as a japa, or synchronize with the breath. Tulsidas called it greater than all mantras.",
-        mantraRepetitions: 108,
-        mantraDeity: "Rama",
-        mantraIsBeej: false,
-        mantraCategory: "Devotional"
     ),
 
     ScriptureItem(

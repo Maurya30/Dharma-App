@@ -230,6 +230,12 @@ final class GoalPathManager: ObservableObject {
         objectWillChange.send()
     }
 
+    func clearAllPaths() {
+        paths = []
+        UserDefaults.standard.removeObject(forKey: Self.storageKey)
+        objectWillChange.send()
+    }
+
     /// Awards one practice point on the active path (first selected goal that has a path).
     func awardSadhanaPoint() {
         for goalId in GoalsManager.shared.selectedGoals {

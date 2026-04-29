@@ -23,12 +23,24 @@ struct GoalPathMapView: View {
 
     var body: some View {
         Group {
-            if let path {
+            if pathManager.paths.isEmpty {
+                ContentUnavailableView(
+                    "Set your goals first",
+                    systemImage: "map",
+                    description: Text("Complete onboarding to begin your goal path.")
+                )
+                .foregroundStyle(Color.dharmaTextPrimary, Color.dharmaTextSecondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let path {
                 mainMap(path: path)
             } else {
-                Text("Path unavailable")
-                    .foregroundColor(.dharmaTextMuted)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ContentUnavailableView(
+                    "Set your goals first",
+                    systemImage: "map",
+                    description: Text("Complete onboarding to begin your goal path.")
+                )
+                .foregroundStyle(Color.dharmaTextPrimary, Color.dharmaTextSecondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .dharmaBackground()

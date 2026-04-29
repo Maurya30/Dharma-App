@@ -27,6 +27,14 @@ final class JournalStore: ObservableObject {
         }
     }
 
+    func saveOffering(entry: JournalEntry) {
+        entries.insert(entry, at: 0)
+        persist()
+        Task {
+            await AuthManager.shared.syncToCloud()
+        }
+    }
+
     func entry(for verseId: String) -> JournalEntry? {
         entries.first { $0.verseId == verseId }
     }
@@ -73,12 +81,16 @@ final class JournalStore: ObservableObject {
             let data = try JSONEncoder().encode(entries)
             try data.write(to: journalFileURL(), options: [.atomic, .completeFileProtection])
         } catch {
-            print("Journal save error: \(error)")
         }
     }
 
     func replaceFromCloud(_ newEntries: [JournalEntry]) {
         entries = newEntries.sorted { $0.date > $1.date }
         persist()
+    }
+
+    func deleteAllEntries() {
+        entries = []
+        try? FileManager.default.removeItem(at: journalFileURL())
     }
 }

@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 struct GoalsOnboardingView: View {
@@ -10,7 +11,7 @@ struct GoalsOnboardingView: View {
     /// When set, navigating to verse swipe is handled by the parent instead of completing goal selection immediately.
     var onGoalsFinished: (() -> Void)? = nil
     var activeStepIndex: Int? = nil
-    var totalSteps: Int = 6
+    var totalSteps: Int = 7
 
     private let sections: [(title: String, goals: [GoalDefinition])] = {
         let grouped = Dictionary(grouping: GoalsManager.allGoals, by: \.section)
@@ -35,6 +36,11 @@ struct GoalsOnboardingView: View {
                             .foregroundColor(.dharmaTextPrimary)
                             .multilineTextAlignment(.center)
 
+                        Text("Your goals shape your daily verse, your Sadhana prompts, and what context Krishna has when you speak.")
+                            .font(.system(size: 11))
+                            .foregroundColor(.dharmaTextMuted)
+                            .multilineTextAlignment(.center)
+
                         Text("Choose 3 goals to shape your journey")
                             .font(DharmaFont.body(16))
                             .foregroundColor(.dharmaTextSecondary)
@@ -56,6 +62,12 @@ struct GoalsOnboardingView: View {
                             .clipShape(Capsule())
                             .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     }
+
+                    Text("Choose up to 3 that feel true right now.")
+                        .font(.system(size: 10))
+                        .foregroundColor(Color.dharmaGold.opacity(0.65))
+                        .italic()
+                        .padding(.horizontal, DharmaSpacing.lg)
 
                     ForEach(sections, id: \.title) { section in
                         VStack(alignment: .leading, spacing: DharmaSpacing.md) {

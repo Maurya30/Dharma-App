@@ -16,14 +16,19 @@ final class AuthManager: ObservableObject {
     @Published var isGuest: Bool = false
     @Published var currentUser: DharmaUser?
     @Published var isLoading: Bool = false
+    @Published var lastOfferingSummary: String = ""
+    @Published var hasPendingSync = false
 
     private static let sessionTokenKey = "auth_session_token"
     private static let userIdKey = "auth_user_id"
     private static let isGuestKey = "auth_is_guest"
     private static let fullNameKey = "auth_full_name"
     private static let emailKey = "auth_email"
+    private static let lastOfferingSummaryKey = "last_offering_summary"
 
     private var didRestoreThisLaunch = false
+    private var cancellables = Set<AnyCancellable>()
+    private let network = NetworkMonitor.shared
 
     private init() {
         let guest = UserDefaults.standard.bool(forKey: Self.isGuestKey)
@@ -31,6 +36,7 @@ final class AuthManager: ObservableObject {
         let uid = UserDefaults.standard.string(forKey: Self.userIdKey) ?? ""
         let name = UserDefaults.standard.string(forKey: Self.fullNameKey)
         let email = UserDefaults.standard.string(forKey: Self.emailKey)
+        let offeringSummary = UserDefaults.standard.string(forKey: Self.lastOfferingSummaryKey) ?? ""
 
         isGuest = guest
         isSignedIn = !guest && !token.isEmpty && !uid.isEmpty
@@ -39,6 +45,16 @@ final class AuthManager: ObservableObject {
         } else {
             currentUser = nil
         }
+        lastOfferingSummary = offeringSummary
+
+        network.$isConnected
+            .receive(on: RunLoop.main)
+            .sink { [weak self] connected in
+                guard let self, connected, self.hasPendingSync else { return }
+                self.hasPendingSync = false
+                Task { await self.syncToCloud() }
+            }
+            .store(in: &cancellables)
     }
 
     func getAuthHeader() -> String? {
@@ -103,11 +119,12 @@ final class AuthManager: ObservableObject {
 
             await syncToCloud()
         } catch {
-            print("Sign in with Apple failed: \(error)")
+            _ = error
         }
     }
 
     func continueAsGuest() {
+        hasPendingSync = false
         isGuest = true
         isSignedIn = false
         currentUser = nil
@@ -119,6 +136,7 @@ final class AuthManager: ObservableObject {
     }
 
     func signOut() {
+        hasPendingSync = false
         UserDefaults.standard.removeObject(forKey: Self.sessionTokenKey)
         UserDefaults.standard.removeObject(forKey: Self.userIdKey)
         UserDefaults.standard.removeObject(forKey: Self.fullNameKey)
@@ -130,8 +148,102 @@ final class AuthManager: ObservableObject {
         currentUser = nil
     }
 
+    func clearAllLocalData() {
+        let defaults = UserDefaults.standard
+        let authKeys = [
+            Self.sessionTokenKey, Self.userIdKey, Self.isGuestKey, Self.fullNameKey, Self.emailKey,
+            Self.lastOfferingSummaryKey
+        ]
+        for key in authKeys {
+            defaults.removeObject(forKey: key)
+        }
+
+        defaults.removeObject(forKey: "selectedGoals")
+        defaults.removeObject(forKey: "hasCompletedGoalSelection")
+        defaults.removeObject(forKey: "dharma_goal_paths")
+
+        let streakKeys = [
+            "sm_streak", "sm_longest", "sm_total_verses", "sm_last_practice", "sm_active_days",
+            "sm_week_start", "sm_active_days_month", "sm_month_start", "sm_acknowledged",
+            "sm_insight_text", "sm_insight_date", "sm_shield"
+        ]
+        for key in streakKeys {
+            defaults.removeObject(forKey: key)
+        }
+
+        let scriptureKeys = [
+            "dharma_favourites", "dharma_read_verses", "dharma_last_read", "dharma_last_read_by_category",
+            "dharma_last_practice_date", "dharma_streak"
+        ]
+        for key in scriptureKeys {
+            defaults.removeObject(forKey: key)
+        }
+
+        let onboardingKeys = [
+            "dharma_onboarding_done", "dharma_user_name", "dharma_intention", "dharma_pace",
+            "dharma_onboarding_profile", "dharma_tutorial_done"
+        ]
+        for key in onboardingKeys {
+            defaults.removeObject(forKey: key)
+        }
+
+        defaults.removeObject(forKey: "krishna_messages_calendar_day")
+        defaults.removeObject(forKey: "krishna_messages_count_today")
+
+        let sadhanaKeys = [
+            "sadhana_darshan_date", "sadhana_bhavana_date", "sadhana_seva_date", "sadhana_streak",
+            "sadhana_last_completion_date", "sadhana_total_acts", "sadhana_notification_verse_hash",
+            "sadhana_bhavana_input", "sadhana_bhavana_krishna", "sadhana_darshan_verse_id", "sadhana_darshan_input"
+        ]
+        for key in sadhanaKeys {
+            defaults.removeObject(forKey: key)
+        }
+
+        defaults.removeObject(forKey: "apnsDeviceToken")
+        defaults.removeObject(forKey: "userDarkMode")
+        defaults.removeObject(forKey: "sadhana_open_krishna")
+
+        if let group = UserDefaults(suiteName: "group.com.maurya.Dharma") {
+            for key in ["widget_verse", "widget_all_verses", "widget_favourites", "widget_content_type", "userDarkMode"] {
+                group.removeObject(forKey: key)
+            }
+        }
+
+        lastOfferingSummary = ""
+    }
+
+    func deleteAccount() async {
+        guard let authHeader = getAuthHeader() else { return }
+
+        let url = BackendConfig.baseURL.appendingPathComponent("user/delete")
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue(authHeader, forHTTPHeaderField: "Authorization")
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
+
+            hasPendingSync = false
+            clearAllLocalData()
+            JournalStore.shared.deleteAllEntries()
+            GoalPathManager.shared.clearAllPaths()
+            isSignedIn = false
+            isGuest = true
+            currentUser = nil
+            UserDefaults.standard.set(true, forKey: Self.isGuestKey)
+            UserDefaults.standard.removeObject(forKey: Self.sessionTokenKey)
+        } catch {
+            _ = error
+        }
+    }
+
     func syncToCloud() async {
         guard isSignedIn, !isGuest, let auth = getAuthHeader() else { return }
+        guard network.isConnected else {
+            hasPendingSync = true
+            return
+        }
 
         do {
             let pathData = try JSONEncoder().encode(GoalPathManager.shared.paths)
@@ -144,7 +256,8 @@ final class AuthManager: ObservableObject {
                 "totalPoints": StreakManager.shared.totalVersesRead,
                 "goalPathProgress": pathJSON,
                 "sadhanaStreak": SadhanaManager.shared.streakDays,
-                "sadhanaTotalActs": SadhanaManager.shared.totalActsCompleted
+                "sadhanaTotalActs": SadhanaManager.shared.totalActsCompleted,
+                "lastOfferingSummary": lastOfferingSummary
             ]
             if let title = latestEarnedTitle() {
                 syncBody["sanskritTitle"] = title
@@ -187,8 +300,9 @@ final class AuthManager: ObservableObject {
             guard let jHttp = jResp as? HTTPURLResponse, (200...299).contains(jHttp.statusCode) else {
                 throw URLError(.badServerResponse)
             }
+            hasPendingSync = false
         } catch {
-            print("Cloud sync failed: \(error)")
+            _ = error
         }
     }
 
@@ -235,6 +349,9 @@ final class AuthManager: ObservableObject {
                     if let ss = ud["sadhana_streak"] as? Int, let ta = ud["sadhana_total_acts"] as? Int {
                         SadhanaManager.shared.applyFromCloud(streakDays: ss, totalActs: ta)
                     }
+                    if let summary = ud["last_offering_summary"] as? String, !summary.isEmpty {
+                        saveOfferingSummary(summary)
+                    }
                 }
             }
 
@@ -255,7 +372,7 @@ final class AuthManager: ObservableObject {
             }
             JournalStore.shared.replaceFromCloud(decoded)
         } catch {
-            print("Restore from cloud failed: \(error)")
+            _ = error
         }
     }
 
@@ -269,6 +386,14 @@ final class AuthManager: ObservableObject {
         let titles = GoalPathManager.shared.paths.flatMap(\.earnedTitles)
         guard let t = titles.max(by: { $0.earnedDate < $1.earnedDate }) else { return nil }
         return t.title
+    }
+
+    func saveOfferingSummary(_ summary: String) {
+        lastOfferingSummary = summary
+        UserDefaults.standard.set(summary, forKey: Self.lastOfferingSummaryKey)
+        Task {
+            await syncToCloud()
+        }
     }
 
     private func journalEntry(fromJSONObject row: [String: Any], scriptureItems: [ScriptureItem]) throws -> JournalEntry {

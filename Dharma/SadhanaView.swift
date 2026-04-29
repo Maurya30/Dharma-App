@@ -15,6 +15,8 @@ struct SadhanaView: View {
     @State private var bhavanaKrishnaResponse = ""
     @State private var showBhavanaKrishna = false
     @State private var isLoadingBhavanaKrishna = false
+    @State private var lastBhavanaUserText = ""
+    @State private var bhavanaKrishnaNeedsRetry = false
 
     @State private var showShareSheet = false
     @State private var shareItems: [Any] = []
@@ -28,7 +30,7 @@ struct SadhanaView: View {
     var body: some View {
         ZStack {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: DharmaSpacing.lg) {
                     header
 
                     darshanCard
@@ -39,7 +41,7 @@ struct SadhanaView: View {
                         completionCard
                     }
                 }
-                .padding()
+                .padding(DharmaSpacing.lg)
             }
         }
         .dharmaBackground()
@@ -68,20 +70,20 @@ struct SadhanaView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Sadhana")
-                .font(.system(size: 26, weight: .regular, design: .serif))
+                .font(.system(size: 32, weight: .regular, design: .serif))
                 .foregroundColor(.dharmaTextPrimary)
 
             Text(Date().formatted(.dateTime.weekday(.wide).month().day()))
-                .font(.system(size: 13))
+                .font(DharmaFont.body(15))
                 .foregroundColor(.dharmaTextMuted)
 
             if !sadhana.sanskritTitle.isEmpty {
                 Text(sadhana.sanskritTitle)
-                    .font(.system(size: 11))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
+                    .font(DharmaFont.caption(13))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
                     .background(Color.dharmaGold.opacity(0.2))
                     .foregroundColor(.dharmaGold)
                     .clipShape(Capsule())
@@ -95,7 +97,7 @@ struct SadhanaView: View {
             dismiss()
         } label: {
             Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 28))
+                .font(.system(size: 34))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(Color.dharmaGold.opacity(0.9))
         }
@@ -107,11 +109,11 @@ struct SadhanaView: View {
 
     private var darshanCard: some View {
         ZStack {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: DharmaSpacing.md) {
                 HStack(alignment: .center) {
                     Text("DARSHAN · SEEING")
-                        .font(.system(size: 9))
-                        .kerning(1.2)
+                        .font(.system(size: 13, weight: .semibold))
+                        .kerning(1.4)
                         .textCase(.uppercase)
                         .foregroundColor(.dharmaGold)
                     Spacer()
@@ -119,9 +121,9 @@ struct SadhanaView: View {
                         ZStack {
                             Circle()
                                 .fill(Color.dharmaGold)
-                                .frame(width: 18, height: 18)
+                                .frame(width: 24, height: 24)
                             Image(systemName: "checkmark")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(.white)
                         }
                     }
@@ -132,20 +134,15 @@ struct SadhanaView: View {
                         darshanCompletedContent(verse: v)
                     } else if darshanExpanded {
                         Text("Sit with today's verse")
-                            .font(.system(size: 15, weight: .regular, design: .serif))
+                            .font(.system(size: 17, weight: .regular, design: .serif))
                             .foregroundColor(.dharmaTextPrimary)
 
-                        Text(v.textEnglish)
-                            .font(.system(size: 14, design: .serif))
-                            .foregroundColor(.dharmaTextPrimary)
-                            .lineSpacing(4)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        Text(v.source)
-                            .font(.system(size: 11, design: .serif))
-                            .italic()
-                            .foregroundColor(.dharmaGold)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        VerseBody(
+                            translation: v.textEnglish,
+                            source: v.source,
+                            compact: true
+                        )
+                        .saffronLeftBar()
 
                         Divider()
                             .background(Color.dharmaGold.opacity(0.3))
@@ -153,23 +150,23 @@ struct SadhanaView: View {
                         ZStack(alignment: .topLeading) {
                             if darshanReflection.isEmpty {
                                 Text("Write your reflection…")
-                                    .font(.system(size: 15, design: .serif))
+                                    .font(.system(size: 17, design: .serif))
                                     .foregroundColor(.dharmaTextMuted)
-                                    .padding(.top, 8)
-                                    .padding(.leading, 4)
+                                    .padding(.top, 10)
+                                    .padding(.leading, 6)
                             }
                             TextEditor(text: $darshanReflection)
-                                .font(.system(size: 15, design: .serif))
+                                .font(.system(size: 17, design: .serif))
                                 .foregroundColor(.dharmaTextPrimary)
                                 .scrollContentBackground(.hidden)
-                                .frame(minHeight: 80)
-                                .padding(4)
+                                .frame(minHeight: 100)
+                                .padding(6)
                         }
-                        .padding(8)
+                        .padding(10)
                         .background(Color.white.opacity(0.06))
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
                                 .stroke(Color.dharmaGold.opacity(0.35), lineWidth: 1)
                         )
 
@@ -178,10 +175,10 @@ struct SadhanaView: View {
                                 finishDarshan()
                             } label: {
                                 Text("Done")
-                                    .font(.system(size: 15, weight: .semibold, design: .serif))
+                                    .font(.system(size: 17, weight: .semibold, design: .serif))
                                     .foregroundColor(.dharmaGold)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 28)
+                                    .padding(.vertical, 14)
                                     .background(Color.dharmaGold.opacity(0.12))
                                     .clipShape(Capsule())
                             }
@@ -192,23 +189,23 @@ struct SadhanaView: View {
                                 darshanExpanded = true
                             }
                         } label: {
-                            VStack(alignment: .leading, spacing: 10) {
+                            VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
                                 Text(v.source)
-                                    .font(.system(size: 11, design: .serif))
-                                    .italic()
+                                    .font(DharmaFont.verseSource())
                                     .foregroundColor(.dharmaTextSecondary)
 
                                 Text(firstLine(of: v.textEnglish))
-                                    .font(.system(size: 14, design: .serif))
+                                    .font(DharmaFont.verseTranslation(19))
                                     .foregroundColor(.dharmaTextPrimary)
                                     .lineLimit(1)
                                     .truncationMode(.tail)
                                     .frame(maxWidth: .infinity, alignment: .leading)
 
                                 Text("Tap to read & reflect")
-                                    .font(.system(size: 11))
+                                    .font(DharmaFont.caption(13))
                                     .foregroundColor(.dharmaTextMuted)
                             }
+                            .saffronLeftBar()
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .contentShape(Rectangle())
                         }
@@ -216,11 +213,11 @@ struct SadhanaView: View {
                     }
                 } else {
                     Text("Verses are loading…")
-                        .font(.system(size: 14, design: .serif))
+                        .font(.system(size: 17, design: .serif))
                         .foregroundColor(.dharmaTextMuted)
                 }
             }
-            .padding(DharmaSpacing.md)
+            .padding(DharmaSpacing.lg)
             .opacity(sadhana.isDarshanComplete ? 0.75 : 1.0)
             .animation(.easeInOut(duration: 0.3), value: sadhana.isDarshanComplete)
 
@@ -261,37 +258,40 @@ struct SadhanaView: View {
                 darshanDetailExpanded.toggle()
             }
         } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(verse.source)
-                    .font(.system(size: 11, design: .serif))
-                    .italic()
-                    .foregroundColor(.dharmaGold)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
+            VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
                 if darshanDetailExpanded {
-                    Text(verse.textEnglish)
-                        .font(.system(size: 14, design: .serif))
-                        .foregroundColor(.dharmaTextPrimary)
-                        .lineSpacing(4)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Divider()
-                        .background(Color.dharmaGold.opacity(0.3))
+                    VerseBody(
+                        translation: verse.textEnglish,
+                        source: verse.source,
+                        compact: true
+                    )
+                    .saffronLeftBar()
+
                     if !reflection.isEmpty {
+                        Divider()
+                            .background(Color.dharmaGold.opacity(0.3))
                         Text(reflection)
-                            .font(.system(size: 14, design: .serif))
+                            .font(.system(size: 16, design: .serif))
                             .foregroundColor(.dharmaTextPrimary)
-                            .lineSpacing(4)
+                            .lineSpacing(5)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 } else {
+                    Text(verse.source)
+                        .font(DharmaFont.verseSource())
+                        .foregroundColor(.dharmaGold)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
                     Text(verse.textEnglish)
-                        .font(.system(size: 12, design: .serif))
+                        .font(DharmaFont.verseTranslation(17))
                         .foregroundColor(.dharmaTextMuted)
-                        .opacity(0.7)
-                        .lineSpacing(4)
+                        .opacity(0.75)
+                        .lineSpacing(5)
                         .lineLimit(2)
                         .frame(maxWidth: .infinity, alignment: .leading)
+
                     Text("Tap to see verse")
-                        .font(.system(size: 10))
+                        .font(DharmaFont.caption(13))
                         .foregroundColor(.dharmaTextMuted)
                 }
             }
@@ -318,31 +318,31 @@ struct SadhanaView: View {
             switch sadhana.bhavanaType {
             case .oneWord:
                 TextField("one word...", text: $bhavanaOneWord)
-                    .font(.system(size: 15, design: .serif))
+                    .font(.system(size: 17, design: .serif))
                     .foregroundColor(.dharmaTextPrimary)
-                    .padding(12)
+                    .padding(14)
                     .background(Color.white.opacity(0.06))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .stroke(Color.dharmaGold.opacity(0.35), lineWidth: 1)
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .disabled(sadhana.isBhavanaComplete)
 
                 if bhavanaOneWord.count >= 1 && !sadhana.isBhavanaComplete {
                     Button("Done") {
                         completeBhavanaWithKrishna(userText: bhavanaOneWord)
                     }
-                    .font(.system(size: 15, weight: .semibold, design: .serif))
+                    .font(.system(size: 17, weight: .semibold, design: .serif))
                     .foregroundColor(.dharmaGold)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 14)
                     .background(Color.dharmaGold.opacity(0.12))
                     .clipShape(Capsule())
                 }
 
             case .yesNo:
-                HStack(spacing: 12) {
+                HStack(spacing: DharmaSpacing.md) {
                     sevaPillButton("Yes") {
                         completeBhavanaWithKrishna(userText: "Yes")
                     }
@@ -355,27 +355,27 @@ struct SadhanaView: View {
 
             case .textInput:
                 TextEditor(text: $bhavanaText)
-                    .font(.system(size: 15, design: .serif))
+                    .font(.system(size: 17, design: .serif))
                     .foregroundColor(.dharmaTextPrimary)
                     .scrollContentBackground(.hidden)
-                    .frame(minHeight: 80)
-                    .padding(10)
+                    .frame(minHeight: 110)
+                    .padding(12)
                     .background(Color.white.opacity(0.06))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .stroke(Color.dharmaGold.opacity(0.35), lineWidth: 1)
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .disabled(sadhana.isBhavanaComplete)
 
                 if bhavanaText.count >= 3 && !sadhana.isBhavanaComplete {
                     Button("Done") {
                         completeBhavanaWithKrishna(userText: bhavanaText)
                     }
-                    .font(.system(size: 15, weight: .semibold, design: .serif))
+                    .font(.system(size: 17, weight: .semibold, design: .serif))
                     .foregroundColor(.dharmaGold)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 14)
                     .background(Color.dharmaGold.opacity(0.12))
                     .clipShape(Capsule())
                 }
@@ -388,40 +388,58 @@ struct SadhanaView: View {
             }
 
             if showBhavanaKrishna && !bhavanaKrishnaResponse.isEmpty {
-                HStack(alignment: .top, spacing: 8) {
+                HStack(alignment: .top, spacing: 10) {
                     Text("✦")
-                        .font(.system(size: 12))
+                        .font(.system(size: 16))
                         .foregroundColor(.dharmaGold)
                     Text(bhavanaKrishnaResponse)
-                        .font(.system(size: 13, design: .serif))
+                        .font(.system(size: 17, design: .serif))
                         .italic()
                         .foregroundColor(.dharmaTextPrimary)
+                        .lineSpacing(5)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.top, 8)
+                .padding(.top, 10)
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+
+            if bhavanaKrishnaNeedsRetry && !isLoadingBhavanaKrishna {
+                bhavanaKrishnaRetryLabel(userText: lastBhavanaUserText)
             }
             }
         }
     }
 
+    private func bhavanaKrishnaRetryLabel(userText: String) -> some View {
+        Text("Krishna is reflecting... tap to try again.")
+            .font(.system(size: 15, design: .serif))
+            .italic()
+            .foregroundColor(Color.dharmaGold.opacity(0.6))
+            .padding(.top, 10)
+            .onTapGesture {
+                let t = userText.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !t.isEmpty else { return }
+                completeBhavanaWithKrishna(userText: t, isRetry: true)
+            }
+    }
+
     private var completedBhavanaBlock: some View {
         let input = sadhana.bhavanaInput
         let kr = sadhana.bhavanaKrishnaResponse
-        return VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
             Button {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                     bhavanaDetailExpanded.toggle()
                 }
             } label: {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     Text(input.isEmpty ? "—" : String(input.prefix(120)))
                         .lineLimit(1)
-                        .font(.system(size: 12, design: .serif))
+                        .font(.system(size: 15, design: .serif))
                         .foregroundColor(.dharmaTextMuted)
                     if !kr.isEmpty {
-                        Text(String(kr.prefix(60)) + (kr.count > 60 ? "…" : ""))
-                            .font(.system(size: 11, design: .serif))
+                        Text(String(kr.prefix(80)) + (kr.count > 80 ? "…" : ""))
+                            .font(.system(size: 14, design: .serif))
                             .italic()
                             .foregroundColor(.dharmaTextMuted)
                     }
@@ -431,66 +449,116 @@ struct SadhanaView: View {
             }
             .buttonStyle(.plain)
 
+            if isLoadingBhavanaKrishna {
+                ProgressView()
+                    .tint(Color.dharmaGold)
+                    .padding(.top, 4)
+            }
+
+            if kr.isEmpty && !isLoadingBhavanaKrishna {
+                bhavanaKrishnaRetryLabel(userText: input.isEmpty ? lastBhavanaUserText : input)
+            }
+
             if bhavanaDetailExpanded {
                 Text(input)
-                    .font(.system(size: 13, design: .serif))
+                    .font(.system(size: 16, design: .serif))
                     .foregroundColor(.dharmaTextPrimary)
+                    .lineSpacing(5)
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Divider()
                     .background(Color.dharmaGold.opacity(0.3))
-                HStack(alignment: .top, spacing: 6) {
+                HStack(alignment: .top, spacing: 8) {
                     Text("✦")
-                        .font(.system(size: 12))
+                        .font(.system(size: 16))
                         .foregroundColor(.dharmaGold)
                     Text(kr)
-                        .font(.system(size: 13, design: .serif))
+                        .font(.system(size: 17, design: .serif))
                         .italic()
                         .foregroundColor(.dharmaGold)
+                        .lineSpacing(5)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
     }
 
-    private func completeBhavanaWithKrishna(userText: String) {
-        sadhana.completeAct(.bhavana)
+    private func completeBhavanaWithKrishna(userText: String, isRetry: Bool = false) {
         let trimmedBhavana = userText.trimmingCharacters(in: .whitespacesAndNewlines)
-        sadhana.saveBhavanaResponse(input: trimmedBhavana, krishnaResponse: "")
-        flashOverlay(for: .bhavana)
-        let msg = "The seeker reflects: '\(userText)'. Respond in exactly one sentence as Krishna. Warm, direct, no questions."
+        lastBhavanaUserText = trimmedBhavana
+        bhavanaKrishnaNeedsRetry = false
+
+        if !isRetry {
+            sadhana.completeAct(.bhavana)
+            sadhana.saveBhavanaResponse(input: trimmedBhavana, krishnaResponse: "")
+            flashOverlay(for: .bhavana)
+        } else {
+            showBhavanaKrishna = false
+            bhavanaKrishnaResponse = ""
+            sadhana.saveBhavanaResponse(input: trimmedBhavana, krishnaResponse: "")
+        }
+
+        let msg = "The seeker reflects: '\(trimmedBhavana)'. Respond in exactly one sentence as Krishna. Warm, direct, no questions."
         isLoadingBhavanaKrishna = true
         Task {
             do {
                 let text = try await KrishnaService.shared.fetchOneShotResponse(message: msg)
                 await MainActor.run {
                     isLoadingBhavanaKrishna = false
-                    bhavanaKrishnaResponse = text
-                    withAnimation(.easeInOut(duration: 0.5)) {
-                        showBhavanaKrishna = true
-                    }
-                    sadhana.saveBhavanaResponse(input: trimmedBhavana, krishnaResponse: text)
-                    if !trimmedBhavana.isEmpty, let v = sadhana.todayVerse {
-                        let formatter = DateFormatter()
-                        formatter.dateFormat = "MMM d"
-                        let dateStr = formatter.string(from: Date())
-                        let entry = JournalEntry(
-                            verseId: v.id.uuidString,
-                            verseReference: v.subtitle,
-                            verseSource: v.source,
-                            verseEnglish: v.textEnglish,
-                            noteText: trimmedBhavana,
-                            goalContext: nil,
-                            source: "sadhana",
-                            sourceLabel: "Sadhana · \(dateStr)",
-                            krishnaResponse: text
-                        )
-                        JournalStore.shared.save(entry: entry)
+                    if text.isEmpty {
+                        bhavanaKrishnaNeedsRetry = true
+                        sadhana.saveBhavanaResponse(input: trimmedBhavana, krishnaResponse: "")
+                        if !isRetry, !trimmedBhavana.isEmpty, let v = sadhana.todayVerse {
+                            let formatter = DateFormatter()
+                            formatter.dateFormat = "MMM d"
+                            let dateStr = formatter.string(from: Date())
+                            let entry = JournalEntry(
+                                verseId: v.id.uuidString,
+                                verseReference: v.subtitle,
+                                verseSource: v.source,
+                                verseEnglish: v.textEnglish,
+                                noteText: trimmedBhavana,
+                                goalContext: nil,
+                                source: "sadhana",
+                                sourceLabel: "Sadhana · \(dateStr)",
+                                krishnaResponse: ""
+                            )
+                            JournalStore.shared.save(entry: entry)
+                        }
+                    } else {
+                        bhavanaKrishnaNeedsRetry = false
+                        bhavanaKrishnaResponse = text
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            showBhavanaKrishna = true
+                        }
+                        sadhana.saveBhavanaResponse(input: trimmedBhavana, krishnaResponse: text)
+                        if !trimmedBhavana.isEmpty, let v = sadhana.todayVerse {
+                            let formatter = DateFormatter()
+                            formatter.dateFormat = "MMM d"
+                            let dateStr = formatter.string(from: Date())
+                            let entry = JournalEntry(
+                                verseId: v.id.uuidString,
+                                verseReference: v.subtitle,
+                                verseSource: v.source,
+                                verseEnglish: v.textEnglish,
+                                noteText: trimmedBhavana,
+                                goalContext: nil,
+                                source: "sadhana",
+                                sourceLabel: "Sadhana · \(dateStr)",
+                                krishnaResponse: text
+                            )
+                            if !isRetry {
+                                JournalStore.shared.save(entry: entry)
+                            }
+                        }
                     }
                 }
             } catch {
                 await MainActor.run {
                     isLoadingBhavanaKrishna = false
-                    if !trimmedBhavana.isEmpty, let v = sadhana.todayVerse {
+                    bhavanaKrishnaNeedsRetry = true
+                    sadhana.saveBhavanaResponse(input: trimmedBhavana, krishnaResponse: "")
+                    if !isRetry, !trimmedBhavana.isEmpty, let v = sadhana.todayVerse {
                         let formatter = DateFormatter()
                         formatter.dateFormat = "MMM d"
                         let dateStr = formatter.string(from: Date())
@@ -526,12 +594,12 @@ struct SadhanaView: View {
                 switch sadhana.todaySevaType {
                 case .chant:
                     if sadhana.isSevaComplete {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 6) {
                             Text(Self.todayChantMantraTitle())
-                                .font(.system(size: 11))
+                                .font(DharmaFont.body(15))
                                 .foregroundColor(.dharmaTextMuted)
                             Text("Chanted 3 times")
-                                .font(.system(size: 10))
+                                .font(DharmaFont.caption(13))
                                 .foregroundColor(.dharmaTextMuted)
                         }
                     } else {
@@ -546,7 +614,7 @@ struct SadhanaView: View {
                 case .askKrishna:
                     if sadhana.isSevaComplete {
                         Text("Opened Krishna AI")
-                            .font(.system(size: 11))
+                            .font(DharmaFont.body(15))
                             .foregroundColor(.dharmaTextMuted)
                     } else {
                         askKrishnaSevaContent
@@ -554,7 +622,7 @@ struct SadhanaView: View {
                 case .share:
                     if sadhana.isSevaComplete {
                         Text("Shared today's verse")
-                            .font(.system(size: 11))
+                            .font(DharmaFont.body(15))
                             .foregroundColor(.dharmaTextMuted)
                     } else {
                         shareSevaContent
@@ -587,23 +655,30 @@ struct SadhanaView: View {
     }
 
     private var askKrishnaSevaContent: some View {
-        Button("Open Krishna AI") {
+        Button {
             sadhana.completeAct(.seva)
             openKrishnaFromSadhana = true
             dismiss()
+        } label: {
+            Text("Open Krishna AI")
+                .font(.system(size: 18, weight: .semibold, design: .serif))
+                .foregroundColor(.dharmaGold)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background(Color.dharmaGold.opacity(0.14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Color.dharmaGold.opacity(0.4), lineWidth: 1)
+                )
+                .cornerRadius(14)
         }
-        .font(.system(size: 15, weight: .semibold, design: .serif))
-        .foregroundColor(.dharmaGold)
-        .padding(.horizontal, 22)
-        .padding(.vertical, 12)
-        .background(Color.dharmaGold.opacity(0.14))
-        .clipShape(Capsule())
+        .buttonStyle(.plain)
     }
 
     private var shareSevaContent: some View {
         Group {
             if let v = sadhana.todayVerse {
-                Button("Share") {
+                Button {
                     let text = "\(v.textEnglish)\n\n— \(v.source)\n\nfrom Dharma"
                     shareItems = [text]
                     showShareSheet = true
@@ -611,13 +686,20 @@ struct SadhanaView: View {
                         sadhana.completeAct(.seva)
                         flashOverlay(for: .seva)
                     }
+                } label: {
+                    Text("Share")
+                        .font(.system(size: 18, weight: .semibold, design: .serif))
+                        .foregroundColor(.dharmaGold)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Color.dharmaGold.opacity(0.14))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(Color.dharmaGold.opacity(0.4), lineWidth: 1)
+                        )
+                        .cornerRadius(14)
                 }
-                .font(.system(size: 15, weight: .semibold, design: .serif))
-                .foregroundColor(.dharmaGold)
-                .padding(.horizontal, 22)
-                .padding(.vertical, 12)
-                .background(Color.dharmaGold.opacity(0.14))
-                .clipShape(Capsule())
+                .buttonStyle(.plain)
             }
         }
     }
@@ -625,10 +707,10 @@ struct SadhanaView: View {
     private func sevaPillButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 15, weight: .medium, design: .serif))
+                .font(.system(size: 17, weight: .medium, design: .serif))
                 .foregroundColor(.dharmaGold)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 16)
                 .overlay(
                     Capsule().stroke(Color.dharmaGold.opacity(0.85), lineWidth: 1)
                 )
@@ -649,42 +731,42 @@ struct SadhanaView: View {
             dismiss()
         } label: {
             ZStack {
-                VStack(spacing: 12) {
+                VStack(spacing: DharmaSpacing.md) {
                     Text("ॐ")
-                        .font(.system(size: 32, design: .serif))
+                        .font(.system(size: 44, design: .serif))
                         .foregroundColor(.dharmaGold)
                     Text("Sadhana complete")
-                        .font(.system(size: 18, weight: .regular, design: .serif))
+                        .font(.system(size: 26, weight: .regular, design: .serif))
                         .foregroundColor(.dharmaTextPrimary)
 
                     if let goalName = GoalsManager.shared.selectedGoals.first {
                         Text(goalName.uppercased())
-                            .font(.system(size: 11))
-                            .tracking(1.2)
+                            .font(.system(size: 13, weight: .semibold))
+                            .tracking(1.4)
                             .foregroundColor(.dharmaGold)
                             .multilineTextAlignment(.center)
 
                         if let p = progress {
-                            HStack(spacing: 5) {
+                            HStack(spacing: 7) {
                                 ForEach(0..<p.total, id: \.self) { i in
                                     Circle()
-                                        .frame(width: 8, height: 8)
+                                        .frame(width: 11, height: 11)
                                         .foregroundColor(i < p.done ? Color.dharmaGold : Color.clear)
                                         .overlay(Circle().stroke(Color.dharmaGold, lineWidth: 1))
                                 }
                             }
                             Text("\(max(0, p.total - p.done)) more days to complete this level")
-                                .font(.system(size: 11))
+                                .font(DharmaFont.body(14))
                                 .foregroundColor(.dharmaTextMuted)
                                 .multilineTextAlignment(.center)
                         }
                     }
 
                     Text(Date(), style: .date)
-                        .font(.system(size: 12))
+                        .font(DharmaFont.body(15))
                         .foregroundColor(.dharmaTextMuted)
                 }
-                .padding(20)
+                .padding(28)
                 .frame(maxWidth: .infinity)
 
                 RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
@@ -717,11 +799,11 @@ struct SadhanaView: View {
         @ViewBuilder content: () -> some View
     ) -> some View {
         ZStack {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: DharmaSpacing.md) {
                 HStack(alignment: .center) {
                     Text(label)
-                        .font(.system(size: 9))
-                        .kerning(1.2)
+                        .font(.system(size: 13, weight: .semibold))
+                        .kerning(1.4)
                         .textCase(.uppercase)
                         .foregroundColor(.dharmaGold)
                     Spacer()
@@ -729,29 +811,30 @@ struct SadhanaView: View {
                         ZStack {
                             Circle()
                                 .fill(Color.dharmaGold)
-                                .frame(width: 18, height: 18)
+                                .frame(width: 24, height: 24)
                             Image(systemName: "checkmark")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(.white)
                         }
                     }
                 }
 
                 Text(title)
-                    .font(.system(size: 15, weight: .regular, design: .serif))
+                    .font(.system(size: 17, weight: .regular, design: .serif))
                     .foregroundColor(.dharmaTextPrimary)
                     .opacity(fadeCompletedPrompt && isComplete ? 0.75 : 1)
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 if let subtitle {
                     Text(subtitle)
-                        .font(.system(size: 13, design: .serif))
+                        .font(.system(size: 15, design: .serif))
                         .foregroundColor(.dharmaTextSecondary)
                 }
 
                 content()
             }
-            .padding(DharmaSpacing.md)
+            .padding(DharmaSpacing.lg)
             .opacity(isComplete && dimWhenComplete ? 0.75 : 1.0)
             .animation(.easeInOut(duration: 0.3), value: isComplete)
 
@@ -768,19 +851,19 @@ struct SadhanaView: View {
                     .fill(.ultraThinMaterial)
                     .opacity(1)
 
-                VStack(spacing: 10) {
+                VStack(spacing: 12) {
                     Text(pl.1)
-                        .font(.system(size: 28, weight: .regular, design: .serif))
+                        .font(.system(size: 34, weight: .regular, design: .serif))
                         .foregroundColor(.dharmaGold)
                         .multilineTextAlignment(.center)
                     Text(pl.2)
-                        .font(.system(size: 13))
+                        .font(.system(size: 16))
                         .foregroundColor(.dharmaTextMuted)
                         .multilineTextAlignment(.center)
                         .opacity(overlayEnglishVisible ? 1 : 0)
                         .animation(.easeInOut(duration: 0.4), value: overlayEnglishVisible)
                 }
-                .padding(DharmaSpacing.md)
+                .padding(DharmaSpacing.lg)
             }
             .transition(.opacity)
         }
@@ -825,14 +908,15 @@ private struct ChantSevaBlock: View {
     let isComplete: Bool
     let onComplete: () -> Void
 
-    @State private var lastTapTime: Date = .distantPast
+    /// Completed repetitions in short mode (0…3).
     @State private var repCount = 0
-    @State private var pulseSize: CGFloat = 60
 
     @State private var words: [String] = []
     @State private var longRep = 1
     @State private var wordIndex = 0
     @State private var longTimer: Timer?
+    @State private var shortProgress: CGFloat = 0
+    @State private var shortTimer: Timer?
 
     private var mantra: ScriptureItem? {
         guard !mantras.isEmpty else { return nil }
@@ -859,6 +943,10 @@ private struct ChantSevaBlock: View {
         return "Rep \(longRep) of 3"
     }
 
+    private var transliterationLine: String {
+        mantra?.mantraTransliteration ?? mantra?.textEnglish ?? ""
+    }
+
     var body: some View {
         Group {
             if isComplete {
@@ -872,9 +960,8 @@ private struct ChantSevaBlock: View {
         .onAppear {
             words = wordList
             if isShortMode {
-                withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
-                    pulseSize = 80
-                }
+                repCount = 0
+                startShortRep()
             } else {
                 if words.count == 1 {
                     longRep = 0
@@ -886,80 +973,99 @@ private struct ChantSevaBlock: View {
             }
         }
         .onDisappear {
+            shortTimer?.invalidate()
+            shortTimer = nil
             longTimer?.invalidate()
             longTimer = nil
         }
     }
 
     private var shortModeBody: some View {
-        VStack(spacing: 16) {
-            Text(mantra?.title ?? "Om")
-                .font(.system(size: 18, weight: .medium, design: .serif))
-                .foregroundColor(.dharmaGold)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
+        let sanskrit = mantra?.mantraSanskrit?.trimmingCharacters(in: .whitespacesAndNewlines)
 
-            Text(mantra?.mantraTransliteration ?? mantra?.textEnglish ?? "")
-                .font(.system(size: 14, design: .serif))
-                .foregroundColor(.dharmaTextPrimary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-
-            Text("Tap the circle once per repetition — 3 repetitions to complete.")
-                .font(.system(size: 12))
+        return VStack(spacing: DharmaSpacing.md) {
+            Text("Tap the card to complete a repetition early — 3 repetitions to finish.")
+                .font(.system(size: 14))
                 .foregroundColor(.dharmaTextMuted)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 12)
 
-            Button {
-                guard repCount < 3 else { return }
-                guard Date().timeIntervalSince(lastTapTime) >= 1.5 else { return }
-                lastTapTime = Date()
-                repCount += 1
-                if repCount >= 3 {
-                    onComplete()
+            VStack(spacing: 0) {
+                VStack(spacing: DharmaSpacing.md) {
+                    if let sanskrit, !sanskrit.isEmpty {
+                        Text(sanskrit)
+                            .font(.system(size: 17, weight: .regular, design: .serif))
+                            .foregroundColor(Color.dharmaGold.opacity(0.65))
+                            .multilineTextAlignment(.center)
+                    }
+                    Text(transliterationLine.isEmpty ? (mantra?.title ?? "") : transliterationLine)
+                        .font(.system(size: 28, weight: .regular, design: .serif))
+                        .foregroundColor(.dharmaTextPrimary)
+                        .multilineTextAlignment(.center)
                 }
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(Color.dharmaGold.opacity(0.3))
-                        .frame(width: pulseSize, height: pulseSize)
-                    Circle()
-                        .stroke(Color.dharmaGold.opacity(0.6), lineWidth: 2)
-                        .frame(width: pulseSize, height: pulseSize)
+                .padding(.horizontal, 32)
+                .padding(.vertical, 44)
+                .frame(maxWidth: .infinity)
+
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Rectangle()
+                            .fill(Color.dharmaGold.opacity(0.12))
+                            .frame(height: 3)
+                        Rectangle()
+                            .fill(Color.dharmaGold)
+                            .frame(width: geo.size.width * shortProgress, height: 3)
+                    }
                 }
+                .frame(height: 3)
+                .animation(.linear(duration: 0.05), value: shortProgress)
             }
-            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity)
+            .glassCard(cornerRadius: DharmaRadius.md)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                shortTimer?.invalidate()
+                shortProgress = 0
+                completeShortRep()
+            }
 
             Text("\(min(repCount + 1, 3)) of 3")
-                .font(.system(size: 13))
+                .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.dharmaGold)
         }
     }
 
     private var longModeBody: some View {
-        VStack(spacing: 12) {
-            Text(mantra?.title ?? "Om")
-                .font(.system(size: 15, weight: .medium, design: .serif))
-                .foregroundColor(.dharmaGold)
-                .frame(maxWidth: .infinity)
+        let sanskrit = mantra?.mantraSanskrit?.trimmingCharacters(in: .whitespacesAndNewlines)
 
+        return VStack(spacing: DharmaSpacing.md) {
             Text("Chant along as each word lights up — 3 full repetitions to complete.")
-                .font(.system(size: 12))
+                .font(.system(size: 14))
                 .foregroundColor(.dharmaTextMuted)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 12)
 
-            karaokeText
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(spacing: DharmaSpacing.md) {
+                if let sanskrit, !sanskrit.isEmpty {
+                    Text(sanskrit)
+                        .font(.system(size: 17, weight: .regular, design: .serif))
+                        .foregroundColor(Color.dharmaGold.opacity(0.65))
+                        .multilineTextAlignment(.center)
+                }
+                karaokeText
+                    .multilineTextAlignment(.center)
+            }
+            .padding(DharmaSpacing.lg)
+            .frame(maxWidth: .infinity)
+            .glassCard(cornerRadius: DharmaRadius.md)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                advanceLong()
+            }
 
             Text(longRepCaption)
-                .font(.system(size: 13))
+                .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.dharmaGold)
-
-            Text("chanting…")
-                .font(.system(size: 11))
-                .foregroundColor(.dharmaTextMuted)
         }
     }
 
@@ -971,7 +1077,7 @@ private struct ChantSevaBlock: View {
                 result = result + Text(verbatim: " ") + karaokeWord(at: i)
             }
         }
-        return result.font(.system(size: 14, design: .serif))
+        return result.font(.system(size: 20, weight: .regular, design: .serif))
     }
 
     private func karaokeWord(at i: Int) -> Text {
@@ -985,13 +1091,45 @@ private struct ChantSevaBlock: View {
         return Text(w).foregroundColor(Color.dharmaTextPrimary.opacity(0.3))
     }
 
+    private func startShortRep() {
+        shortProgress = 0
+        shortTimer?.invalidate()
+        shortTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+            tickShortRep()
+        }
+        if let t = shortTimer {
+            RunLoop.main.add(t, forMode: .common)
+        }
+    }
+
+    private func tickShortRep() {
+        shortProgress += 0.05 / 8.0
+        if shortProgress >= 1.0 {
+            shortProgress = 0
+            completeShortRep()
+        }
+    }
+
+    private func completeShortRep() {
+        repCount += 1
+        if repCount >= 3 {
+            shortTimer?.invalidate()
+            shortTimer = nil
+            onComplete()
+        } else {
+            startShortRep()
+        }
+    }
+
     private func startLongTimerIfNeeded() {
         guard !words.isEmpty else { return }
         longTimer?.invalidate()
         longTimer = Timer.scheduledTimer(withTimeInterval: 1.2, repeats: true) { _ in
             advanceLong()
         }
-        RunLoop.main.add(longTimer!, forMode: .common)
+        if let t = longTimer {
+            RunLoop.main.add(t, forMode: .common)
+        }
     }
 
     private func advanceLong() {

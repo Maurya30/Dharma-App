@@ -26,40 +26,40 @@ struct JourneyView: View {
                     // Header
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Your spiritual practice")
-                            .font(DharmaFont.body(14))
+                            .font(DharmaFont.body(17))
                             .foregroundColor(.dharmaTextMuted)
                     }
-                    .padding(.horizontal, DharmaSpacing.md)
+                    .padding(.horizontal, DharmaSpacing.lg)
                     .padding(.top, DharmaSpacing.sm)
 
                     // Stats Row
                     statsRow
-                        .padding(.horizontal, DharmaSpacing.md)
+                        .padding(.horizontal, DharmaSpacing.lg)
 
                     // Milestone Banner
                     if let milestone = streakManager.pendingMilestone {
                         milestoneBanner(milestone)
-                            .padding(.horizontal, DharmaSpacing.md)
+                            .padding(.horizontal, DharmaSpacing.lg)
                     }
 
                     // Weekly Insight Card
                     if !streakManager.weeklyInsight.isEmpty || streakManager.isLoadingInsight {
                         weeklyInsightCard
-                            .padding(.horizontal, DharmaSpacing.md)
+                            .padding(.horizontal, DharmaSpacing.lg)
                     }
 
                     // Section 1 — Goals
                     goalsSection
-                        .padding(.horizontal, DharmaSpacing.md)
+                        .padding(.horizontal, DharmaSpacing.lg)
 
                     // Section 2 — Reflections
                     reflectionsSection
-                        .padding(.horizontal, DharmaSpacing.md)
+                        .padding(.horizontal, DharmaSpacing.lg)
 
                     // Section 3 — Explore Further
                     if !journalStore.entries.isEmpty {
                         exploreFurtherSection
-                            .padding(.horizontal, DharmaSpacing.md)
+                            .padding(.horizontal, DharmaSpacing.lg)
                     }
 
                     Spacer(minLength: DharmaSpacing.xxl)
@@ -139,15 +139,15 @@ struct JourneyView: View {
 
             HStack {
                 Text("Your Goals")
-                    .font(DharmaFont.caption(11))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.dharmaGold)
                     .textCase(.uppercase)
-                    .kerning(0.8)
+                    .kerning(1.4)
                 Spacer()
                 Button(action: { showingGoalEditor = true }) {
                     Image(systemName: "plus.circle")
                         .foregroundColor(Color(hex: "C9821E"))
-                        .font(.system(size: 18))
+                        .font(.system(size: 22))
                 }
             }
 
@@ -178,21 +178,21 @@ struct JourneyView: View {
         } label: {
             ZStack {
                 HStack {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text(sadhana.isFullyComplete ? "Sadhana complete" : "Sadhana")
-                            .font(.system(size: 16, weight: .regular, design: .serif))
+                            .font(.system(size: 20, weight: .regular, design: .serif))
                             .foregroundColor(sadhana.isFullyComplete ? Color(hex: "C9821E") : Color(hex: "F5E6C8"))
                         if !sadhana.sanskritTitle.isEmpty {
                             Text(sadhana.sanskritTitle)
-                                .font(.system(size: 11))
+                                .font(.system(size: 14))
                                 .foregroundColor(Color(hex: "C9821E"))
                         }
                     }
                     Spacer()
-                    HStack(spacing: 6) {
+                    HStack(spacing: 8) {
                         ForEach(0..<3, id: \.self) { i in
                             Circle()
-                                .frame(width: 8, height: 8)
+                                .frame(width: 11, height: 11)
                                 .foregroundColor(
                                     i < sadhana.completedCount
                                     ? Color(hex: "C9821E")
@@ -202,7 +202,7 @@ struct JourneyView: View {
                         }
                     }
                 }
-                .padding(DharmaSpacing.md)
+                .padding(DharmaSpacing.lg)
 
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .stroke(Color(hex: "C9821E"), lineWidth: 1.5)
@@ -228,10 +228,10 @@ struct JourneyView: View {
                 goalsManager.resetGoals()
             } label: {
                 Text("Choose goals")
-                    .font(DharmaFont.heading(14))
+                    .font(DharmaFont.body(17).weight(.semibold))
                     .foregroundColor(.dharmaGold)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 16)
                     .background(Color.dharmaGold.opacity(0.12))
                     .clipShape(Capsule())
             }
@@ -252,37 +252,38 @@ struct JourneyView: View {
         }()
         let dimForTodayDone = shouldDimGoalRing(path: path)
 
-        return VStack(spacing: DharmaSpacing.sm) {
+        return VStack(spacing: DharmaSpacing.md) {
             ZStack {
                 Circle()
-                    .stroke(Color(hex: "C9821E").opacity(0.15), lineWidth: 8)
+                    .stroke(Color(hex: "C9821E").opacity(0.15), lineWidth: 10)
                 Circle()
                     .trim(from: 0, to: progress)
-                    .stroke(Color(hex: "C9821E"), style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .stroke(Color(hex: "C9821E"), style: StrokeStyle(lineWidth: 10, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                     .animation(.easeInOut(duration: 0.8), value: progress)
             }
-            .frame(width: 54, height: 54)
+            .frame(width: 68, height: 68)
 
             Text(GoalsManager.shortName(for: goal))
-                .font(.custom("Georgia-Bold", size: 17))
+                .font(.custom("Georgia-Bold", size: 20))
                 .foregroundColor(.dharmaTextPrimary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
 
             if let levelCaption {
                 Text(levelCaption)
-                    .font(DharmaFont.georgia(13))
+                    .font(DharmaFont.georgia(15))
                     .foregroundColor(.dharmaTextPrimary)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
             }
 
             Text("\(readCount) of \(verseCount)")
-                .font(DharmaFont.georgia(13))
+                .font(DharmaFont.georgia(15))
                 .foregroundColor(.dharmaTextPrimary)
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, DharmaSpacing.sm)
         .opacity(dimForTodayDone ? 0.5 : 1.0)
     }
 
@@ -317,10 +318,10 @@ struct JourneyView: View {
         VStack(alignment: .leading, spacing: DharmaSpacing.md) {
             HStack {
                 Text("Your Reflections")
-                    .font(DharmaFont.caption(11))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.dharmaGold)
                     .textCase(.uppercase)
-                    .kerning(0.8)
+                    .kerning(1.4)
 
                 Spacer()
 
@@ -331,7 +332,7 @@ struct JourneyView: View {
                         }
                     }) {
                         Text("Collapse")
-                            .font(DharmaFont.caption(11))
+                            .font(DharmaFont.caption())
                             .foregroundColor(.dharmaTextMuted)
                     }
                 }
@@ -380,11 +381,11 @@ struct JourneyView: View {
                     HStack {
                         Spacer()
                         Text("+\(journalStore.entries.count - 3) more")
-                            .font(DharmaFont.caption(11))
+                            .font(DharmaFont.caption(13))
                             .fontWeight(.semibold)
                             .foregroundColor(.dharmaTextPrimary)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
                             .background(Color.dharmaSurface.opacity(0.95))
                             .clipShape(Capsule())
                             .overlay(
@@ -398,7 +399,7 @@ struct JourneyView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: CGFloat(118 + min(stackDepth - 1, 2) * 11))
+        .frame(height: CGFloat(150 + min(stackDepth - 1, 2) * 13))
         .contentShape(Rectangle())
         .onTapGesture {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
@@ -420,9 +421,9 @@ struct JourneyView: View {
 
                     Button(action: { journalStore.delete(entry: entry) }) {
                         Image(systemName: "trash")
-                            .font(.system(size: 12))
+                            .font(.system(size: 15))
                             .foregroundColor(.dharmaTextSecondary)
-                            .padding(6)
+                            .padding(8)
                     }
                     .buttonStyle(.plain)
                     .padding(.top, 10)
@@ -435,15 +436,15 @@ struct JourneyView: View {
                     DharmaHaptics.light()
                     showingAllReflectionsSheet = true
                 } label: {
-                    HStack {
+                    HStack(spacing: 8) {
                         Text("View all \(journalStore.entries.count) reflections")
-                            .font(DharmaFont.heading(14))
+                            .font(.system(size: 17, weight: .semibold))
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(size: 15, weight: .semibold))
                     }
                     .foregroundColor(.dharmaGold)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, DharmaSpacing.sm)
+                    .frame(height: 52)
                     .background(Color.dharmaGold.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous))
                 }
@@ -453,34 +454,35 @@ struct JourneyView: View {
     }
 
     private var reflectionsEmptyState: some View {
-        WarmEmptyState(
-            icon: "flame",
-            title: "A gentle beginning",
-            message: "When a verse stays with you, pause and reflect — your words become part of your journey here.",
-            hint: "Open any verse and tap Reflect on this verse."
-        )
+        ContentUnavailableView {
+            Label("No reflections yet", systemImage: "text.book.closed")
+                .foregroundColor(Color.dharmaGold)
+        } description: {
+            Text("Your reflections from Sadhana, Goal Path, and Krishna will appear here.")
+                .foregroundColor(Color.dharmaTextSecondary)
+        }
         .frame(maxWidth: .infinity)
         .padding(DharmaSpacing.md)
         .glassCard(cornerRadius: DharmaRadius.lg)
     }
 
     private func reflectionCard(_ entry: JournalEntry, isCollapsedStack: Bool, showDelete: Bool = true) -> some View {
-        VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+        VStack(alignment: .leading, spacing: DharmaSpacing.md) {
             HStack(spacing: 8) {
                 Text(entry.verseSource)
-                    .font(DharmaFont.caption(10))
+                    .font(DharmaFont.caption(13))
                     .foregroundColor(.dharmaGold)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
                     .background(Color.dharmaGold.opacity(0.12))
                     .clipShape(Capsule())
 
                 if entry.spokenWithKrishna {
                     Text("Spoke with Krishna")
-                        .font(DharmaFont.caption(9))
+                        .font(DharmaFont.caption(12))
                         .foregroundColor(.dharmaGold)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
                         .background(Color.dharmaGold.opacity(0.12))
                         .clipShape(Capsule())
                 }
@@ -490,27 +492,27 @@ struct JourneyView: View {
                 if !isCollapsedStack && showDelete {
                     Button(action: { journalStore.delete(entry: entry) }) {
                         Image(systemName: "trash")
-                            .font(.system(size: 12))
+                            .font(.system(size: 15))
                             .foregroundColor(.dharmaTextSecondary)
-                            .padding(6)
+                            .padding(8)
                     }
                     .buttonStyle(.plain)
                 }
             }
 
             Text(String(entry.verseEnglish.prefix(isCollapsedStack ? 56 : entry.verseEnglish.count)) + (isCollapsedStack && entry.verseEnglish.count > 56 ? "…" : ""))
-                .font(DharmaFont.georgia(13))
+                .font(DharmaFont.georgia(17))
                 .foregroundColor(.dharmaTextBody)
-                .lineSpacing(4)
+                .lineSpacing(5)
                 .lineLimit(isCollapsedStack ? 1 : nil)
                 .fixedSize(horizontal: false, vertical: !isCollapsedStack)
 
             Divider().background(Color.dharmaDivider)
 
             Text(String(entry.noteText.prefix(isCollapsedStack ? 48 : entry.noteText.count)) + (isCollapsedStack && entry.noteText.count > 48 ? "…" : ""))
-                .font(DharmaFont.body(13))
+                .font(DharmaFont.body(16))
                 .foregroundColor(.dharmaTextBody)
-                .lineSpacing(4)
+                .lineSpacing(5)
                 .lineLimit(isCollapsedStack ? 1 : nil)
                 .fixedSize(horizontal: false, vertical: !isCollapsedStack)
 
@@ -524,11 +526,11 @@ struct JourneyView: View {
             HStack {
                 Spacer()
                 Text(entry.date.formatted(date: .abbreviated, time: .omitted))
-                    .font(DharmaFont.caption(10))
+                    .font(DharmaFont.caption(13))
                     .foregroundColor(.dharmaTextMuted)
             }
         }
-        .padding(DharmaSpacing.md)
+        .padding(DharmaSpacing.lg)
         .glassCard(cornerRadius: DharmaRadius.md)
     }
 
@@ -536,15 +538,15 @@ struct JourneyView: View {
 
     private var exploreFurtherSection: some View {
         VStack(alignment: .leading, spacing: DharmaSpacing.md) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text("Explore Further")
-                    .font(DharmaFont.caption(11))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.dharmaGold)
                     .textCase(.uppercase)
-                    .kerning(0.8)
+                    .kerning(1.4)
 
                 Text("Based on your reflections")
-                    .font(DharmaFont.caption(12))
+                    .font(DharmaFont.caption())
                     .foregroundColor(.dharmaTextMuted)
             }
 
@@ -579,7 +581,7 @@ struct JourneyView: View {
     private func exploreLibraryStyleCard(_ item: ScriptureItem) -> some View {
         NavigationLink(destination: ScriptureDetailView(item: item, store: store)) {
             ScriptureCardView(item: item)
-                .frame(width: 260, alignment: .leading)
+                .frame(width: 300, alignment: .leading)
         }
         .buttonStyle(.plain)
     }
@@ -602,28 +604,28 @@ struct JourneyView: View {
     }
 
     private func exploreCardContent(_ rv: RelatedVerse) -> some View {
-        VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+        VStack(alignment: .leading, spacing: DharmaSpacing.md) {
             Text(rv.categoryBadge)
-                .font(DharmaFont.caption(10))
+                .font(DharmaFont.caption(13))
                 .foregroundColor(.dharmaGold)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
                 .background(Color.dharmaGold.opacity(0.12))
                 .clipShape(Capsule())
 
             Text(rv.truncatedEnglish)
-                .font(DharmaFont.georgia(13))
+                .font(DharmaFont.georgia(17))
                 .foregroundColor(.dharmaTextBody)
-                .lineSpacing(5)
-                .lineLimit(4)
+                .lineSpacing(6)
+                .lineLimit(5)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(rv.id)
-                .font(DharmaFont.caption(10))
+                .font(DharmaFont.caption(13))
                 .foregroundColor(.dharmaTextMuted)
         }
-        .padding(DharmaSpacing.md)
-        .frame(width: 200, alignment: .topLeading)
+        .padding(DharmaSpacing.lg)
+        .frame(width: 260, alignment: .topLeading)
         .glassCard(cornerRadius: DharmaRadius.md)
     }
 
@@ -650,20 +652,20 @@ struct JourneyView: View {
     }
 
     private func statCard(value: String, label: String, icon: String, color: Color) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(.system(size: 18))
                 .foregroundColor(color)
             Text(value)
                 .font(.custom("Georgia-Bold", size: 20))
                 .foregroundColor(.dharmaTextPrimary)
             Text(label)
-                .font(DharmaFont.caption(10))
+                .font(DharmaFont.caption(13))
                 .foregroundColor(.dharmaTextMuted)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, DharmaSpacing.md)
+        .padding(.vertical, DharmaSpacing.lg)
         .glassCard(cornerRadius: DharmaRadius.md)
     }
 
@@ -671,32 +673,33 @@ struct JourneyView: View {
 
     @ViewBuilder
     private func milestoneBanner(_ milestone: DharmaMilestoneItem) -> some View {
-        VStack(spacing: DharmaSpacing.sm) {
+        VStack(spacing: DharmaSpacing.md) {
             Image(systemName: milestone.isLotus ? "seal.fill" : "flame.fill")
-                .font(.system(size: milestone.isLotus ? 32 : 24))
+                .font(.system(size: milestone.isLotus ? 40 : 30))
                 .foregroundColor(.dharmaGold)
 
             Text(milestone.label)
-                .font(.custom("Georgia-Bold", size: milestone.isLotus ? 20 : 17))
+                .font(.custom("Georgia-Bold", size: milestone.isLotus ? 26 : 22))
                 .foregroundColor(.dharmaTextPrimary)
 
             Text("A sacred milestone on your path")
-                .font(DharmaFont.georgia(13))
+                .font(DharmaFont.georgia(15))
                 .foregroundColor(.dharmaTextMuted)
                 .multilineTextAlignment(.center)
 
             Button(action: { streakManager.acknowledgeMilestone(milestone) }) {
                 Text("Continue the journey")
-                    .font(DharmaFont.heading(14))
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.dharmaGold)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
                     .background(Color.dharmaGold.opacity(0.12))
-                    .clipShape(Capsule())
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
+            .padding(.top, DharmaSpacing.sm)
         }
         .frame(maxWidth: .infinity)
-        .padding(DharmaSpacing.lg)
+        .padding(DharmaSpacing.xl)
         .glassCard(cornerRadius: DharmaRadius.lg)
         .overlay(
             RoundedRectangle(cornerRadius: DharmaRadius.lg, style: .continuous)
@@ -707,39 +710,32 @@ struct JourneyView: View {
     // MARK: - Weekly Insight Card
 
     private var weeklyInsightCard: some View {
-        HStack(alignment: .top, spacing: 0) {
-            Rectangle()
-                .fill(Color.dharmaGold)
-                .frame(width: 2)
-                .clipShape(Capsule())
-
-            VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
-                HStack(spacing: 6) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 11))
-                        .foregroundColor(.dharmaGold)
-                    Text("Weekly Insight")
-                        .font(DharmaFont.caption(11))
-                        .foregroundColor(.dharmaGold)
-                        .textCase(.uppercase)
-                        .kerning(0.8)
-                }
-
-                if streakManager.isLoadingInsight {
-                    ProgressView()
-                        .tint(.dharmaGold)
-                        .padding(.vertical, DharmaSpacing.sm)
-                } else {
-                    Text(streakManager.weeklyInsight)
-                        .font(DharmaFont.georgia(14))
-                        .foregroundColor(.dharmaTextBody)
-                        .lineSpacing(5)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+        VStack(alignment: .leading, spacing: DharmaSpacing.md) {
+            HStack(spacing: 8) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 14))
+                    .foregroundColor(.dharmaGold)
+                Text("Weekly Insight")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.dharmaGold)
+                    .textCase(.uppercase)
+                    .kerning(1.4)
             }
-            .padding(.leading, DharmaSpacing.md)
+
+            if streakManager.isLoadingInsight {
+                ProgressView()
+                    .tint(.dharmaGold)
+                    .padding(.vertical, DharmaSpacing.sm)
+            } else {
+                Text(streakManager.weeklyInsight)
+                    .font(DharmaFont.georgia(17))
+                    .foregroundColor(.dharmaTextBody)
+                    .lineSpacing(6)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
-        .padding(DharmaSpacing.md)
+        .saffronLeftBar()
+        .padding(DharmaSpacing.lg)
         .glassCard(cornerRadius: DharmaRadius.md)
     }
 

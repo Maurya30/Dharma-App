@@ -1,17 +1,17 @@
 import SwiftUI
+import UIKit
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
     @ObservedObject private var auth = AuthManager.shared
+    @EnvironmentObject private var onboarding: OnboardingManager
 
     @State private var showSignInSheet = false
     @State private var showSignOutConfirm = false
+    @State private var showDeleteAccountConfirm = false
+    @State private var showRedoOnboardingConfirm = false
 
     @AppStorage("userDarkMode") private var userDarkMode = false
-    @AppStorage("dharma_notify_daily_verse") private var notifyDailyVerse = true
-    @AppStorage("dharma_notify_streak") private var notifyStreak = true
-    @AppStorage("dharma_notify_festival") private var notifyFestival = true
 
     @ObservedObject private var krishnaService = KrishnaService.shared
 
@@ -21,10 +21,6 @@ struct SettingsView: View {
 
     private var messagesAtLimit: Bool {
         krishnaService.messagesSentToday >= KrishnaService.dailyMessageLimit
-    }
-
-    private var premiumButtonLabelColor: Color {
-        colorScheme == .dark ? Color.dharmaTextPrimary : Color.dharmaBackground
     }
 
     private var accountDisplayName: String {
@@ -44,7 +40,6 @@ struct SettingsView: View {
                         accountSection
                         appearanceSection
                         krishnaSection
-                        notificationsSection
                         journeySection
                         aboutSection
                     }
@@ -69,6 +64,26 @@ struct SettingsView: View {
         } message: {
             Text("Your local data stays on this device until you sign in again.")
         }
+        .alert("Redo Onboarding", isPresented: $showRedoOnboardingConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button("Restart", role: .destructive) {
+                onboarding.hasCompletedOnboarding = false
+                dismiss()
+            }
+        } message: {
+            Text("This will restart the onboarding flow. Your data will not be deleted.")
+        }
+        .alert("Delete Account", isPresented: $showDeleteAccountConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                Task {
+                    await auth.deleteAccount()
+                    dismiss()
+                }
+            }
+        } message: {
+            Text("This will permanently delete your account, journals, goals, and all practice data. This cannot be undone.")
+        }
     }
 
     private var accountSection: some View {
@@ -78,15 +93,15 @@ struct SettingsView: View {
                 if auth.isSignedIn && !auth.isGuest {
                     VStack(alignment: .leading, spacing: DharmaSpacing.xs) {
                         Text(accountDisplayName)
-                            .font(DharmaFont.heading(16))
+                            .font(DharmaFont.heading(20))
                             .foregroundColor(.dharmaTextPrimary)
                         Text(auth.currentUser?.email ?? "Hidden email")
-                            .font(DharmaFont.body(14))
+                            .font(DharmaFont.body(16))
                             .foregroundColor(.dharmaTextSecondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, DharmaSpacing.md)
-                    .padding(.vertical, DharmaSpacing.sm)
+                    .padding(.horizontal, DharmaSpacing.lg)
+                    .padding(.vertical, DharmaSpacing.md)
 
                     Rectangle()
                         .fill(Color.dharmaDivider)
@@ -99,14 +114,15 @@ struct SettingsView: View {
                     } label: {
                         HStack {
                             Text("Sync now")
-                                .font(DharmaFont.body())
+                                .font(DharmaFont.body(16))
                                 .foregroundColor(.dharmaTextPrimary)
                             Spacer()
                             Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.system(size: 18))
                                 .foregroundColor(.dharmaGold)
                         }
-                        .padding(.horizontal, DharmaSpacing.md)
-                        .frame(minHeight: 52)
+                        .padding(.horizontal, DharmaSpacing.lg)
+                        .frame(minHeight: 60)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -120,22 +136,41 @@ struct SettingsView: View {
                     } label: {
                         HStack {
                             Text("Sign out")
-                                .font(DharmaFont.body())
+                                .font(DharmaFont.body(16))
                                 .foregroundColor(.dharmaTextPrimary)
                             Spacer()
                         }
-                        .padding(.horizontal, DharmaSpacing.md)
-                        .frame(minHeight: 52)
+                        .padding(.horizontal, DharmaSpacing.lg)
+                        .frame(minHeight: 60)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+
+                    Rectangle()
+                        .fill(Color.dharmaDivider)
+                        .frame(height: 1)
+
+                    Button {
+                        showDeleteAccountConfirm = true
+                    } label: {
+                        HStack {
+                            Text("Delete Account")
+                                .font(DharmaFont.body(16))
+                                .foregroundColor(Color.red.opacity(0.8))
+                            Spacer()
+                        }
+                        .padding(.horizontal, DharmaSpacing.lg)
+                        .frame(minHeight: 60)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 } else {
                     Text("Your progress isn't backed up")
-                        .font(DharmaFont.body())
+                        .font(DharmaFont.body(16))
                         .foregroundColor(Color(hex: "C9821E"))
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, DharmaSpacing.md)
-                        .padding(.vertical, DharmaSpacing.sm)
+                        .padding(.horizontal, DharmaSpacing.lg)
+                        .padding(.vertical, DharmaSpacing.md)
 
                     Rectangle()
                         .fill(Color.dharmaDivider)
@@ -146,15 +181,15 @@ struct SettingsView: View {
                     } label: {
                         HStack {
                             Text("Sign in to save your progress")
-                                .font(DharmaFont.body())
+                                .font(DharmaFont.body(16))
                                 .foregroundColor(.dharmaTextPrimary)
                             Spacer()
                             Image(systemName: "chevron.right")
-                                .font(DharmaFont.body(14))
+                                .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(.dharmaTextSecondary)
                         }
-                        .padding(.horizontal, DharmaSpacing.md)
-                        .frame(minHeight: 52)
+                        .padding(.horizontal, DharmaSpacing.lg)
+                        .frame(minHeight: 60)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -167,22 +202,23 @@ struct SettingsView: View {
     private var header: some View {
         HStack(alignment: .center) {
             Text("Settings")
-                .font(DharmaFont.title(34))
+                .font(DharmaFont.title(40))
                 .foregroundColor(.dharmaTextPrimary)
             Spacer()
             Button {
                 dismiss()
             } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 18, weight: .regular))
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 30, weight: .regular))
+                    .symbolRenderingMode(.hierarchical)
                     .foregroundColor(.dharmaGold)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Close")
         }
         .padding(.horizontal, DharmaSpacing.lg)
-        .padding(.top, DharmaSpacing.md)
-        .padding(.bottom, DharmaSpacing.sm)
+        .padding(.top, DharmaSpacing.lg)
+        .padding(.bottom, DharmaSpacing.md)
     }
 
     // MARK: - Section 1 — Appearance
@@ -193,7 +229,7 @@ struct SettingsView: View {
             VStack(spacing: 0) {
                 HStack {
                     Text("Theme")
-                        .font(DharmaFont.body())
+                        .font(DharmaFont.body(16))
                         .foregroundColor(.dharmaTextPrimary)
                     Spacer()
                     Picker("", selection: $userDarkMode) {
@@ -203,8 +239,8 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                     .tint(Color.dharmaGold)
                 }
-                .padding(.horizontal, DharmaSpacing.md)
-                .frame(minHeight: 52)
+                .padding(.horizontal, DharmaSpacing.lg)
+                .frame(minHeight: 60)
             }
             .glassCard(cornerRadius: DharmaRadius.md)
         }
@@ -218,76 +254,18 @@ struct SettingsView: View {
             VStack(spacing: 0) {
                 HStack {
                     Text("Messages today")
-                        .font(DharmaFont.body())
+                        .font(DharmaFont.body(16))
                         .foregroundColor(.dharmaTextPrimary)
                     Spacer()
                     Text("\(krishnaService.messagesSentToday) of \(KrishnaService.dailyMessageLimit)")
-                        .font(DharmaFont.body())
+                        .font(DharmaFont.body(16))
                         .foregroundColor(messagesAtLimit ? Color.dharmaTextSecondary : Color.dharmaGold)
                 }
-                .padding(.horizontal, DharmaSpacing.md)
-                .frame(minHeight: 52)
-
-                Rectangle()
-                    .fill(Color.dharmaDivider)
-                    .frame(height: 1)
-
-                Button {
-                    // Placeholder — premium upgrade
-                } label: {
-                    Text("Upgrade to Premium")
-                        .font(DharmaFont.heading(16))
-                        .foregroundColor(premiumButtonLabelColor)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DharmaSpacing.sm)
-                        .background(Color.dharmaGold)
-                        .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, DharmaSpacing.md)
-                .padding(.vertical, DharmaSpacing.sm)
-                .frame(minHeight: 52)
+                .padding(.horizontal, DharmaSpacing.lg)
+                .frame(minHeight: 60)
             }
             .glassCard(cornerRadius: DharmaRadius.md)
         }
-    }
-
-    // MARK: - Section 3 — Notifications
-
-    private var notificationsSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            sectionHeader("NOTIFICATIONS")
-            VStack(spacing: 0) {
-                toggleRow(title: "Daily verse reminder", binding: $notifyDailyVerse)
-
-                Rectangle()
-                    .fill(Color.dharmaDivider)
-                    .frame(height: 1)
-
-                toggleRow(title: "Streak reminder", binding: $notifyStreak)
-
-                Rectangle()
-                    .fill(Color.dharmaDivider)
-                    .frame(height: 1)
-
-                toggleRow(title: "Festival alerts", binding: $notifyFestival)
-            }
-            .glassCard(cornerRadius: DharmaRadius.md)
-        }
-    }
-
-    private func toggleRow(title: String, binding: Binding<Bool>) -> some View {
-        HStack {
-            Text(title)
-                .font(DharmaFont.body())
-                .foregroundColor(.dharmaTextPrimary)
-            Spacer()
-            Toggle("", isOn: binding)
-                .labelsHidden()
-                .tint(Color.dharmaGold)
-        }
-        .padding(.horizontal, DharmaSpacing.md)
-        .frame(minHeight: 52)
     }
 
     // MARK: - Section 4 — Your Journey
@@ -296,39 +274,29 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 0) {
             sectionHeader("YOUR JOURNEY")
             VStack(spacing: 0) {
-                chevronRow(title: "Manage goals")
-
-                Rectangle()
-                    .fill(Color.dharmaDivider)
-                    .frame(height: 1)
-
-                chevronRow(title: "Export journal")
-
-                Rectangle()
-                    .fill(Color.dharmaDivider)
-                    .frame(height: 1)
-
-                chevronRow(title: "Redo onboarding")
+                chevronRow(title: "Redo onboarding") {
+                    showRedoOnboardingConfirm = true
+                }
             }
             .glassCard(cornerRadius: DharmaRadius.md)
         }
     }
 
-    private func chevronRow(title: String) -> some View {
+    private func chevronRow(title: String, action: @escaping () -> Void) -> some View {
         Button {
-            // Placeholder
+            action()
         } label: {
             HStack {
                 Text(title)
-                    .font(DharmaFont.body())
+                    .font(DharmaFont.body(16))
                     .foregroundColor(.dharmaTextPrimary)
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(DharmaFont.body(14))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.dharmaTextSecondary)
             }
-            .padding(.horizontal, DharmaSpacing.md)
-            .frame(minHeight: 52)
+            .padding(.horizontal, DharmaSpacing.lg)
+            .frame(minHeight: 60)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -340,25 +308,41 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 0) {
             sectionHeader("ABOUT")
             VStack(spacing: 0) {
-                chevronRow(title: "Privacy policy")
+                chevronRow(title: "Privacy policy") {
+                    if let url = URL(string: "https://maurya30.github.io/dharma-legal/privacy.html") {
+                        UIApplication.shared.open(url)
+                    }
+                }
 
                 Rectangle()
                     .fill(Color.dharmaDivider)
                     .frame(height: 1)
 
-                chevronRow(title: "Terms of service")
+                chevronRow(title: "Terms of service") {
+                    if let url = URL(string: "https://maurya30.github.io/dharma-legal/terms.html") {
+                        UIApplication.shared.open(url)
+                    }
+                }
 
                 Rectangle()
                     .fill(Color.dharmaDivider)
                     .frame(height: 1)
 
-                chevronRow(title: "Rate Dharma")
+                chevronRow(title: "Rate Dharma") {
+                    if let url = URL(string: "itms-apps://itunes.apple.com/app/id6761423523?action=write-review") {
+                        UIApplication.shared.open(url)
+                    }
+                }
 
                 Rectangle()
                     .fill(Color.dharmaDivider)
                     .frame(height: 1)
 
-                chevronRow(title: "Send feedback")
+                chevronRow(title: "Send feedback") {
+                    if let url = URL(string: "https://maurya30.github.io/dharma-legal/") {
+                        UIApplication.shared.open(url)
+                    }
+                }
 
                 Rectangle()
                     .fill(Color.dharmaDivider)
@@ -366,31 +350,15 @@ struct SettingsView: View {
 
                 HStack {
                     Text("Version")
-                        .font(DharmaFont.body())
+                        .font(DharmaFont.body(16))
                         .foregroundColor(.dharmaTextPrimary)
                     Spacer()
                     Text(appVersion)
                         .font(DharmaFont.caption())
                         .foregroundColor(.dharmaTextSecondary)
                 }
-                .padding(.horizontal, DharmaSpacing.md)
-                .frame(minHeight: 52)
-
-                Rectangle()
-                    .fill(Color.dharmaDivider)
-                    .frame(height: 1)
-
-                HStack {
-                    Text("Device Token")
-                        .font(DharmaFont.body())
-                        .foregroundColor(.dharmaTextPrimary)
-                    Spacer()
-                    Text(UserDefaults.standard.string(forKey: "apnsDeviceToken") ?? "Not registered")
-                        .font(DharmaFont.caption())
-                        .foregroundColor(.dharmaTextSecondary)
-                }
-                .padding(.horizontal, DharmaSpacing.md)
-                .frame(minHeight: 52)
+                .padding(.horizontal, DharmaSpacing.lg)
+                .frame(minHeight: 60)
             }
             .glassCard(cornerRadius: DharmaRadius.md)
         }
@@ -398,11 +366,11 @@ struct SettingsView: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(DharmaFont.caption())
+            .font(.system(size: 13, weight: .semibold))
             .foregroundColor(.dharmaGold)
-            .tracking(0.8)
+            .tracking(1.4)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.bottom, DharmaSpacing.xs)
+            .padding(.bottom, DharmaSpacing.sm)
     }
 }
 

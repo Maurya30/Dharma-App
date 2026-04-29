@@ -12,6 +12,7 @@ struct LibraryView: View {
     @State private var selectedUpanishadSource: String? = nil
     @State private var selectedRigVedaBook: Int? = nil
     @State private var selectedGoalFilter: String? = nil
+    @State private var searchError: String? = nil
 
     private var isSemanticQuery: Bool {
         searchText.split(separator: " ").count >= 3
@@ -67,6 +68,14 @@ struct LibraryView: View {
         selectedChapter != nil || selectedSpeaker != nil || selectedUpanishadSource != nil || selectedRigVedaBook != nil
     }
 
+    private var offlineSearchBannerMessage: String? {
+        guard searchError == nil,
+              isSemanticQuery,
+              !searchText.isEmpty,
+              searchService.showOfflineKeywordBanner else { return nil }
+        return "Offline — showing keyword results"
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -83,21 +92,21 @@ struct LibraryView: View {
                     let userGoals = GoalsManager.shared.selectedGoals
                     if !userGoals.isEmpty {
                         ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
+                            HStack(spacing: 10) {
                                 ForEach(userGoals, id: \.self) { goal in
                                     let isSelected = selectedGoalFilter == goal
                                     Button {
                                         DharmaHaptics.selection()
                                         selectedGoalFilter = isSelected ? nil : goal
                                     } label: {
-                                        HStack(spacing: 5) {
+                                        HStack(spacing: 7) {
                                             Image(systemName: "sparkle")
-                                                .font(.system(size: 10))
+                                                .font(.system(size: 13))
                                             Text(GoalsManager.shortName(for: goal))
-                                                .font(DharmaFont.caption(12))
+                                                .font(DharmaFont.caption())
                                         }
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 7)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 10)
                                         .foregroundColor(isSelected ? .white : .dharmaTextSecondary)
                                         .background(isSelected ? Color.dharmaGold : Color.clear)
                                         .clipShape(Capsule())
@@ -158,17 +167,17 @@ struct LibraryView: View {
 
                     // Semantic search indicator
                     if isSemanticQuery && !searchText.isEmpty {
-                        HStack(spacing: 6) {
+                        HStack(spacing: 8) {
                             if searchService.isSearching {
                                 ProgressView()
                                     .tint(.dharmaGold)
-                                    .scaleEffect(0.7)
+                                    .scaleEffect(0.85)
                             }
                             Text("Semantic search")
-                                .font(DharmaFont.caption(11))
+                                .font(DharmaFont.caption(13))
                                 .foregroundColor(.dharmaGold)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
                                 .background(Color.dharmaGold.opacity(0.12))
                                 .clipShape(Capsule())
                         }
@@ -302,6 +311,25 @@ struct LibraryView: View {
             }
             .transparentNavigationBar()
             .dharmaBackground()
+            .dharmaErrorBanner(
+                message: searchError,
+                onDismiss: {
+                    searchError = nil
+                    searchService.clearSearchError()
+                }
+            )
+            .dharmaErrorBanner(
+                message: offlineSearchBannerMessage,
+                onDismiss: {},
+                systemImage: "wifi.slash",
+                isDismissable: false
+            )
+            .onChange(of: searchService.searchError) { _, newValue in
+                searchError = newValue
+            }
+            .onAppear {
+                searchError = searchService.searchError
+            }
             .onReceive(NotificationCenter.default.publisher(for: Notification.Name("dharma.openGoalFilter"))) { notification in
                 if let goal = notification.userInfo?["goal"] as? String {
                     selectedGoalFilter = goal
@@ -312,13 +340,13 @@ struct LibraryView: View {
     }
 
     private var librarySearchField: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 16, weight: .medium))
+                .font(.system(size: 20, weight: .medium))
                 .foregroundColor(.dharmaTextMuted)
 
             TextField("Search verses, mantras…", text: $searchText)
-                .font(DharmaFont.body(15))
+                .font(DharmaFont.body(17))
                 .foregroundColor(.dharmaTextPrimary)
 
             if !searchText.isEmpty {
@@ -326,13 +354,13 @@ struct LibraryView: View {
                     searchText = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.system(size: 20))
                         .foregroundColor(.dharmaTextMuted)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.vertical, 12)
+        .padding(.vertical, 14)
         .padding(.horizontal, DharmaSpacing.md)
         .glassCard(cornerRadius: DharmaRadius.lg)
     }
@@ -341,27 +369,27 @@ struct LibraryView: View {
 extension LibraryView {
     func browseByLink<D: View>(destination: D, icon: String, title: String, subtitle: String, color: Color) -> some View {
         NavigationLink(destination: destination) {
-            HStack(spacing: 12) {
+            HStack(spacing: DharmaSpacing.md) {
                 Image(systemName: icon)
-                    .font(.system(size: 16))
+                    .font(.system(size: 22))
                     .foregroundColor(color)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(DharmaFont.heading(15))
+                        .font(DharmaFont.heading(20))
                         .foregroundColor(.dharmaTextPrimary)
                     Text(subtitle)
-                        .font(DharmaFont.caption(12))
+                        .font(DharmaFont.body(14))
                         .foregroundColor(.dharmaTextMuted)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12))
+                    .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.dharmaTextMuted)
             }
-            .padding(DharmaSpacing.md)
+            .padding(DharmaSpacing.lg)
             .glassCard(cornerRadius: DharmaRadius.md)
             .overlay(
                 RoundedRectangle(cornerRadius: DharmaRadius.md, style: .continuous)
@@ -428,9 +456,9 @@ struct FilterSheetView: View {
                                         selectedChapter = selectedChapter == chapter ? nil : chapter
                                     } label: {
                                         Text("\(chapter)")
-                                            .font(DharmaFont.caption(13))
+                                            .font(DharmaFont.caption())
                                             .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 8)
+                                            .padding(.vertical, 12)
                                             .background(selectedChapter == chapter ? Color.dharmaGold.opacity(0.18) : Color.dharmaSurface)
                                             .foregroundColor(selectedChapter == chapter ? .dharmaGold : .dharmaTextSecondary)
                                             .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -456,9 +484,9 @@ struct FilterSheetView: View {
                                         selectedUpanishadSource = selectedUpanishadSource == source ? nil : source
                                     } label: {
                                         Text(source.replacingOccurrences(of: " Upanishad", with: ""))
-                                            .font(DharmaFont.caption(12))
+                                            .font(DharmaFont.caption())
                                             .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 8)
+                                            .padding(.vertical, 12)
                                             .background(selectedUpanishadSource == source ? Color.categoryUpanishads.opacity(0.18) : Color.dharmaSurface)
                                             .foregroundColor(selectedUpanishadSource == source ? .categoryUpanishads : .dharmaTextSecondary)
                                             .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -484,9 +512,9 @@ struct FilterSheetView: View {
                                         selectedRigVedaBook = selectedRigVedaBook == book ? nil : book
                                     } label: {
                                         Text("\(book)")
-                                            .font(DharmaFont.caption(13))
+                                            .font(DharmaFont.caption())
                                             .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 8)
+                                            .padding(.vertical, 12)
                                             .background(selectedRigVedaBook == book ? Color.categoryRigVeda.opacity(0.18) : Color.dharmaSurface)
                                             .foregroundColor(selectedRigVedaBook == book ? .categoryRigVeda : .dharmaTextSecondary)
                                             .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -509,10 +537,10 @@ struct FilterSheetView: View {
                             selectedRigVedaBook = nil
                         } label: {
                             Text("Clear All Filters")
-                                .font(DharmaFont.body())
+                                .font(.system(size: 17, weight: .semibold))
                                 .foregroundColor(.red.opacity(0.8))
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
+                                .frame(height: 52)
                                 .background(Color.red.opacity(0.08))
                                 .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
                         }
@@ -649,26 +677,26 @@ struct CategoryPill: View {
         } label: {
             Group {
                 if isSelected {
-                    HStack(spacing: 5) {
+                    HStack(spacing: 7) {
                         Image(systemName: icon)
-                            .font(.system(size: 11))
+                            .font(.system(size: 14))
                         Text(label)
-                            .font(DharmaFont.caption(13))
+                            .font(DharmaFont.caption())
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 12)
                     .foregroundColor(.white)
                     .background(Color.dharmaGold)
                     .clipShape(Capsule())
                 } else {
-                    HStack(spacing: 5) {
+                    HStack(spacing: 7) {
                         Image(systemName: icon)
-                            .font(.system(size: 11))
+                            .font(.system(size: 14))
                         Text(label)
-                            .font(DharmaFont.caption(13))
+                            .font(DharmaFont.caption())
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 12)
                     .foregroundColor(.dharmaTextSecondary)
                     .glassCapsuleCard()
                 }
@@ -685,13 +713,13 @@ struct SemanticResultCard: View {
     let similarity: Double?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 8) {
+        VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+            HStack(alignment: .center, spacing: 10) {
                 Label(item.category.rawValue, systemImage: item.category.icon)
-                    .font(DharmaFont.caption(11))
+                    .font(DharmaFont.caption(13))
                     .foregroundColor(item.category.color)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
                     .background(item.category.color.opacity(0.12))
                     .clipShape(Capsule())
 
@@ -700,29 +728,29 @@ struct SemanticResultCard: View {
                 if let sim = similarity {
                     Circle()
                         .fill(Color.dharmaGold.opacity(0.2 + sim * 0.8))
-                        .frame(width: 8, height: 8)
+                        .frame(width: 10, height: 10)
                 }
 
                 if item.isFavourite {
                     Image(systemName: "heart.fill")
-                        .font(.system(size: 12))
+                        .font(.system(size: 15))
                         .foregroundColor(.dharmaGold)
                 }
             }
 
             Text(item.title)
-                .font(DharmaFont.heading())
+                .font(DharmaFont.heading(20))
                 .foregroundColor(.dharmaTextPrimary)
                 .lineLimit(1)
 
             Text(item.textEnglish)
-                .font(DharmaFont.body(14))
+                .font(DharmaFont.body(17))
                 .foregroundColor(.dharmaTextSecondary)
                 .lineLimit(2)
-                .lineSpacing(3)
+                .lineSpacing(4)
 
             Text(item.source)
-                .font(DharmaFont.caption())
+                .font(DharmaFont.caption(13))
                 .foregroundColor(.dharmaTextMuted)
         }
         .padding(DharmaSpacing.md)
@@ -740,13 +768,13 @@ struct ScriptureCardView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 8) {
+        VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+            HStack(alignment: .center, spacing: 10) {
                 Label(item.category.rawValue, systemImage: item.category.icon)
-                    .font(DharmaFont.caption(11))
+                    .font(DharmaFont.caption(13))
                     .foregroundColor(item.category.color)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
                     .background(item.category.color.opacity(0.12))
                     .clipShape(Capsule())
 
@@ -754,43 +782,43 @@ struct ScriptureCardView: View {
 
                 if item.audioFileName != nil {
                     Image(systemName: "waveform")
-                        .font(.system(size: 12))
+                        .font(.system(size: 15))
                         .foregroundColor(.dharmaTextMuted)
                 }
 
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     if journalStore.entry(for: item.id.uuidString) != nil {
                         Image(systemName: "pencil.circle.fill")
-                            .font(.system(size: 14))
+                            .font(.system(size: 17))
                             .foregroundColor(Color(hex: "C9821E").opacity(0.7))
                     }
                     if item.isFavourite {
                         Image(systemName: "heart.fill")
-                            .font(.system(size: 12))
+                            .font(.system(size: 15))
                             .foregroundColor(.dharmaGold)
                     }
                 }
             }
 
             Text(item.title)
-                .font(DharmaFont.heading())
+                .font(DharmaFont.heading(20))
                 .foregroundColor(.dharmaTextPrimary)
                 .lineLimit(1)
 
             Text(item.textEnglish)
-                .font(DharmaFont.body(14))
+                .font(DharmaFont.body(17))
                 .foregroundColor(.dharmaTextSecondary)
                 .lineLimit(2)
-                .lineSpacing(3)
+                .lineSpacing(4)
 
             if !matchingGoals.isEmpty {
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     ForEach(matchingGoals, id: \.self) { goal in
                         Text(GoalsManager.shortName(for: goal))
-                            .font(DharmaFont.caption(10))
+                            .font(DharmaFont.caption(12))
                             .foregroundColor(.dharmaGold)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
                             .background(Color.dharmaGold.opacity(0.15))
                             .clipShape(Capsule())
                     }
@@ -798,7 +826,7 @@ struct ScriptureCardView: View {
             }
 
             Text(item.source)
-                .font(DharmaFont.caption())
+                .font(DharmaFont.caption(13))
                 .foregroundColor(.dharmaTextMuted)
         }
         .padding(DharmaSpacing.md)
@@ -821,19 +849,15 @@ struct EmptyStateView: View {
                     hint: "Use the chapter and speaker filters, or pick a text from the top."
                 )
             } else if isSemanticQuery {
-                WarmEmptyState(
-                    icon: "sparkles",
-                    title: "No verses surfaced",
-                    message: "We couldn’t match that thought to a verse yet. The sacred texts are vast — a gentler phrase might find a path.",
-                    hint: "Try fewer words, or a simpler keyword — you can always browse by chapter."
+                ContentUnavailableView(
+                    "No results",
+                    systemImage: "magnifyingglass",
+                    description: Text("Try different keywords or browse the library below.")
                 )
+                .foregroundStyle(Color.dharmaTextPrimary, Color.dharmaTextSecondary)
             } else {
-                WarmEmptyState(
-                    icon: "magnifyingglass",
-                    title: "No results for “\(searchText)”",
-                    message: "Adjust your search or browse by chapter and text — what you seek may be worded differently in the verses.",
-                    hint: "Longer, phrase-like searches use meaning-based discovery."
-                )
+                ContentUnavailableView.search
+                    .foregroundStyle(Color.dharmaTextPrimary, Color.dharmaTextSecondary)
             }
         }
         .padding(DharmaSpacing.md)

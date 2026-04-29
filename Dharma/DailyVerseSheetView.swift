@@ -68,7 +68,7 @@ struct DailyVerseSheetView: View {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 22))
+                            .font(.system(size: 28))
                             .symbolRenderingMode(.hierarchical)
                             .foregroundColor(.dharmaGold)
                     }
@@ -109,21 +109,21 @@ struct DailyVerseSheetView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DharmaSpacing.lg) {
                 Text(displayDay.verseReference.uppercased())
-                    .font(DharmaFont.caption(11))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.dharmaGold)
-                    .tracking(0.8)
+                    .tracking(1.4)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                HStack(spacing: 8) {
+                HStack(spacing: 10) {
                     Image(systemName: "sun.max")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 16, weight: .medium))
                         .foregroundColor(Color(hex: "C9821E"))
                     Text("Level \(liveLevel.levelNumber) — \(liveLevel.levelName)")
-                        .font(DharmaFont.caption(12))
+                        .font(DharmaFont.caption().weight(.semibold))
                         .foregroundColor(.dharmaGold)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
                 .background(Color.dharmaGold.opacity(0.12))
                 .clipShape(Capsule())
 
@@ -147,14 +147,15 @@ struct DailyVerseSheetView: View {
             }
 
             if showKrishnaReflection && !krishnaReflectionResponse.isEmpty {
-                HStack(alignment: .top, spacing: 8) {
+                HStack(alignment: .top, spacing: 10) {
                     Text("✦")
-                        .font(.system(size: 12))
+                        .font(.system(size: 16))
                         .foregroundColor(.dharmaGold)
                     Text(krishnaReflectionResponse)
-                        .font(.system(size: 13, design: .serif))
+                        .font(.system(size: 17, design: .serif))
                         .italic()
                         .foregroundColor(.dharmaTextPrimary)
+                        .lineSpacing(5)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -164,10 +165,10 @@ struct DailyVerseSheetView: View {
 
             if dayAlreadyDone {
                 Text("Come back tomorrow")
-                    .font(DharmaFont.heading(15))
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.dharmaTextMuted)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                    .frame(height: 56)
                     .background(Color.dharmaSurface.opacity(0.5))
                     .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
             } else {
@@ -210,22 +211,22 @@ struct DailyVerseSheetView: View {
                             .opacity(showMarkSuccess ? 0.4 : (reflectionNonEmpty ? 1 : 0.4))
                         if showMarkSuccess {
                             Text("Completed ✓")
-                                .font(DharmaFont.heading(16))
+                                .font(.system(size: 18, weight: .semibold))
                                 .foregroundColor(.white.opacity(0.9))
                                 .transition(.opacity)
                         } else {
                             Text("Mark complete")
-                                .font(DharmaFont.heading(16))
+                                .font(.system(size: 18, weight: .semibold))
                                 .foregroundColor(.white)
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: 52)
+                    .frame(height: 56)
                 }
                 .disabled(showMarkSuccess || !reflectionNonEmpty)
             }
         }
-        .padding(DharmaSpacing.md)
+        .padding(DharmaSpacing.lg)
         .background(.ultraThinMaterial)
     }
 
@@ -255,34 +256,22 @@ struct DailyVerseSheetView: View {
     }
 
     private var verseCard: some View {
-        HStack(alignment: .top, spacing: 0) {
+        VStack(alignment: .leading, spacing: DharmaSpacing.md) {
+            Text(displayDay.verseReference.uppercased())
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.dharmaGold)
+                .tracking(1.4)
             Rectangle()
-                .fill(Color.dharmaGold)
-                .frame(width: 3)
-            VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
-                Text(displayDay.verseReference.uppercased())
-                    .font(DharmaFont.caption(11))
-                    .foregroundColor(.dharmaGold)
-                    .tracking(0.8)
-                Rectangle()
-                    .fill(Color.dharmaDivider)
-                    .frame(height: 1)
-                if !sanskritTrimmed.isEmpty {
-                    Text(sanskritTrimmed)
-                        .font(DharmaFont.sanskrit(15))
-                        .italic()
-                        .foregroundColor(.dharmaTextPrimary.opacity(0.65))
-                        .lineLimit(5)
-                }
-                Text(displayDay.verseText)
-                    .font(DharmaFont.title(18))
-                    .foregroundColor(.dharmaTextPrimary)
-                    .lineSpacing(5)
-            }
-            .padding(.leading, DharmaSpacing.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
+                .fill(Color.dharmaDivider)
+                .frame(height: 1)
+            VerseBody(
+                sanskrit: sanskritTrimmed.isEmpty ? nil : sanskritTrimmed,
+                translation: displayDay.verseText,
+                source: nil
+            )
         }
-        .padding(DharmaSpacing.md)
+        .saffronLeftBar()
+        .padding(DharmaSpacing.lg)
         .glassCard(cornerRadius: DharmaRadius.md)
         .overlay(alignment: .bottomTrailing) {
             Text("ॐ")
@@ -297,15 +286,16 @@ struct DailyVerseSheetView: View {
     private var krishnaBlock: some View {
         VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
             Text("✦ KRISHNA'S THOUGHT")
-                .font(DharmaFont.caption(10))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.dharmaGold)
-                .tracking(0.8)
+                .tracking(1.4)
             Text(displayDay.krishnaContext)
-                .font(DharmaFont.georgia(15))
+                .font(DharmaFont.georgia(17))
                 .foregroundColor(.dharmaTextBody)
-                .lineSpacing(4)
+                .lineSpacing(5)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(DharmaSpacing.md)
+        .padding(DharmaSpacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.dharmaGold.opacity(0.06))
         .clipShape(RoundedRectangle(cornerRadius: DharmaRadius.md))
@@ -316,38 +306,39 @@ struct DailyVerseSheetView: View {
     }
 
     private var reflectionSection: some View {
-        VStack(alignment: .leading, spacing: DharmaSpacing.sm) {
+        VStack(alignment: .leading, spacing: DharmaSpacing.md) {
             Text("TODAY'S QUESTION")
-                .font(DharmaFont.caption(10))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.dharmaGold)
-                .tracking(0.8)
+                .tracking(1.4)
             Text(displayDay.reflectionPrompt)
-                .font(DharmaFont.georgia(16))
+                .font(DharmaFont.georgia())
                 .italic()
                 .foregroundColor(.dharmaTextPrimary)
+                .fixedSize(horizontal: false, vertical: true)
 
             ZStack(alignment: .topLeading) {
                 if reflection.isEmpty && !editorFocused {
                     Text("Write a few lines in your own words…")
-                        .font(DharmaFont.body(16))
+                        .font(DharmaFont.body(17))
                         .foregroundColor(.dharmaTextMuted)
                         .padding(.leading, 4)
-                        .padding(.top, 10)
+                        .padding(.top, 12)
                 }
                 TextEditor(text: $reflection)
-                    .font(DharmaFont.body(16))
+                    .font(DharmaFont.body(17))
                     .foregroundColor(.dharmaTextPrimary)
-                    .frame(minHeight: 100)
+                    .frame(minHeight: 120)
                     .padding(8)
                     .scrollContentBackground(.hidden)
                     .background(Color.clear)
                     .focused($editorFocused)
             }
-            .padding(12)
+            .padding(14)
             .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: 14)
                     .strokeBorder(Color.dharmaGold.opacity(0.5), lineWidth: 0.5)
             )
         }

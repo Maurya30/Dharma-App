@@ -3,8 +3,8 @@ import SwiftUI
 struct NameOnboardingView: View {
     @ObservedObject var manager: OnboardingManager
     var onContinue: () -> Void
-    var activeStepIndex: Int = 2
-    var totalSteps: Int = 6
+    var activeStepIndex: Int = 3
+    var totalSteps: Int = 7
 
     @State private var name: String = ""
 
@@ -22,6 +22,11 @@ struct NameOnboardingView: View {
                 Text("What should Krishna call you?")
                     .font(.system(size: 24, design: .serif))
                     .foregroundColor(.dharmaTextPrimary)
+                    .multilineTextAlignment(.center)
+
+                Text("Krishna will address you by name in every conversation.")
+                    .font(.system(size: 11))
+                    .foregroundColor(.dharmaTextMuted)
                     .multilineTextAlignment(.center)
 
                 OnboardingProgressDots(activeIndex: activeStepIndex, total: totalSteps)

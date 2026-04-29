@@ -5,6 +5,8 @@ struct SignInView: View {
     var onFinished: () -> Void
 
     @ObservedObject private var auth = AuthManager.shared
+    @State private var showSignInError = false
+    @State private var signInErrorMessage = ""
 
     var body: some View {
         ZStack {
@@ -24,12 +26,19 @@ struct SignInView: View {
                     .multilineTextAlignment(.center)
                     .padding(.top, DharmaSpacing.lg)
 
-                Text("Sign in to sync your practice across devices and never lose your progress.")
-                    .font(DharmaFont.body(16))
-                    .foregroundColor(.dharmaTextSecondary)
+                Text("Sign in to save your progress across devices. Your journals, goals, and streaks are yours — we never sell your data.")
+                    .font(.system(size: 11))
+                    .foregroundColor(.dharmaTextMuted)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DharmaSpacing.xl)
                     .padding(.top, DharmaSpacing.sm)
+
+                Text("Sign in to sync your practice across devices and never lose your progress.")
+                    .font(.system(size: 11))
+                    .foregroundColor(.dharmaTextMuted)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DharmaSpacing.xl)
+                    .padding(.top, 6)
 
                 Spacer(minLength: DharmaSpacing.xl)
 
@@ -39,6 +48,8 @@ struct SignInView: View {
                     switch result {
                     case .success(let authorization):
                         guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
+                            signInErrorMessage = "Something went wrong. Please try again."
+                            showSignInError = true
                             return
                         }
                         Task {
@@ -46,11 +57,19 @@ struct SignInView: View {
                             await MainActor.run {
                                 if auth.isSignedIn {
                                     onFinished()
+                                } else {
+                                    signInErrorMessage = "Something went wrong. Please try again."
+                                    showSignInError = true
                                 }
                             }
                         }
                     case .failure(let error):
-                        print("Sign in with Apple: \(error.localizedDescription)")
+                        if let authError = error as? ASAuthorizationError,
+                           authError.code == .canceled {
+                            return
+                        }
+                        signInErrorMessage = "Something went wrong. Please try again."
+                        showSignInError = true
                     }
                 }
                 .signInWithAppleButtonStyle(.black)
@@ -91,6 +110,13 @@ struct SignInView: View {
                     .scaleEffect(1.2)
                     .tint(.dharmaGold)
             }
+        }
+        .alert(isPresented: $showSignInError) {
+            Alert(
+                title: Text("Sign In Failed"),
+                message: Text(signInErrorMessage),
+                dismissButton: .default(Text("OK"))
+            )
         }
     }
 }

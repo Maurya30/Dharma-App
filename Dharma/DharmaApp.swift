@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import WidgetKit
 
 @main
 struct DharmaApp: App {
@@ -47,6 +48,7 @@ struct DharmaApp: App {
                 if onboarding.hasCompletedOnboarding {
                     ContentView()
                         .environmentObject(store)
+                        .environmentObject(onboarding)
                         .environmentObject(goalsManager)
                         .environmentObject(journalStore)
                         .environmentObject(streakManager)
@@ -69,10 +71,19 @@ struct DharmaApp: App {
             .preferredColorScheme(userDarkMode ? .dark : .light)
             .onAppear {
                 NotificationManager.shared.setup()
+                syncWidgetUserDarkMode()
+            }
+            .onChange(of: userDarkMode) { _, _ in
+                syncWidgetUserDarkMode()
             }
             .task {
                 await AuthManager.shared.restoreFromCloudOnLaunchIfNeeded()
             }
         }
+    }
+
+    private func syncWidgetUserDarkMode() {
+        SharedDataManager.shared.saveUserDarkModeForWidget(userDarkMode)
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }

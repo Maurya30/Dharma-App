@@ -2,8 +2,8 @@ import SwiftUI
 
 struct AppearanceOnboardingView: View {
     var onContinue: () -> Void
-    var activeStepIndex: Int = 1
-    var totalSteps: Int = 6
+    var activeStepIndex: Int = 2
+    var totalSteps: Int = 7
 
     @AppStorage("userDarkMode") private var userDarkMode: Bool = false
     @State private var selectionIsDark: Bool = false
@@ -16,9 +16,9 @@ struct AppearanceOnboardingView: View {
                     .foregroundColor(.dharmaTextPrimary)
                     .multilineTextAlignment(.center)
 
-                Text("You can change this anytime in Settings")
-                    .font(DharmaFont.body(15))
-                    .foregroundColor(.dharmaTextSecondary)
+                Text("Choose what feels right for your practice. You can change this anytime in Settings.")
+                    .font(.system(size: 11))
+                    .foregroundColor(.dharmaTextMuted)
                     .multilineTextAlignment(.center)
 
                 OnboardingProgressDots(activeIndex: activeStepIndex, total: totalSteps)

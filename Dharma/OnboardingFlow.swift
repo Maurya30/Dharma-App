@@ -2,7 +2,7 @@ import SwiftUI
 
 struct OnboardingProgressDots: View {
     var activeIndex: Int
-    var total: Int = 6
+    var total: Int = 7
 
     var body: some View {
         HStack(spacing: 8) {
@@ -22,11 +22,12 @@ struct OnboardingFlowView: View {
 
     enum Step: Int {
         case welcome = 0
-        case appearance = 1
-        case name = 2
-        case goals = 3
-        case verseSwipe = 4
-        case signIn = 5
+        case howWorks = 1
+        case appearance = 2
+        case name = 3
+        case goals = 4
+        case verseSwipe = 5
+        case signIn = 6
     }
 
     @State private var step: Step = .welcome
@@ -38,20 +39,26 @@ struct OnboardingFlowView: View {
                 switch step {
                 case .welcome:
                     welcomeStep
+                case .howWorks:
+                    HowDharmaWorksView(
+                        onContinue: { goTo(.appearance) },
+                        activeStepIndex: 1,
+                        totalSteps: 7
+                    )
                 case .appearance:
-                    AppearanceOnboardingView(onContinue: { goTo(.name) }, activeStepIndex: 1, totalSteps: 6)
+                    AppearanceOnboardingView(onContinue: { goTo(.name) }, activeStepIndex: 2, totalSteps: 7)
                 case .name:
                     NameOnboardingView(
                         manager: manager,
                         onContinue: { goTo(.goals) },
-                        activeStepIndex: 2,
-                        totalSteps: 6
+                        activeStepIndex: 3,
+                        totalSteps: 7
                     )
                 case .goals:
                     GoalsOnboardingView(
                         onGoalsFinished: { goTo(.verseSwipe) },
-                        activeStepIndex: 3,
-                        totalSteps: 6
+                        activeStepIndex: 4,
+                        totalSteps: 7
                     )
                 case .verseSwipe:
                     VerseSwipeOnboardingView(
@@ -59,8 +66,8 @@ struct OnboardingFlowView: View {
                             goalsManager.completeGoalSelection()
                             goTo(.signIn)
                         },
-                        activeStepIndex: 4,
-                        totalSteps: 6
+                        activeStepIndex: 5,
+                        totalSteps: 7
                     )
                 case .signIn:
                     SignInView(onFinished: {
@@ -107,7 +114,7 @@ struct OnboardingFlowView: View {
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
 
-                OnboardingProgressDots(activeIndex: 0, total: 6)
+                OnboardingProgressDots(activeIndex: 0, total: 7)
                     .padding(.top, DharmaSpacing.sm)
             }
             .padding(.horizontal, DharmaSpacing.xl)
@@ -117,7 +124,7 @@ struct OnboardingFlowView: View {
             VStack(spacing: DharmaSpacing.md) {
                 Button {
                     HapticManager.light()
-                    goTo(.appearance)
+                    goTo(.howWorks)
                 } label: {
                     Text("Get started")
                         .font(DharmaFont.heading(16))

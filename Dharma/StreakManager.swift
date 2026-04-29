@@ -183,12 +183,18 @@ final class StreakManager: ObservableObject {
         Based on my practice, offer a single focused weekly spiritual insight in 3–5 sentences. Speak warmly and directly. Do not ask follow-up questions. Respond in exactly 2 sentences maximum. Be personal and direct. Do not use asterisks or markdown formatting.
         """
 
+        let lastOfferingSummary: String? = await MainActor.run {
+            let s = AuthManager.shared.lastOfferingSummary
+            return s.isEmpty ? nil : s
+        }
+
         let req = KrishnaRequest(
             message: message,
             currentVerse: nil,
             goals: goals,
             reflection: nil,
-            conversationHistory: nil
+            conversationHistory: nil,
+            lastOfferingSummary: lastOfferingSummary
         )
 
         do {
@@ -200,7 +206,9 @@ final class StreakManager: ObservableObject {
             weeklyInsightDate = Date()
             UserDefaults.standard.set(weeklyInsight, forKey: insightTextKey)
             UserDefaults.standard.set(weeklyInsightDate, forKey: insightDateKey)
-        } catch {}
+        } catch {
+            // silently fail — non-critical
+        }
 
         isLoadingInsight = false
     }

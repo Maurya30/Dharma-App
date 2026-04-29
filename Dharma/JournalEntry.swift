@@ -10,11 +10,13 @@ struct JournalEntry: Codable, Identifiable {
     let date: Date
     var spokenWithKrishna: Bool
     var goalContext: String?
-    /// "manual" | "sadhana" | "goalPath"
+    /// "manual" | "sadhana" | "goalPath" | "offering"
     var source: String
     var sourceLabel: String
     /// Krishna one-sentence inline reply (Sadhana Bhavana, goal path).
     var krishnaResponse: String
+    var suggestedActions: [String] = []
+    var offeringSummary: String = ""
 
     init(
         verseId: String,
@@ -25,7 +27,9 @@ struct JournalEntry: Codable, Identifiable {
         goalContext: String? = nil,
         source: String = "manual",
         sourceLabel: String = "",
-        krishnaResponse: String = ""
+        krishnaResponse: String = "",
+        suggestedActions: [String] = [],
+        offeringSummary: String = ""
     ) {
         self.id = UUID()
         self.verseId = verseId
@@ -39,6 +43,8 @@ struct JournalEntry: Codable, Identifiable {
         self.source = source
         self.sourceLabel = sourceLabel
         self.krishnaResponse = krishnaResponse
+        self.suggestedActions = suggestedActions
+        self.offeringSummary = offeringSummary
     }
 
     /// Restore from cloud when `verseEnglish` / `verseReference` were not stored server-side.
@@ -54,7 +60,9 @@ struct JournalEntry: Codable, Identifiable {
         goalContext: String?,
         source: String = "manual",
         sourceLabel: String = "",
-        krishnaResponse: String = ""
+        krishnaResponse: String = "",
+        suggestedActions: [String] = [],
+        offeringSummary: String = ""
     ) {
         self.id = id
         self.verseId = verseId
@@ -68,10 +76,12 @@ struct JournalEntry: Codable, Identifiable {
         self.source = source
         self.sourceLabel = sourceLabel
         self.krishnaResponse = krishnaResponse
+        self.suggestedActions = suggestedActions
+        self.offeringSummary = offeringSummary
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, verseId, verseReference, verseSource, verseEnglish, noteText, date, spokenWithKrishna, goalContext, source, sourceLabel, krishnaResponse
+        case id, verseId, verseReference, verseSource, verseEnglish, noteText, date, spokenWithKrishna, goalContext, source, sourceLabel, krishnaResponse, suggestedActions, offeringSummary
     }
 
     init(from decoder: Decoder) throws {
@@ -88,6 +98,8 @@ struct JournalEntry: Codable, Identifiable {
         source = try c.decodeIfPresent(String.self, forKey: .source) ?? "manual"
         sourceLabel = try c.decodeIfPresent(String.self, forKey: .sourceLabel) ?? ""
         krishnaResponse = try c.decodeIfPresent(String.self, forKey: .krishnaResponse) ?? ""
+        suggestedActions = try c.decodeIfPresent([String].self, forKey: .suggestedActions) ?? []
+        offeringSummary = try c.decodeIfPresent(String.self, forKey: .offeringSummary) ?? ""
     }
 
     func encode(to encoder: Encoder) throws {
@@ -104,5 +116,7 @@ struct JournalEntry: Codable, Identifiable {
         try c.encode(source, forKey: .source)
         try c.encode(sourceLabel, forKey: .sourceLabel)
         try c.encode(krishnaResponse, forKey: .krishnaResponse)
+        try c.encode(suggestedActions, forKey: .suggestedActions)
+        try c.encode(offeringSummary, forKey: .offeringSummary)
     }
 }

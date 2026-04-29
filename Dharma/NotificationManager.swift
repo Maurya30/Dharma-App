@@ -32,7 +32,6 @@ final class NotificationManager {
 
         center.add(request) { error in
             if let error {
-                print("Sadhana notification schedule failed: \(error.localizedDescription)")
             }
         }
     }
@@ -50,7 +49,6 @@ final class NotificationManager {
     /// Hex string, UserDefaults (same storage as `@AppStorage("apnsDeviceToken")`), POST to backend.
     func saveDeviceToken(_ token: Data) {
         let hexToken = token.map { String(format: "%02x", $0) }.joined()
-        print("APNS TOKEN: \(hexToken)")
         UserDefaults.standard.set(hexToken, forKey: Self.deviceTokenKey)
 
         var request = URLRequest(url: registerURL)
@@ -63,10 +61,9 @@ final class NotificationManager {
             do {
                 let (_, response) = try await URLSession.shared.data(for: request)
                 if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-                    print("register-device failed: HTTP \(http.statusCode)")
                 }
             } catch {
-                print("register-device error: \(error.localizedDescription)")
+                // silently fail — non-critical
             }
         }
     }
