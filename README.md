@@ -15,7 +15,7 @@ scripture-backed wisdom rooted in the actual texts.
 ## Screenshots
 
 <div align="center">
-  <img src="screenshots/01_today.png" width="30%" />
+  <img src="AppMockup Screenshots(1).zip/Apple iPhone 16 Pro Max Screenshot 1.png" width="30%" />
   <img src="screenshots/02_krishna.png" width="30%" />
   <img src="screenshots/03_verse.png" width="30%" />
 </div>
