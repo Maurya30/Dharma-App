@@ -8,7 +8,7 @@ verses from the Bhagavad Gita, Upanishads, and Rig Veda. Ask him anything. He
 remembers your past conversations, knows your goals, and responds with 
 scripture-backed wisdom rooted in the actual texts.
 
-> 🕉️ Coming to the App Store soon.
+> Download today on the App Store (https://apps.apple.com/us/app/dharma/id6761423523).
 
 ---
 
